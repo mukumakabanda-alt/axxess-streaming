@@ -1,9 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, LogOut, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { OverviewTab } from "@/components/admin/OverviewTab";
 import { OrdersTab } from "@/components/admin/OrdersTab";
 import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
@@ -14,27 +11,16 @@ import { ReferralsTab } from "@/components/admin/ReferralsTab";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 
 export const Route = createFileRoute("/admin/")({
+  head: () => ({
+    meta: [
+      { title: "Axxess Admin" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AdminPage,
 });
 
 function AdminPage() {
-  const auth = useAdminAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!auth.loading && (!auth.isAuthed || !auth.isAdmin)) {
-      navigate({ to: "/admin/login" });
-    }
-  }, [auth, navigate]);
-
-  if (auth.loading || !auth.isAuthed || !auth.isAdmin) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
@@ -45,18 +31,15 @@ function AdminPage() {
             </div>
             <div>
               <p className="font-display text-sm font-bold leading-none">Axxess Admin</p>
-              <p className="text-[10px] text-muted-foreground">{auth.email}</p>
+              <p className="text-[10px] text-muted-foreground">Private dashboard</p>
             </div>
           </Link>
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate({ to: "/admin/login" });
-            }}
+          <Link
+            to="/"
             className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
           >
-            <LogOut className="h-3.5 w-3.5" /> Sign out
-          </button>
+            View site
+          </Link>
         </div>
       </header>
 
