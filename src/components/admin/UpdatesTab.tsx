@@ -22,7 +22,7 @@ export function UpdatesTab() {
   };
   useEffect(() => { load(); }, []);
 
-  const save = async (data: Partial<U> & { id?: string }) => {
+  const save = async (data: { id?: string; title: string; body: string; is_published?: boolean }) => {
     const payload = { title: data.title, body: data.body, is_published: data.is_published ?? true };
     if (data.id) await supabase.from("updates").update(payload).eq("id", data.id);
     else await supabase.from("updates").insert(payload);
