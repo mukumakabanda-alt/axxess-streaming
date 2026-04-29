@@ -1,0 +1,137 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Check, Loader2 } from "lucide-react";
+import { OrderDialog } from "./OrderDialog";
+
+type Service = {
+  id: string;
+  name: string;
+  slug: string;
+  price_kwacha: number;
+  description: string | null;
+  features: string[];
+  accent_color: string | null;
+  badge: string | null;
+};
+
+export function Pricing() {
+  const [services, setServices] = useState<Service[] | null>(null);
+  const [selected, setSelected] = useState<Service | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("services")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .then(({ data }) => {
+        setServices(
+          (data ?? []).map((d: any) => ({
+            ...d,
+            features: Array.isArray(d.features) ? d.features : [],
+          })),
+        );
+      });
+  }, []);
+
+  return (
+    <section id="plans" className="px-4 py-20 sm:px-6">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Plans</p>
+          <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">
+            Pick your access
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+            Simple monthly pricing. No hidden fees. Cancel anytime.
+          </p>
+        </div>
+
+        {!services ? (
+          <div className="mt-12 flex justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {services.map((s) => {
+              const isSpotify = s.accent_color === "spotify";
+              const isFeatured = s.badge === "Best Value" || s.badge === "Most Popular";
+              return (
+                <div
+                  key={s.id}
+                  className={`group relative flex flex-col overflow-hidden rounded-3xl border p-6 transition-smooth hover:-translate-y-1 sm:p-8 ${
+                    isFeatured
+                      ? "border-primary/40 bg-card shadow-glow-red"
+                      : "border-border gradient-card"
+                  }`}
+                >
+                  {s.badge && (
+                    <span
+                      className={`absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                        isSpotify
+                          ? "bg-success/15 text-success"
+                          : "bg-primary text-primary-foreground"
+                      }`}
+                      style={isSpotify ? { color: "var(--color-spotify)", backgroundColor: "color-mix(in oklab, var(--color-spotify) 15%, transparent)" } : undefined}
+                    >
+                      {s.badge}
+                    </span>
+                  )}
+
+                  <h3 className="font-display text-2xl font-bold">{s.name}</h3>
+                  {s.description && (
+                    <p className="mt-1 text-sm text-muted-foreground">{s.description}</p>
+                  )}
+
+                  <div className="mt-6 flex items-baseline gap-1">
+                    <span className="text-xs font-semibold text-muted-foreground">K</span>
+                    <span className="font-display text-5xl font-bold tracking-tight">
+                      {Number(s.price_kwacha)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">/month</span>
+                  </div>
+
+                  <ul className="mt-6 flex-1 space-y-2.5">
+                    {s.features.map((f, i) => (
+                      <li key={i} className="flex items-start gap-2.5 text-sm">
+                        <span
+                          className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full ${
+                            isSpotify ? "" : "bg-primary/15"
+                          }`}
+                          style={isSpotify ? { backgroundColor: "color-mix(in oklab, var(--color-spotify) 18%, transparent)" } : undefined}
+                        >
+                          <Check
+                            className="h-2.5 w-2.5"
+                            style={{ color: isSpotify ? "var(--color-spotify)" : "var(--color-primary)" }}
+                          />
+                        </span>
+                        <span className="text-foreground/90">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => setSelected(s)}
+                    className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-smooth ${
+                      isSpotify
+                        ? "text-black hover:opacity-90"
+                        : "bg-primary text-primary-foreground shadow-glow-red hover:bg-primary/90"
+                    }`}
+                    style={isSpotify ? { backgroundColor: "var(--color-spotify)" } : undefined}
+                  >
+                    Get Access
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <OrderDialog
+        service={selected}
+        onClose={() => setSelected(null)}
+      />
+    </section>
+  );
+}
