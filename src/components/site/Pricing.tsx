@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, Loader2 } from "lucide-react";
 import { OrderDialog } from "./OrderDialog";
+import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 
 type Service = {
   id: string;
@@ -54,25 +55,30 @@ export function Pricing() {
         ) : (
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((s) => {
-              const isSpotify = s.accent_color === "spotify";
+              const accentHex = resolveAccentHex(s.accent_color);
+              const light = isLightAccent(accentHex);
               const isFeatured = s.badge === "Best Value" || s.badge === "Most Popular";
+              const buttonTextColor = light ? "#000" : "#fff";
               return (
                 <div
                   key={s.id}
-                  className={`group relative flex flex-col overflow-hidden rounded-3xl border p-6 transition-smooth hover:-translate-y-1 sm:p-8 ${
-                    isFeatured
-                      ? "border-primary/40 bg-card shadow-glow-red"
-                      : "border-border gradient-card"
-                  }`}
+                  className="group relative flex flex-col overflow-hidden rounded-3xl border p-6 transition-smooth hover:-translate-y-1 sm:p-8 gradient-card"
+                  style={{
+                    borderColor: isFeatured
+                      ? `color-mix(in oklab, ${accentHex} 45%, transparent)`
+                      : undefined,
+                    boxShadow: isFeatured
+                      ? `0 0 60px -10px color-mix(in oklab, ${accentHex} 50%, transparent)`
+                      : undefined,
+                  }}
                 >
                   {s.badge && (
                     <span
-                      className={`absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                        isSpotify
-                          ? "bg-success/15 text-success"
-                          : "bg-primary text-primary-foreground"
-                      }`}
-                      style={isSpotify ? { color: "var(--color-spotify)", backgroundColor: "color-mix(in oklab, var(--color-spotify) 15%, transparent)" } : undefined}
+                      className="absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
+                      style={{
+                        color: buttonTextColor,
+                        backgroundColor: accentHex,
+                      }}
                     >
                       {s.badge}
                     </span>
@@ -85,7 +91,10 @@ export function Pricing() {
 
                   <div className="mt-6 flex items-baseline gap-1">
                     <span className="text-xs font-semibold text-muted-foreground">K</span>
-                    <span className="font-display text-5xl font-bold tracking-tight">
+                    <span
+                      className="font-display text-5xl font-bold tracking-tight"
+                      style={{ color: accentHex }}
+                    >
                       {Number(s.price_kwacha)}
                     </span>
                     <span className="text-sm text-muted-foreground">/month</span>
@@ -95,15 +104,12 @@ export function Pricing() {
                     {s.features.map((f, i) => (
                       <li key={i} className="flex items-start gap-2.5 text-sm">
                         <span
-                          className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full ${
-                            isSpotify ? "" : "bg-primary/15"
-                          }`}
-                          style={isSpotify ? { backgroundColor: "color-mix(in oklab, var(--color-spotify) 18%, transparent)" } : undefined}
+                          className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
+                          style={{
+                            backgroundColor: `color-mix(in oklab, ${accentHex} 18%, transparent)`,
+                          }}
                         >
-                          <Check
-                            className="h-2.5 w-2.5"
-                            style={{ color: isSpotify ? "var(--color-spotify)" : "var(--color-primary)" }}
-                          />
+                          <Check className="h-2.5 w-2.5" style={{ color: accentHex }} />
                         </span>
                         <span className="text-foreground/90">{f}</span>
                       </li>
@@ -112,12 +118,12 @@ export function Pricing() {
 
                   <button
                     onClick={() => setSelected(s)}
-                    className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-smooth ${
-                      isSpotify
-                        ? "text-black hover:opacity-90"
-                        : "bg-primary text-primary-foreground shadow-glow-red hover:bg-primary/90"
-                    }`}
-                    style={isSpotify ? { backgroundColor: "var(--color-spotify)" } : undefined}
+                    className="mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-smooth hover:opacity-90"
+                    style={{
+                      backgroundColor: accentHex,
+                      color: buttonTextColor,
+                      boxShadow: `0 0 30px -8px color-mix(in oklab, ${accentHex} 60%, transparent)`,
+                    }}
                   >
                     Get Access
                   </button>
@@ -135,3 +141,4 @@ export function Pricing() {
     </section>
   );
 }
+
