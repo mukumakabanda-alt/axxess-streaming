@@ -131,6 +131,8 @@ export function Pricing() {
               );
             })}
           </div>
+        )}
+      </div>
 
       <OrderDialog
         service={selected}
@@ -139,3 +141,4 @@ export function Pricing() {
     </section>
   );
 }
+
