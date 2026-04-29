@@ -106,6 +106,12 @@ function ServiceDialog({ open, service, onClose, onSave }: {
   open: boolean; service: Service | null;
   onClose: () => void; onSave: (s: any) => void;
 }) {
+  const [accent, setAccent] = useState<string>(service?.accent_color ?? "red");
+
+  useEffect(() => {
+    setAccent(service?.accent_color ?? "red");
+  }, [service, open]);
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -122,7 +128,7 @@ function ServiceDialog({ open, service, onClose, onSave }: {
             description: String(fd.get("description") || ""),
             features,
             badge: String(fd.get("badge") || ""),
-            accent_color: String(fd.get("accent_color") || ""),
+            accent_color: accent,
             sort_order: Number(fd.get("sort_order") || 0),
             is_active: fd.get("is_active") === "on",
           });
@@ -137,15 +143,43 @@ function ServiceDialog({ open, service, onClose, onSave }: {
           </div>
           <div><Label>Description</Label><Textarea name="description" defaultValue={service?.description ?? ""} rows={2} /></div>
           <div><Label>Features (one per line)</Label><Textarea name="features" defaultValue={(service?.features ?? []).join("\n")} rows={4} /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>Badge (optional)</Label><Input name="badge" defaultValue={service?.badge ?? ""} placeholder="Best Value" /></div>
-            <div><Label>Accent</Label>
-              <select name="accent_color" defaultValue={service?.accent_color ?? "red"} className="w-full rounded-md border border-input bg-background p-2 text-sm">
-                <option value="red">Red (default)</option>
-                <option value="spotify">Spotify green</option>
-              </select>
+          <div><Label>Badge (optional)</Label><Input name="badge" defaultValue={service?.badge ?? ""} placeholder="Best Value" /></div>
+
+          <div>
+            <Label>Accent color</Label>
+            <div className="mt-2 grid grid-cols-9 gap-2">
+              {ACCENT_PRESETS.map((p) => {
+                const selected = accent === p.value;
+                return (
+                  <button
+                    key={p.value}
+                    type="button"
+                    title={p.label}
+                    onClick={() => setAccent(p.value)}
+                    className={`relative h-9 w-9 rounded-full border-2 transition-all ${
+                      selected ? "border-foreground scale-110" : "border-border hover:scale-105"
+                    }`}
+                    style={{ backgroundColor: p.hex }}
+                  >
+                    {selected && (
+                      <Check
+                        className="absolute inset-0 m-auto h-4 w-4"
+                        style={{ color: p.hex === "#FFD60A" || p.hex === "#A3E635" ? "#000" : "#fff" }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <span
+                className="inline-block h-3 w-3 rounded-full"
+                style={{ backgroundColor: resolveAccentHex(accent) }}
+              />
+              Selected: {ACCENT_PRESETS.find((p) => p.value === accent)?.label ?? accent}
             </div>
           </div>
+
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="is_active" defaultChecked={service?.is_active ?? true} /> Active
           </label>
@@ -155,3 +189,4 @@ function ServiceDialog({ open, service, onClose, onSave }: {
     </Dialog>
   );
 }
+
