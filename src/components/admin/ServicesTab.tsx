@@ -63,6 +63,7 @@ export function ServicesTab() {
       accent_color: data.accent_color || null,
       sort_order: data.sort_order ?? 0,
       is_active: data.is_active ?? true,
+      is_full: data.is_full ?? false,
     };
     if (data.id) {
       await supabase.from("services").update(payload).eq("id", data.id);
