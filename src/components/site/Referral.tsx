@@ -21,6 +21,10 @@ export function Referral() {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const referralLink = code
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/?ref=${code}`
+    : "";
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -37,15 +41,15 @@ export function Referral() {
     const { error } = await supabase.from("referrals").insert({ ...parsed.data, code: newCode });
     setSubmitting(false);
     if (error) {
-      toast.error("Could not generate code. Try again.");
+      toast.error("Could not generate link. Try again.");
       return;
     }
     setCode(newCode);
-    toast.success("Your referral code is ready!");
+    toast.success("Your referral link is ready!");
   };
 
   const copy = () => {
-    navigator.clipboard.writeText(code);
+    navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -59,7 +63,7 @@ export function Referral() {
           </div>
           <div>
             <h2 className="font-display text-2xl font-bold sm:text-3xl">Refer a friend</h2>
-            <p className="text-sm text-muted-foreground">Get <span className="text-primary font-semibold">10 days free</span> on your next subscription.</p>
+            <p className="text-sm text-muted-foreground">Get <span className="text-primary font-semibold">K5 off</span> your next subscription.</p>
           </div>
         </div>
 
@@ -78,22 +82,22 @@ export function Referral() {
               disabled={submitting}
               className="sm:col-span-2 mt-2 rounded-full bg-primary py-6 font-semibold shadow-glow-red hover:bg-primary/90"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate My Referral Code"}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate My Referral Link"}
             </Button>
           </form>
         ) : (
           <div className="mt-8 rounded-2xl border border-primary/40 bg-background p-6 text-center">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Your referral code</p>
-            <p className="mt-2 font-display text-3xl font-bold tracking-widest text-primary sm:text-4xl">{code}</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Your referral link</p>
+            <p className="mt-3 break-all rounded-lg bg-card p-3 font-mono text-sm text-primary">{referralLink}</p>
             <button
               onClick={copy}
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/15 px-4 py-2 text-sm font-semibold text-primary"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? "Copied!" : "Copy code"}
+              {copied ? "Copied!" : "Copy link"}
             </button>
             <p className="mt-4 text-xs text-muted-foreground">
-              Share with friends. When they order using this code, you earn 10 days free.
+              Share this link. When friends visit through it, your visits count grows in our system, and you get K5 off your next subscription.
             </p>
           </div>
         )}
