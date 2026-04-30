@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Star, Loader2, Quote, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 type Testimonial = {
   id: string;
@@ -18,6 +25,10 @@ type Testimonial = {
 
 type PublicMessage = { id: string; name: string; message: string; screenshot_url: string | null };
 
+type Card =
+  | { kind: "t"; id: string; name: string; message: string; screenshot_url: string | null; rating: number | null }
+  | { kind: "m"; id: string; name: string; message: string; screenshot_url: string | null };
+
 const schema = z.object({
   name: z.string().trim().min(2, "Name too short").max(80),
   message: z.string().trim().min(5, "Message too short").max(500),
@@ -27,6 +38,11 @@ export function Testimonials() {
   const [items, setItems] = useState<Testimonial[]>([]);
   const [messages, setMessages] = useState<PublicMessage[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const autoplay = useRef(
+    Autoplay({ delay: 4500, stopOnInteraction: false, stopOnMouseEnter: true }),
+  );
 
   const load = async () => {
     const [{ data: t }, { data: m }] = await Promise.all([
@@ -43,6 +59,22 @@ export function Testimonials() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!api) return;
+    setCurrent(api.selectedScrollSnap());
+    api.on("select", () => setCurrent(api.selectedScrollSnap()));
+  }, [api]);
+
+  const cards: Card[] = [
+    ...items.map<Card>((t) => ({
+      kind: "t", id: t.id, name: t.customer_name, message: t.message,
+      screenshot_url: t.screenshot_url, rating: t.rating,
+    })),
+    ...messages.map<Card>((m) => ({
+      kind: "m", id: m.id, name: m.name, message: m.message, screenshot_url: m.screenshot_url,
+    })),
+  ];
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -102,47 +134,56 @@ export function Testimonials() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((t) => (
-            <div key={t.id} className="rounded-3xl border border-border gradient-card p-6 shadow-card">
-              {t.screenshot_url ? (
-                <img
-                  src={t.screenshot_url}
-                  alt={`Message from ${t.customer_name}`}
-                  loading="lazy"
-                  className="mb-4 w-full rounded-xl border border-border object-cover"
+        {cards.length > 0 && (
+          <Carousel
+            setApi={setApi}
+            plugins={[autoplay.current]}
+            opts={{ loop: true, align: "start" }}
+            className="mt-12"
+          >
+            <CarouselContent>
+              {cards.map((c) => (
+                <CarouselItem key={`${c.kind}-${c.id}`} className="sm:basis-1/2 lg:basis-1/3">
+                  <div className="neon-red-glow h-full rounded-3xl border-2 gradient-card p-6">
+                    {c.screenshot_url ? (
+                      <img
+                        src={c.screenshot_url}
+                        alt={`Message from ${c.name}`}
+                        loading="lazy"
+                        className="mb-4 w-full rounded-xl border border-border object-cover"
+                      />
+                    ) : (
+                      <Quote className="mb-3 h-6 w-6 text-primary/60" />
+                    )}
+                    <p className="text-sm leading-relaxed text-foreground/90">"{c.message}"</p>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-muted-foreground">— {c.name}</span>
+                      {c.kind === "t" && (
+                        <div className="flex gap-0.5">
+                          {Array.from({ length: c.rating ?? 5 }).map((_, i) => (
+                            <Star key={i} className="h-3 w-3 fill-primary text-primary" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="mt-6 flex items-center justify-center gap-2">
+              {cards.map((_, i) => (
+                <button
+                  key={i}
+                  aria-label={`Go to slide ${i + 1}`}
+                  onClick={() => api?.scrollTo(i)}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
+                  }`}
                 />
-              ) : (
-                <Quote className="mb-3 h-6 w-6 text-primary/60" />
-              )}
-              <p className="text-sm leading-relaxed text-foreground/90">"{t.message}"</p>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">— {t.customer_name}</span>
-                <div className="flex gap-0.5">
-                  {Array.from({ length: t.rating ?? 5 }).map((_, i) => (
-                    <Star key={i} className="h-3 w-3 fill-primary text-primary" />
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-          {messages.map((m) => (
-            <div key={m.id} className="rounded-3xl border border-border bg-card/40 p-6">
-              {m.screenshot_url ? (
-                <img
-                  src={m.screenshot_url}
-                  alt={`Message from ${m.name}`}
-                  loading="lazy"
-                  className="mb-4 w-full rounded-xl border border-border object-cover"
-                />
-              ) : (
-                <Quote className="mb-3 h-5 w-5 text-muted-foreground" />
-              )}
-              <p className="text-sm text-foreground/90">"{m.message}"</p>
-              <p className="mt-4 text-xs text-muted-foreground">— {m.name}</p>
-            </div>
-          ))}
-        </div>
+          </Carousel>
+        )}
 
         {/* Submit your own */}
         <div className="mx-auto mt-12 max-w-xl rounded-3xl border border-border gradient-card p-6 sm:p-8">

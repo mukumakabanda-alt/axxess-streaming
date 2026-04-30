@@ -13,6 +13,7 @@ type Service = {
   features: string[];
   accent_color: string | null;
   badge: string | null;
+  is_full: boolean | null;
 };
 
 export function Pricing() {
@@ -38,6 +39,14 @@ export function Pricing() {
   return (
     <section id="plans" className="px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-6xl">
+        {/* Free-trial CTA banner */}
+        <a
+          href="#referral"
+          className="mx-auto mb-10 flex max-w-2xl items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-3 text-center text-sm font-semibold text-primary shadow-glow-red transition-smooth hover:bg-primary/20"
+        >
+          🎁 Refer a friend and begin your 5-day free trial →
+        </a>
+
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Plans</p>
           <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">
@@ -59,10 +68,13 @@ export function Pricing() {
               const light = isLightAccent(accentHex);
               const isFeatured = s.badge === "Best Value" || s.badge === "Most Popular";
               const buttonTextColor = light ? "#000" : "#fff";
+              const isFull = !!s.is_full;
               return (
                 <div
                   key={s.id}
-                  className="group relative flex flex-col overflow-hidden rounded-3xl border p-6 transition-smooth hover:-translate-y-1 sm:p-8 gradient-card"
+                  className={`group relative flex flex-col overflow-hidden rounded-3xl border p-6 transition-smooth sm:p-8 gradient-card ${
+                    isFull ? "opacity-80" : "hover:-translate-y-1"
+                  }`}
                   style={{
                     borderColor: isFeatured
                       ? `color-mix(in oklab, ${accentHex} 45%, transparent)`
@@ -72,7 +84,11 @@ export function Pricing() {
                       : undefined,
                   }}
                 >
-                  {s.badge && (
+                  {isFull ? (
+                    <span className="absolute right-4 top-4 rounded-full bg-destructive px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-destructive-foreground">
+                      Full
+                    </span>
+                  ) : s.badge && (
                     <span
                       className="absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
                       style={{
@@ -116,17 +132,26 @@ export function Pricing() {
                     ))}
                   </ul>
 
-                  <button
-                    onClick={() => setSelected(s)}
-                    className="mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-smooth hover:opacity-90"
-                    style={{
-                      backgroundColor: accentHex,
-                      color: buttonTextColor,
-                      boxShadow: `0 0 30px -8px color-mix(in oklab, ${accentHex} 60%, transparent)`,
-                    }}
-                  >
-                    Get Access
-                  </button>
+                  {isFull ? (
+                    <a
+                      href="#reserve"
+                      className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-smooth hover:bg-accent"
+                    >
+                      Reserve a slot
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => setSelected(s)}
+                      className="mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-smooth hover:opacity-90"
+                      style={{
+                        backgroundColor: accentHex,
+                        color: buttonTextColor,
+                        boxShadow: `0 0 30px -8px color-mix(in oklab, ${accentHex} 60%, transparent)`,
+                      }}
+                    >
+                      Get Access
+                    </button>
+                  )}
                 </div>
               );
             })}

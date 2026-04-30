@@ -21,6 +21,7 @@ type Service = {
   accent_color: string | null;
   sort_order: number;
   is_active: boolean;
+  is_full: boolean;
 };
 
 export function ServicesTab() {
@@ -36,6 +37,12 @@ export function ServicesTab() {
 
   const toggleActive = async (s: Service) => {
     await supabase.from("services").update({ is_active: !s.is_active }).eq("id", s.id);
+    load();
+  };
+
+  const toggleFull = async (s: Service) => {
+    await supabase.from("services").update({ is_full: !s.is_full }).eq("id", s.id);
+    toast.success(!s.is_full ? "Marked as Full" : "Marked as Available");
     load();
   };
 
@@ -56,6 +63,7 @@ export function ServicesTab() {
       accent_color: data.accent_color || null,
       sort_order: data.sort_order ?? 0,
       is_active: data.is_active ?? true,
+      is_full: data.is_full ?? false,
     };
     if (data.id) {
       await supabase.from("services").update(payload).eq("id", data.id);
@@ -84,6 +92,12 @@ export function ServicesTab() {
               <Switch checked={s.is_active} onCheckedChange={() => toggleActive(s)} />
             </div>
             {s.description && <p className="mt-2 text-xs text-muted-foreground">{s.description}</p>}
+            <label className="mt-3 flex items-center justify-between rounded-lg border border-border bg-card/40 px-3 py-2 text-xs">
+              <span className="font-semibold">
+                {s.is_full ? <span className="text-destructive">Marked Full</span> : "Available"}
+              </span>
+              <Switch checked={s.is_full} onCheckedChange={() => toggleFull(s)} />
+            </label>
             <div className="mt-4 flex gap-2">
               <Button size="sm" variant="outline" onClick={() => setEditing(s)}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
               <Button size="sm" variant="outline" onClick={() => remove(s.id)} className="text-destructive"><Trash2 className="mr-1 h-3 w-3" /></Button>
@@ -131,6 +145,7 @@ function ServiceDialog({ open, service, onClose, onSave }: {
             accent_color: accent,
             sort_order: Number(fd.get("sort_order") || 0),
             is_active: fd.get("is_active") === "on",
+            is_full: fd.get("is_full") === "on",
           });
         }} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
@@ -180,9 +195,14 @@ function ServiceDialog({ open, service, onClose, onSave }: {
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="is_active" defaultChecked={service?.is_active ?? true} /> Active
-          </label>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="is_active" defaultChecked={service?.is_active ?? true} /> Active
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="is_full" defaultChecked={service?.is_full ?? false} /> Mark as Full
+            </label>
+          </div>
           <DialogFooter><Button type="submit">Save</Button></DialogFooter>
         </form>
       </DialogContent>

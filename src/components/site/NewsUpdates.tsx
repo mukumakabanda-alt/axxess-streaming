@@ -56,7 +56,7 @@ export function NewsUpdates() {
           <CarouselContent>
             {items.map((u) => (
               <CarouselItem key={u.id} className="sm:basis-1/2">
-                <article className="h-full rounded-2xl border border-border gradient-card p-5">
+                <article className="neon-red-glow h-full rounded-2xl border-2 gradient-card p-5">
                   <h3 className="font-display text-lg font-bold">{u.title}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">{u.body}</p>
                   <time className="mt-3 block text-xs text-muted-foreground/60">

@@ -130,6 +130,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          id: string
+          note: string | null
+          service_id: string | null
+          service_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          customer_phone: string
+          id?: string
+          note?: string | null
+          service_id?: string | null
+          service_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          note?: string | null
+          service_id?: string | null
+          service_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           accent_color: string | null
@@ -140,6 +176,7 @@ export type Database = {
           features: Json
           id: string
           is_active: boolean
+          is_full: boolean
           name: string
           price_kwacha: number
           slug: string
@@ -155,6 +192,7 @@ export type Database = {
           features?: Json
           id?: string
           is_active?: boolean
+          is_full?: boolean
           name: string
           price_kwacha: number
           slug: string
@@ -170,6 +208,7 @@ export type Database = {
           features?: Json
           id?: string
           is_active?: boolean
+          is_full?: boolean
           name?: string
           price_kwacha?: number
           slug?: string

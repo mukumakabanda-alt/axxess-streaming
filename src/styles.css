@@ -154,3 +154,21 @@
   50% { box-shadow: 0 0 0 12px oklch(0.628 0.258 25.5 / 0); }
 }
 .animate-pulse-glow { animation: pulse-glow 2s infinite; }
+
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px oklch(0.628 0.258 25.5 / 0.5),
+      0 0 24px oklch(0.628 0.258 25.5 / 0.35),
+      0 0 48px oklch(0.628 0.258 25.5 / 0.2);
+    border-color: oklch(0.628 0.258 25.5 / 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 14px oklch(0.7 0.27 25.5 / 0.8),
+      0 0 36px oklch(0.7 0.27 25.5 / 0.55),
+      0 0 72px oklch(0.7 0.27 25.5 / 0.35);
+    border-color: oklch(0.7 0.27 25.5 / 0.85);
+  }
+}
+.neon-red-glow { animation: neon-pulse 2.4s ease-in-out infinite; }
