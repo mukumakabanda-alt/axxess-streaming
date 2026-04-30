@@ -40,6 +40,12 @@ export function ServicesTab() {
     load();
   };
 
+  const toggleFull = async (s: Service) => {
+    await supabase.from("services").update({ is_full: !s.is_full }).eq("id", s.id);
+    toast.success(!s.is_full ? "Marked as Full" : "Marked as Available");
+    load();
+  };
+
   const remove = async (id: string) => {
     if (!confirm("Delete this service?")) return;
     await supabase.from("services").delete().eq("id", id);
