@@ -34,7 +34,7 @@ function Index() {
     supabase.rpc("record_referral_visit", {
       _code: ref,
       _user_agent: navigator.userAgent,
-      _referer: document.referrer || null,
+      _referer: document.referrer || "",
     });
   }, []);
 
