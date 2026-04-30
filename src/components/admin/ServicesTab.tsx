@@ -92,6 +92,12 @@ export function ServicesTab() {
               <Switch checked={s.is_active} onCheckedChange={() => toggleActive(s)} />
             </div>
             {s.description && <p className="mt-2 text-xs text-muted-foreground">{s.description}</p>}
+            <label className="mt-3 flex items-center justify-between rounded-lg border border-border bg-card/40 px-3 py-2 text-xs">
+              <span className="font-semibold">
+                {s.is_full ? <span className="text-destructive">Marked Full</span> : "Available"}
+              </span>
+              <Switch checked={s.is_full} onCheckedChange={() => toggleFull(s)} />
+            </label>
             <div className="mt-4 flex gap-2">
               <Button size="sm" variant="outline" onClick={() => setEditing(s)}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
               <Button size="sm" variant="outline" onClick={() => remove(s.id)} className="text-destructive"><Trash2 className="mr-1 h-3 w-3" /></Button>
