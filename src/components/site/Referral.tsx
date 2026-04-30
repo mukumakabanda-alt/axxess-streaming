@@ -51,7 +51,7 @@ export function Referral() {
   };
 
   return (
-    <section className="px-4 py-20 sm:px-6">
+    <section id="referral" className="px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-3xl rounded-3xl border border-border bg-card p-8 shadow-elegant sm:p-12">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
