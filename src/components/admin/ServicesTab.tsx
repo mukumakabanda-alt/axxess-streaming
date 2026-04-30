@@ -21,6 +21,7 @@ type Service = {
   accent_color: string | null;
   sort_order: number;
   is_active: boolean;
+  is_full: boolean;
 };
 
 export function ServicesTab() {
