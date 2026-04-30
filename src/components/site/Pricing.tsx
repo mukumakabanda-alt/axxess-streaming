@@ -39,6 +39,14 @@ export function Pricing() {
   return (
     <section id="plans" className="px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-6xl">
+        {/* Free-trial CTA banner */}
+        <a
+          href="#referral"
+          className="mx-auto mb-10 flex max-w-2xl items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-3 text-center text-sm font-semibold text-primary shadow-glow-red transition-smooth hover:bg-primary/20"
+        >
+          🎁 Refer a friend and begin your 5-day free trial →
+        </a>
+
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Plans</p>
           <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">
