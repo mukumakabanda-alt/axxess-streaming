@@ -100,6 +100,41 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_visits: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          referer: string | null
+          referral_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          referer?: string | null
+          referral_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          referer?: string | null
+          referral_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_visits_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referrals: {
         Row: {
           code: string
@@ -109,6 +144,7 @@ export type Database = {
           owner_phone: string
           reward_days_earned: number
           uses_count: number
+          visits_count: number
         }
         Insert: {
           code: string
@@ -118,6 +154,7 @@ export type Database = {
           owner_phone: string
           reward_days_earned?: number
           uses_count?: number
+          visits_count?: number
         }
         Update: {
           code?: string
@@ -127,6 +164,7 @@ export type Database = {
           owner_phone?: string
           reward_days_earned?: number
           uses_count?: number
+          visits_count?: number
         }
         Relationships: []
       }
@@ -374,6 +412,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      record_referral_visit: {
+        Args: { _code: string; _referer: string; _user_agent: string }
+        Returns: undefined
       }
     }
     Enums: {
