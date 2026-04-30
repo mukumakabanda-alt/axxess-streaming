@@ -13,6 +13,7 @@ type Service = {
   features: string[];
   accent_color: string | null;
   badge: string | null;
+  is_full: boolean | null;
 };
 
 export function Pricing() {
