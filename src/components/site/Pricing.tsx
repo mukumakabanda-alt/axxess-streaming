@@ -66,6 +66,8 @@ export function Pricing() {
             {services.map((s) => {
               const accentHex = resolveAccentHex(s.accent_color);
               const light = isLightAccent(accentHex);
+              const isFeatured = s.badge === "Best Value" || s.badge === "Most Popular";
+              const buttonTextColor = light ? "#000" : "#fff";
               const isFull = !!s.is_full;
               return (
                 <div
