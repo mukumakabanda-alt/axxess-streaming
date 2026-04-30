@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2 } from "lucide-react";
 
-type R = { id: string; owner_name: string; owner_phone: string; code: string; uses_count: number; reward_days_earned: number; created_at: string };
+type R = { id: string; owner_name: string; owner_phone: string; code: string; uses_count: number; visits_count: number; reward_days_earned: number; created_at: string };
 
 export function ReferralsTab() {
   const [items, setItems] = useState<R[]>([]);
