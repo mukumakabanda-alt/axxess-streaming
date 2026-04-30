@@ -44,7 +44,7 @@ export function Pricing() {
           href="#referral"
           className="mx-auto mb-10 flex max-w-2xl items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-3 text-center text-sm font-semibold text-primary shadow-glow-red transition-smooth hover:bg-primary/20"
         >
-          🎁 Refer a friend and begin your 5-day free trial →
+          🎁 Refer a friend to get K5 off your next subscription →
         </a>
 
         <div className="text-center">
