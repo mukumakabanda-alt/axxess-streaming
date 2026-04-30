@@ -48,16 +48,22 @@ function AdminPage() {
         <p className="mt-1 text-sm text-muted-foreground">Manage your business in one place.</p>
 
         <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="flex w-full flex-wrap justify-start gap-1 bg-card">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="subs">Subscriptions</TabsTrigger>
-            <TabsTrigger value="services">Services</TabsTrigger>
-            <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
-            <TabsTrigger value="updates">News</TabsTrigger>
-            <TabsTrigger value="referrals">Referrals</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+          <div className="relative -mx-4 sm:-mx-6">
+            <div className="overflow-x-auto scrollbar-none px-4 sm:px-6">
+              <TabsList className="inline-flex h-auto w-max min-w-full items-center gap-1 rounded-full bg-card p-1">
+                <TabsTrigger value="overview" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Overview</TabsTrigger>
+                <TabsTrigger value="orders" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Orders</TabsTrigger>
+                <TabsTrigger value="subs" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Subscriptions</TabsTrigger>
+                <TabsTrigger value="services" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Services</TabsTrigger>
+                <TabsTrigger value="testimonials" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Testimonials</TabsTrigger>
+                <TabsTrigger value="updates" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">News</TabsTrigger>
+                <TabsTrigger value="referrals" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Referrals</TabsTrigger>
+                <TabsTrigger value="settings" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Settings</TabsTrigger>
+              </TabsList>
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background to-transparent sm:w-8" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background to-transparent sm:w-8" />
+          </div>
 
           <TabsContent value="overview" className="mt-6"><OverviewTab /></TabsContent>
           <TabsContent value="orders" className="mt-6"><OrdersTab /></TabsContent>
