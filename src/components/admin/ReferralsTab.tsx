@@ -51,6 +51,7 @@ export function ReferralsTab() {
                     <p className="font-semibold">{r.owner_name}</p>
                     <p className="text-xs text-muted-foreground">{r.owner_phone}</p>
                   </td>
+                  <td className="p-3 font-bold">{r.visits_count ?? 0}</td>
                   <td className="p-3">
                     <div className="inline-flex items-center gap-2">
                       <button onClick={() => updateUses(r, -1)} className="h-6 w-6 rounded-md border border-border">−</button>
@@ -58,7 +59,7 @@ export function ReferralsTab() {
                       <button onClick={() => updateUses(r, 1)} className="h-6 w-6 rounded-md border border-border">+</button>
                     </div>
                   </td>
-                  <td className="p-3 font-bold text-primary">{r.reward_days_earned}</td>
+                  <td className="p-3 font-bold text-primary">K{r.reward_days_earned}</td>
                   <td className="p-3 text-right">
                     <button onClick={() => remove(r.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </td>
