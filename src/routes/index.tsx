@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Hero } from "@/components/site/Hero";
@@ -14,6 +15,7 @@ import { NewsUpdates } from "@/components/site/NewsUpdates";
 import { Referral } from "@/components/site/Referral";
 import { Reserve } from "@/components/site/Reserve";
 import { WhatsAppFab } from "@/components/site/WhatsAppFab";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   component: Index,
