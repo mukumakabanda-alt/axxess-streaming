@@ -15,7 +15,7 @@ export function ReferralsTab() {
 
   const updateUses = async (r: R, delta: number) => {
     const uses = Math.max(0, r.uses_count + delta);
-    const reward = uses * 10;
+    const reward = uses * 5;
     await supabase.from("referrals").update({ uses_count: uses, reward_days_earned: reward }).eq("id", r.id);
     load();
   };
