@@ -32,6 +32,7 @@ function Index() {
         <WhatsAppCommunity />
         <Trust />
         <NewsUpdates />
+        <Reserve />
         <Referral />
         <FAQ />
         <ContactCTA />
