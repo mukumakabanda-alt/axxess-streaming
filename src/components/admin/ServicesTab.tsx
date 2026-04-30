@@ -145,6 +145,7 @@ function ServiceDialog({ open, service, onClose, onSave }: {
             accent_color: accent,
             sort_order: Number(fd.get("sort_order") || 0),
             is_active: fd.get("is_active") === "on",
+            is_full: fd.get("is_full") === "on",
           });
         }} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
