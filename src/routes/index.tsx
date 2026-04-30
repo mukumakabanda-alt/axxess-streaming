@@ -12,6 +12,7 @@ import { FAQ } from "@/components/site/FAQ";
 import { ContactCTA } from "@/components/site/ContactCTA";
 import { NewsUpdates } from "@/components/site/NewsUpdates";
 import { Referral } from "@/components/site/Referral";
+import { Reserve } from "@/components/site/Reserve";
 import { WhatsAppFab } from "@/components/site/WhatsAppFab";
 
 export const Route = createFileRoute("/")({
