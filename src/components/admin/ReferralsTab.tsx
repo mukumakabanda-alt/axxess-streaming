@@ -36,13 +36,14 @@ export function ReferralsTab() {
               <tr>
                 <th className="p-3 text-left">Code</th>
                 <th className="p-3 text-left">Owner</th>
+                <th className="p-3 text-left">Link visits</th>
                 <th className="p-3 text-left">Uses</th>
-                <th className="p-3 text-left">Reward (days)</th>
+                <th className="p-3 text-left">Reward (K)</th>
                 <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">No codes yet</td></tr>}
+              {items.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No codes yet</td></tr>}
               {items.map((r) => (
                 <tr key={r.id} className="border-t border-border">
                   <td className="p-3 font-mono font-bold text-primary">{r.code}</td>
