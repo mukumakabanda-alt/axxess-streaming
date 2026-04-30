@@ -66,12 +66,13 @@ export function Pricing() {
             {services.map((s) => {
               const accentHex = resolveAccentHex(s.accent_color);
               const light = isLightAccent(accentHex);
-              const isFeatured = s.badge === "Best Value" || s.badge === "Most Popular";
-              const buttonTextColor = light ? "#000" : "#fff";
+              const isFull = !!s.is_full;
               return (
                 <div
                   key={s.id}
-                  className="group relative flex flex-col overflow-hidden rounded-3xl border p-6 transition-smooth hover:-translate-y-1 sm:p-8 gradient-card"
+                  className={`group relative flex flex-col overflow-hidden rounded-3xl border p-6 transition-smooth sm:p-8 gradient-card ${
+                    isFull ? "opacity-80" : "hover:-translate-y-1"
+                  }`}
                   style={{
                     borderColor: isFeatured
                       ? `color-mix(in oklab, ${accentHex} 45%, transparent)`
@@ -81,7 +82,11 @@ export function Pricing() {
                       : undefined,
                   }}
                 >
-                  {s.badge && (
+                  {isFull ? (
+                    <span className="absolute right-4 top-4 rounded-full bg-destructive px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-destructive-foreground">
+                      Full
+                    </span>
+                  ) : s.badge && (
                     <span
                       className="absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
                       style={{
@@ -125,17 +130,26 @@ export function Pricing() {
                     ))}
                   </ul>
 
-                  <button
-                    onClick={() => setSelected(s)}
-                    className="mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-smooth hover:opacity-90"
-                    style={{
-                      backgroundColor: accentHex,
-                      color: buttonTextColor,
-                      boxShadow: `0 0 30px -8px color-mix(in oklab, ${accentHex} 60%, transparent)`,
-                    }}
-                  >
-                    Get Access
-                  </button>
+                  {isFull ? (
+                    <a
+                      href="#reserve"
+                      className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-smooth hover:bg-accent"
+                    >
+                      Reserve a slot
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => setSelected(s)}
+                      className="mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-smooth hover:opacity-90"
+                      style={{
+                        backgroundColor: accentHex,
+                        color: buttonTextColor,
+                        boxShadow: `0 0 30px -8px color-mix(in oklab, ${accentHex} 60%, transparent)`,
+                      }}
+                    >
+                      Get Access
+                    </button>
+                  )}
                 </div>
               );
             })}
