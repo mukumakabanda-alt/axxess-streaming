@@ -22,6 +22,22 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (!ref) return;
+    const seenKey = `axx_ref_seen_${ref}`;
+    if (sessionStorage.getItem(seenKey)) return;
+    sessionStorage.setItem(seenKey, "1");
+    try { localStorage.setItem("axx_ref_code", ref); } catch {}
+    supabase.rpc("record_referral_visit", {
+      _code: ref,
+      _user_agent: navigator.userAgent,
+      _referer: document.referrer || null,
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SiteHeader />
