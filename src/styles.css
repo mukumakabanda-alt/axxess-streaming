@@ -113,11 +113,28 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "cv11", "ss01";
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, oklch(0.628 0.258 25.5 / 0.12), transparent 70%),
+      radial-gradient(circle at 20% 80%, oklch(0.628 0.258 25.5 / 0.06), transparent 50%),
+      linear-gradient(oklch(1 0 0 / 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.025) 1px, transparent 1px);
+    background-size: auto, auto, 44px 44px, 44px 44px;
+    background-attachment: fixed;
+    background-position: 0 0, 0 0, 0 0, 0 0;
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+  }
+
+  /* Higher-contrast inputs across the app */
+  input, textarea, select {
+    background-color: oklch(0.14 0 0) !important;
+    border-color: var(--color-border) !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: oklch(0.6 0 0) !important;
   }
 }
 
