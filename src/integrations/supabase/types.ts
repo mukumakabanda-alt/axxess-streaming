@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_points: {
+        Row: {
+          created_at: string
+          customer_name: string | null
+          customer_phone: string
+          id: string
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone: string
+          id?: string
+          points?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string
+          id?: string
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           admin_notes: string | null
@@ -72,6 +99,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      point_events: {
+        Row: {
+          created_at: string
+          customer_phone: string
+          delta: number
+          id: string
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          customer_phone: string
+          delta: number
+          id?: string
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          customer_phone?: string
+          delta?: number
+          id?: string
+          reason?: string
+        }
+        Relationships: []
       }
       public_messages: {
         Row: {
@@ -406,6 +457,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_points: {
+        Args: { _delta: number; _name: string; _phone: string; _reason: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
