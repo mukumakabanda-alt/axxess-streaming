@@ -32,6 +32,7 @@ type Card =
 const schema = z.object({
   name: z.string().trim().min(2, "Name too short").max(80),
   message: z.string().trim().min(5, "Message too short").max(500),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
 });
 
 export function Testimonials() {
@@ -80,7 +81,11 @@ export function Testimonials() {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
-    const parsed = schema.safeParse({ name: fd.get("name"), message: fd.get("message") });
+    const parsed = schema.safeParse({
+      name: fd.get("name"),
+      message: fd.get("message"),
+      phone: fd.get("phone") || "",
+    });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
@@ -110,7 +115,8 @@ export function Testimonials() {
     }
 
     const { error } = await supabase.from("public_messages").insert({
-      ...parsed.data,
+      name: parsed.data.name,
+      message: parsed.data.message,
       screenshot_url,
     });
     setSubmitting(false);
@@ -118,7 +124,25 @@ export function Testimonials() {
       toast.error("Could not send message: " + error.message);
       return;
     }
-    toast.success("Thanks! Your message is now live.");
+
+    // Award 5 points per review (only if phone given)
+    const phone = (parsed.data.phone || "").trim();
+    if (phone.length >= 6) {
+      try {
+        localStorage.setItem("axx_customer_phone", phone);
+        await supabase.rpc("award_points", {
+          _phone: phone,
+          _name: parsed.data.name,
+          _delta: 5,
+          _reason: "Left a review",
+        });
+        toast.success("Thanks! +5 points added to your rewards.");
+      } catch {
+        toast.success("Thanks! Your message is now live.");
+      }
+    } else {
+      toast.success("Thanks! Your message is now live. Add your WhatsApp number next time to earn 5 points.");
+    }
     form.reset();
     load();
   };
@@ -189,7 +213,7 @@ export function Testimonials() {
         <div className="mx-auto mt-12 max-w-xl rounded-3xl border border-border gradient-card p-6 sm:p-8">
           <h3 className="font-display text-xl font-bold">Leave a message</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Share your experience. Optionally attach a screenshot.
+            Share your experience. Add your WhatsApp number to earn <span className="font-semibold text-primary">+5 points</span>.
           </p>
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             <div>
@@ -199,6 +223,10 @@ export function Testimonials() {
             <div>
               <Label htmlFor="msg-message">Message</Label>
               <Textarea id="msg-message" name="message" required rows={3} maxLength={500} />
+            </div>
+            <div>
+              <Label htmlFor="msg-phone">WhatsApp number (optional, for rewards)</Label>
+              <Input id="msg-phone" name="phone" placeholder="+260 ..." maxLength={20} />
             </div>
             <div>
               <Label htmlFor="msg-screenshot">Screenshot (optional, max 5MB)</Label>
