@@ -63,6 +63,41 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
       toast.error("Could not submit order. Please try WhatsApp instead.");
       return;
     }
+
+    // Award 5 points for placing an order + remember phone for rewards section
+    try {
+      localStorage.setItem("axx_customer_phone", parsed.data.customer_phone);
+      await supabase.rpc("award_points", {
+        _phone: parsed.data.customer_phone,
+        _name: parsed.data.customer_name,
+        _delta: 5,
+        _reason: `Subscribed to ${service.name}`,
+      });
+
+      // If they used a referral code, give the referrer 10 points too
+      if (parsed.data.referral_code) {
+        const { data: ref } = await supabase
+          .from("referrals")
+          .select("owner_phone, owner_name, uses_count")
+          .eq("code", parsed.data.referral_code)
+          .maybeSingle();
+        if (ref) {
+          await supabase.rpc("award_points", {
+            _phone: ref.owner_phone,
+            _name: ref.owner_name,
+            _delta: 10,
+            _reason: `Friend used referral code ${parsed.data.referral_code}`,
+          });
+          await supabase
+            .from("referrals")
+            .update({ uses_count: (ref.uses_count ?? 0) + 1 })
+            .eq("code", parsed.data.referral_code);
+        }
+      }
+    } catch {
+      /* points are best-effort */
+    }
+
     setDone(true);
   };
 
