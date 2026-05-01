@@ -41,11 +41,11 @@
 :root {
   --radius: 1rem;
 
-  /* Pure black premium dark theme */
-  --background: oklch(0 0 0);
+  /* Deep charcoal premium dark theme (slightly lifted from pure black for pattern visibility) */
+  --background: oklch(0.04 0 0);
   --foreground: oklch(0.985 0 0);
 
-  --card: oklch(0.07 0 0);
+  --card: oklch(0.1 0 0);
   --card-foreground: oklch(0.985 0 0);
 
   --popover: oklch(0.09 0 0);
@@ -56,20 +56,20 @@
   --primary-foreground: oklch(1 0 0);
   --primary-glow: oklch(0.7 0.27 25.5);
 
-  --secondary: oklch(0.14 0 0);
+  --secondary: oklch(0.18 0 0);
   --secondary-foreground: oklch(0.985 0 0);
 
-  --muted: oklch(0.13 0 0);
-  --muted-foreground: oklch(0.65 0 0);
+  --muted: oklch(0.16 0 0);
+  --muted-foreground: oklch(0.72 0 0);
 
-  --accent: oklch(0.16 0 0);
+  --accent: oklch(0.2 0 0);
   --accent-foreground: oklch(0.985 0 0);
 
   --destructive: oklch(0.628 0.258 25.5);
   --destructive-foreground: oklch(1 0 0);
 
-  --border: oklch(0.18 0 0);
-  --input: oklch(0.16 0 0);
+  --border: oklch(0.28 0 0);
+  --input: oklch(0.22 0 0);
   --ring: oklch(0.628 0.258 25.5);
 
   /* Spotify green #1DB954 */
@@ -113,11 +113,28 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "cv11", "ss01";
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, oklch(0.628 0.258 25.5 / 0.12), transparent 70%),
+      radial-gradient(circle at 20% 80%, oklch(0.628 0.258 25.5 / 0.06), transparent 50%),
+      linear-gradient(oklch(1 0 0 / 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.025) 1px, transparent 1px);
+    background-size: auto, auto, 44px 44px, 44px 44px;
+    background-attachment: fixed;
+    background-position: 0 0, 0 0, 0 0, 0 0;
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+  }
+
+  /* Higher-contrast inputs across the app */
+  input, textarea, select {
+    background-color: oklch(0.14 0 0) !important;
+    border-color: var(--color-border) !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: oklch(0.6 0 0) !important;
   }
 }
 

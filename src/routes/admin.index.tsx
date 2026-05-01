@@ -9,6 +9,7 @@ import { TestimonialsTab } from "@/components/admin/TestimonialsTab";
 import { UpdatesTab } from "@/components/admin/UpdatesTab";
 import { ReferralsTab } from "@/components/admin/ReferralsTab";
 import { SettingsTab } from "@/components/admin/SettingsTab";
+import { ReservationsTab } from "@/components/admin/ReservationsTab";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -53,6 +54,7 @@ function AdminPage() {
               <TabsList className="inline-flex h-auto w-max min-w-full items-center gap-1 rounded-full bg-card p-1">
                 <TabsTrigger value="overview" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Overview</TabsTrigger>
                 <TabsTrigger value="orders" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Orders</TabsTrigger>
+                <TabsTrigger value="reservations" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Reservations</TabsTrigger>
                 <TabsTrigger value="subs" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Subscriptions</TabsTrigger>
                 <TabsTrigger value="services" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Services</TabsTrigger>
                 <TabsTrigger value="testimonials" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Testimonials</TabsTrigger>
@@ -67,6 +69,7 @@ function AdminPage() {
 
           <TabsContent value="overview" className="mt-6"><OverviewTab /></TabsContent>
           <TabsContent value="orders" className="mt-6"><OrdersTab /></TabsContent>
+          <TabsContent value="reservations" className="mt-6"><ReservationsTab /></TabsContent>
           <TabsContent value="subs" className="mt-6"><SubscriptionsTab /></TabsContent>
           <TabsContent value="services" className="mt-6"><ServicesTab /></TabsContent>
           <TabsContent value="testimonials" className="mt-6"><TestimonialsTab /></TabsContent>

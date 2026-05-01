@@ -14,6 +14,8 @@ import { ContactCTA } from "@/components/site/ContactCTA";
 import { NewsUpdates } from "@/components/site/NewsUpdates";
 import { Referral } from "@/components/site/Referral";
 import { Reserve } from "@/components/site/Reserve";
+import { PackageQuiz } from "@/components/site/PackageQuiz";
+import { PointsRewards } from "@/components/site/PointsRewards";
 import { WhatsAppFab } from "@/components/site/WhatsAppFab";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -44,6 +46,7 @@ function Index() {
       <main>
         <Hero />
         <IntroVideo />
+        <PackageQuiz />
         <Pricing />
         <HowItWorks />
         <Testimonials />
@@ -52,6 +55,7 @@ function Index() {
         <NewsUpdates />
         <Reserve />
         <Referral />
+        <PointsRewards />
         <FAQ />
         <ContactCTA />
       </main>
