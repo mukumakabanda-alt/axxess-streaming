@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Star, Loader2, Quote, Upload } from "lucide-react";
+import { Star, Loader2, Quote, Send } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -23,7 +23,13 @@ type Testimonial = {
   rating: number | null;
 };
 
-type PublicMessage = { id: string; name: string; message: string; screenshot_url: string | null };
+type PublicMessage = {
+  id: string;
+  name: string;
+  message: string;
+  screenshot_url: string | null;
+  created_at?: string;
+};
 
 type Card =
   | { kind: "t"; id: string; name: string; message: string; screenshot_url: string | null; rating: number | null }
@@ -31,9 +37,18 @@ type Card =
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name too short").max(80),
-  message: z.string().trim().min(5, "Message too short").max(500),
-  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  phone: z.string().trim().min(6, "Add your WhatsApp number").max(20),
+  message: z.string().trim().max(500).optional().or(z.literal("")),
+  rating: z.number().int().min(1).max(5).optional(),
 });
+
+const ACCENT_BARS = [
+  "from-rose-500 via-fuchsia-500 to-amber-400",
+  "from-emerald-400 via-cyan-400 to-blue-500",
+  "from-amber-400 via-orange-500 to-rose-500",
+  "from-violet-500 via-pink-500 to-rose-400",
+  "from-cyan-400 via-sky-500 to-indigo-500",
+];
 
 export function Testimonials() {
   const [items, setItems] = useState<Testimonial[]>([]);
@@ -41,6 +56,7 @@ export function Testimonials() {
   const [submitting, setSubmitting] = useState(false);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+  const [rating, setRating] = useState<number>(0);
   const autoplay = useRef(
     Autoplay({ delay: 4500, stopOnInteraction: false, stopOnMouseEnter: true }),
   );
@@ -50,7 +66,7 @@ export function Testimonials() {
       supabase.from("testimonials").select("*").eq("is_approved", true).order("sort_order"),
       supabase
         .from("public_messages")
-        .select("id,name,message,screenshot_url")
+        .select("id,name,message,screenshot_url,created_at")
         .eq("is_approved", true)
         .order("created_at", { ascending: false })
         .limit(12),
@@ -81,80 +97,68 @@ export function Testimonials() {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
+    const messageVal = String(fd.get("message") || "").trim();
+
     const parsed = schema.safeParse({
       name: fd.get("name"),
-      message: fd.get("message"),
-      phone: fd.get("phone") || "",
+      phone: fd.get("phone"),
+      message: messageVal,
+      rating: rating || undefined,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
-
-    setSubmitting(true);
-
-    let screenshot_url: string | null = null;
-    const file = fd.get("screenshot") as File | null;
-    if (file && file.size > 0) {
-      if (file.size > 5 * 1024 * 1024) {
-        setSubmitting(false);
-        toast.error("Screenshot must be under 5MB");
-        return;
-      }
-      const ext = file.name.split(".").pop() || "png";
-      const path = `public-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("testimonial-screenshots")
-        .upload(path, file, { contentType: file.type || "image/png" });
-      if (upErr) {
-        setSubmitting(false);
-        toast.error("Could not upload screenshot: " + upErr.message);
-        return;
-      }
-      screenshot_url = supabase.storage.from("testimonial-screenshots").getPublicUrl(path).data.publicUrl;
-    }
-
-    const { error } = await supabase.from("public_messages").insert({
-      name: parsed.data.name,
-      message: parsed.data.message,
-      screenshot_url,
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error("Could not send message: " + error.message);
+    if (!messageVal && !rating) {
+      toast.error("Add a short message or rate us with stars");
       return;
     }
 
-    // Award 5 points per review (only if phone given)
-    const phone = (parsed.data.phone || "").trim();
-    if (phone.length >= 6) {
-      try {
-        localStorage.setItem("axx_customer_phone", phone);
-        await supabase.rpc("award_points", {
-          _phone: phone,
-          _name: parsed.data.name,
-          _delta: 5,
-          _reason: "Left a review",
-        });
-        toast.success("Thanks! +5 points added to your rewards.");
-      } catch {
-        toast.success("Thanks! Your message is now live.");
-      }
-    } else {
-      toast.success("Thanks! Your message is now live. Add your WhatsApp number next time to earn 5 points.");
+    setSubmitting(true);
+
+    const finalMessage =
+      messageVal ||
+      `Rated us ${rating} out of 5 ⭐`;
+
+    const { error } = await supabase.from("public_messages").insert({
+      name: parsed.data.name,
+      message: finalMessage,
+      screenshot_url: null,
+    });
+
+    if (error) {
+      setSubmitting(false);
+      toast.error("Could not send: " + error.message);
+      return;
     }
+
+    try {
+      localStorage.setItem("axx_customer_phone", parsed.data.phone);
+      await supabase.rpc("award_points", {
+        _phone: parsed.data.phone,
+        _name: parsed.data.name,
+        _delta: 5,
+        _reason: "Left a review",
+      });
+      toast.success("Thanks! +5 points added to your rewards 🎉");
+    } catch {
+      toast.success("Thanks for the feedback!");
+    }
+
+    setSubmitting(false);
+    setRating(0);
     form.reset();
     load();
   };
 
   return (
-    <section className="px-4 py-20 sm:px-6">
+    <section id="reviews" className="px-4 py-16 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Real Feedback</p>
-          <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">Satisfied customers</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Real People</p>
+          <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">Loved by customers</h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Real messages from happy customers across Zambia.
+            Leave a review &amp; earn <span className="font-semibold text-primary">+5 points</span>.
           </p>
         </div>
 
@@ -163,25 +167,28 @@ export function Testimonials() {
             setApi={setApi}
             plugins={[autoplay.current]}
             opts={{ loop: true, align: "start" }}
-            className="mt-12"
+            className="mt-10"
           >
             <CarouselContent>
-              {cards.map((c) => (
-                <CarouselItem key={`${c.kind}-${c.id}`} className="sm:basis-1/2 lg:basis-1/3">
-                  <div className="neon-red-glow h-full rounded-3xl border-2 gradient-card p-6">
-                    {c.screenshot_url ? (
-                      <img
-                        src={c.screenshot_url}
-                        alt={`Message from ${c.name}`}
-                        loading="lazy"
-                        className="mb-4 w-full rounded-xl border border-border object-cover"
-                      />
-                    ) : (
-                      <Quote className="mb-3 h-6 w-6 text-primary/60" />
-                    )}
-                    <p className="text-sm leading-relaxed text-foreground/90">"{c.message}"</p>
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-xs font-semibold text-muted-foreground">— {c.name}</span>
+              {cards.map((c, idx) => (
+                <CarouselItem key={`${c.kind}-${c.id}`} className="basis-[88%] sm:basis-1/2 lg:basis-1/3">
+                  <article className="relative h-full overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card to-background/60 shadow-card transition-smooth hover:-translate-y-0.5">
+                    {/* Instagram-style top bar */}
+                    <div className={`h-1 w-full bg-gradient-to-r ${ACCENT_BARS[idx % ACCENT_BARS.length]}`} />
+                    <div className="flex items-center gap-2.5 px-5 pt-4">
+                      <div
+                        className={`relative flex h-9 w-9 items-center justify-center rounded-full p-[2px] bg-gradient-to-tr ${ACCENT_BARS[idx % ACCENT_BARS.length]}`}
+                      >
+                        <span className="flex h-full w-full items-center justify-center rounded-full bg-card text-[13px] font-bold uppercase">
+                          {c.name.charAt(0)}
+                        </span>
+                      </div>
+                      <div className="flex-1 leading-tight">
+                        <p className="text-sm font-semibold">{c.name}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          axxess.zm
+                        </p>
+                      </div>
                       {c.kind === "t" && (
                         <div className="flex gap-0.5">
                           {Array.from({ length: c.rating ?? 5 }).map((_, i) => (
@@ -190,7 +197,30 @@ export function Testimonials() {
                         </div>
                       )}
                     </div>
-                  </div>
+
+                    {c.screenshot_url ? (
+                      <img
+                        src={c.screenshot_url}
+                        alt={`${c.name}'s review`}
+                        loading="lazy"
+                        className="mt-3 aspect-square w-full object-cover"
+                      />
+                    ) : (
+                      <div className="mt-3 flex aspect-square items-center justify-center bg-gradient-to-br from-secondary/50 to-card p-6 text-center">
+                        <Quote className="absolute h-12 w-12 text-primary/15" />
+                        <p className="relative font-display text-lg leading-snug text-foreground/90">
+                          "{c.message.length > 140 ? c.message.slice(0, 140) + "…" : c.message}"
+                        </p>
+                      </div>
+                    )}
+
+                    {c.screenshot_url && (
+                      <p className="px-5 py-3 text-sm text-foreground/85">
+                        <span className="font-semibold">{c.name}</span>{" "}
+                        {c.message.length > 90 ? c.message.slice(0, 90) + "…" : c.message}
+                      </p>
+                    )}
+                  </article>
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -209,29 +239,50 @@ export function Testimonials() {
           </Carousel>
         )}
 
-        {/* Submit your own */}
-        <div className="mx-auto mt-12 max-w-xl rounded-3xl border border-border gradient-card p-6 sm:p-8">
-          <h3 className="font-display text-xl font-bold">Leave a message</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Share your experience. Add your WhatsApp number to earn <span className="font-semibold text-primary">+5 points</span>.
+        {/* Submit form — simple */}
+        <div className="mx-auto mt-10 max-w-md rounded-3xl border border-border gradient-card p-6 sm:p-8">
+          <h3 className="font-display text-lg font-bold">Leave a quick review</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Add a message <span className="text-foreground/60">or</span> rate us — earn +5 points.
           </p>
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-            <div>
-              <Label htmlFor="msg-name">Your name</Label>
-              <Input id="msg-name" name="name" required maxLength={80} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="rev-name" className="text-xs">Name</Label>
+                <Input id="rev-name" name="name" required maxLength={80} placeholder="Your name" />
+              </div>
+              <div>
+                <Label htmlFor="rev-phone" className="text-xs">WhatsApp</Label>
+                <Input id="rev-phone" name="phone" required maxLength={20} placeholder="+260 ..." />
+              </div>
             </div>
+
             <div>
-              <Label htmlFor="msg-message">Message</Label>
-              <Textarea id="msg-message" name="message" required rows={3} maxLength={500} />
+              <Label htmlFor="rev-message" className="text-xs">Message (optional)</Label>
+              <Textarea id="rev-message" name="message" rows={2} maxLength={500} placeholder="Share your experience" />
             </div>
-            <div>
-              <Label htmlFor="msg-phone">WhatsApp number (optional, for rewards)</Label>
-              <Input id="msg-phone" name="phone" placeholder="+260 ..." maxLength={20} />
+
+            <div className="flex items-center justify-between rounded-2xl bg-secondary px-4 py-3">
+              <span className="text-xs font-semibold text-muted-foreground">Or rate us</span>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setRating(n === rating ? 0 : n)}
+                    className="rounded-md p-1 transition-smooth hover:scale-110"
+                    aria-label={`Rate ${n} stars`}
+                  >
+                    <Star
+                      className={`h-5 w-5 transition-smooth ${
+                        n <= rating ? "fill-primary text-primary" : "text-muted-foreground"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <Label htmlFor="msg-screenshot">Screenshot (optional, max 5MB)</Label>
-              <Input id="msg-screenshot" name="screenshot" type="file" accept="image/*" />
-            </div>
+
             <Button
               type="submit"
               disabled={submitting}
@@ -240,7 +291,7 @@ export function Testimonials() {
               {submitting ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending…</>
               ) : (
-                <><Upload className="mr-2 h-4 w-4" /> Send Message</>
+                <><Send className="mr-2 h-4 w-4" /> Submit &amp; earn 5 pts</>
               )}
             </Button>
           </form>

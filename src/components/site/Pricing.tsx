@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, Loader2 } from "lucide-react";
 import { OrderDialog } from "./OrderDialog";
+import { PremiumBundleTeaser } from "./PremiumBundleTeaser";
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 
 type Service = {
@@ -16,9 +17,12 @@ type Service = {
   is_full: boolean | null;
 };
 
+const POINTS_KEY = "axx_customer_phone";
+
 export function Pricing() {
   const [services, setServices] = useState<Service[] | null>(null);
   const [selected, setSelected] = useState<Service | null>(null);
+  const [bundleUnlocked, setBundleUnlocked] = useState(false);
 
   useEffect(() => {
     supabase
@@ -34,19 +38,22 @@ export function Pricing() {
           })),
         );
       });
+
+    // Check unlock status
+    if (typeof window === "undefined") return;
+    const phone = localStorage.getItem(POINTS_KEY);
+    if (!phone) return;
+    supabase
+      .from("customer_points")
+      .select("points")
+      .eq("customer_phone", phone)
+      .maybeSingle()
+      .then(({ data }) => setBundleUnlocked((data?.points ?? 0) >= 50));
   }, []);
 
   return (
-    <section id="plans" className="px-4 py-20 sm:px-6">
+    <section id="plans" className="px-4 py-16 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-6xl">
-        {/* Free-trial CTA banner */}
-        <a
-          href="#referral"
-          className="mx-auto mb-10 flex max-w-2xl items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-3 text-center text-sm font-semibold text-primary shadow-glow-red transition-smooth hover:bg-primary/20"
-        >
-          🎁 Refer a friend to get K5 off your next subscription →
-        </a>
-
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Plans</p>
           <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">
@@ -91,10 +98,7 @@ export function Pricing() {
                   ) : s.badge && (
                     <span
                       className="absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
-                      style={{
-                        color: buttonTextColor,
-                        backgroundColor: accentHex,
-                      }}
+                      style={{ color: buttonTextColor, backgroundColor: accentHex }}
                     >
                       {s.badge}
                     </span>
@@ -121,9 +125,7 @@ export function Pricing() {
                       <li key={i} className="flex items-start gap-2.5 text-sm">
                         <span
                           className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
-                          style={{
-                            backgroundColor: `color-mix(in oklab, ${accentHex} 18%, transparent)`,
-                          }}
+                          style={{ backgroundColor: `color-mix(in oklab, ${accentHex} 18%, transparent)` }}
                         >
                           <Check className="h-2.5 w-2.5" style={{ color: accentHex }} />
                         </span>
@@ -134,7 +136,7 @@ export function Pricing() {
 
                   {isFull ? (
                     <a
-                      href="#reserve"
+                      href="/reserve"
                       className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-smooth hover:bg-accent"
                     >
                       Reserve a slot
@@ -155,15 +157,14 @@ export function Pricing() {
                 </div>
               );
             })}
+
+            {/* Premium bundle teaser */}
+            <PremiumBundleTeaser unlocked={bundleUnlocked} />
           </div>
         )}
       </div>
 
-      <OrderDialog
-        service={selected}
-        onClose={() => setSelected(null)}
-      />
+      <OrderDialog service={selected} onClose={() => setSelected(null)} />
     </section>
   );
 }
-
