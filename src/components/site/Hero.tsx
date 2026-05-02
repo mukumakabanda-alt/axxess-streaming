@@ -1,72 +1,82 @@
-import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
-import { WHATSAPP_PRIMARY, waLink } from "@/lib/whatsapp";
+import { useEffect, useState } from "react";
+import { ArrowRight, Sparkles, Play } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import heroGlow from "@/assets/hero-glow.jpg";
 
 export function Hero() {
+  const [videoUrl, setVideoUrl] = useState<string>("");
+
+  useEffect(() => {
+    supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "intro_video_url")
+      .maybeSingle()
+      .then(({ data }) => setVideoUrl(data?.value ?? ""));
+  }, []);
+
   return (
     <section className="relative overflow-hidden">
-      {/* Background glow */}
       <div className="absolute inset-0 -z-10">
         <img
           src={heroGlow}
           alt=""
           aria-hidden
-          className="h-full w-full object-cover opacity-60"
+          className="h-full w-full object-cover opacity-40"
           width={1536}
           height={1024}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
       </div>
       <div className="absolute inset-0 -z-10 gradient-radial-red" />
 
-      <div className="mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            <Sparkles className="h-3 w-3" />
-            Trusted by streamers across Zambia
-          </div>
-
-          <h1 className="mt-6 font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl md:text-7xl">
-            Premium<br />
-            <span className="text-gradient-red">Entertainment</span><br />
-            for Less
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
-            Affordable Netflix & Spotify access for Zambia. Pay in Kwacha,
-            get your access details in minutes — straight to your WhatsApp.
-          </p>
-
-          <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-            <a
-              href="#plans"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-glow-red transition-smooth hover:scale-[1.02] hover:bg-primary/90"
-            >
-              Order Now
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </a>
-            <a
-              href="#plans"
-              className="inline-flex items-center justify-center rounded-full border border-border bg-card/60 px-6 py-3.5 text-sm font-semibold text-foreground transition-smooth hover:bg-card"
-            >
-              View Plans
-            </a>
-            <a
-              href={waLink(WHATSAPP_PRIMARY, "Hi Axxess Streaming! I'd like to know more.")}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-success/40 bg-success/10 px-6 py-3.5 text-sm font-semibold text-success transition-smooth hover:bg-success/20"
-              style={{ color: "var(--color-spotify)" }}
-            >
-              <MessageCircle className="h-4 w-4" />
-              Chat on WhatsApp
-            </a>
-          </div>
-
-          <p className="mt-6 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Fast · Affordable · Reliable
-          </p>
+      <div className="mx-auto max-w-3xl px-4 pb-12 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-24">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          <Sparkles className="h-3 w-3" />
+          Trusted by streamers across Zambia
         </div>
+
+        <h1 className="mt-5 font-display text-[2.6rem] font-bold leading-[1.05] tracking-tight sm:text-6xl">
+          Welcome to <span className="text-gradient-red">Axxess Streaming</span>
+        </h1>
+
+        <p className="mx-auto mt-4 max-w-lg text-base text-muted-foreground sm:text-lg">
+          Premium entertainment for better prices.
+        </p>
+
+        <div className="mt-7 flex justify-center">
+          <a href="#plans" className="btn-primary-cta">
+            Order Now
+            <ArrowRight className="h-4 w-4" />
+          </a>
+        </div>
+
+        {/* Intro video */}
+        <div className="relative mx-auto mt-10 max-w-3xl overflow-hidden rounded-3xl border border-border bg-card shadow-elegant">
+          {videoUrl ? (
+            <video
+              src={videoUrl}
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-video w-full bg-black"
+            />
+          ) : (
+            <div className="relative flex aspect-video w-full items-center justify-center bg-gradient-to-br from-card to-background">
+              <div className="absolute inset-0 gradient-radial-red opacity-50" />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary shadow-glow-red animate-pulse-glow">
+                <Play className="h-8 w-8 text-primary-foreground" fill="currentColor" />
+              </div>
+              <p className="absolute bottom-6 text-xs text-muted-foreground">
+                Intro video coming soon
+              </p>
+            </div>
+          )}
+        </div>
+
+        <p className="mt-6 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+          Fast · Affordable · Reliable
+        </p>
       </div>
     </section>
   );
