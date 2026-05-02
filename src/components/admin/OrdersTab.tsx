@@ -22,6 +22,8 @@ type Order = {
   notes: string | null;
   admin_notes: string | null;
   referral_code: string | null;
+  duration_days: number | null;
+  expires_at: string | null;
   created_at: string;
 };
 
