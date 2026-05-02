@@ -10,6 +10,7 @@ import { UpdatesTab } from "@/components/admin/UpdatesTab";
 import { ReferralsTab } from "@/components/admin/ReferralsTab";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 import { ReservationsTab } from "@/components/admin/ReservationsTab";
+import { AccountInventoryTab } from "@/components/admin/AccountInventoryTab";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -57,6 +58,7 @@ function AdminPage() {
                 <TabsTrigger value="reservations" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Reservations</TabsTrigger>
                 <TabsTrigger value="subs" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Subscriptions</TabsTrigger>
                 <TabsTrigger value="services" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Services</TabsTrigger>
+                <TabsTrigger value="inventory" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Inventory</TabsTrigger>
                 <TabsTrigger value="testimonials" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Testimonials</TabsTrigger>
                 <TabsTrigger value="updates" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">News</TabsTrigger>
                 <TabsTrigger value="referrals" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Referrals</TabsTrigger>
@@ -72,6 +74,7 @@ function AdminPage() {
           <TabsContent value="reservations" className="mt-6"><ReservationsTab /></TabsContent>
           <TabsContent value="subs" className="mt-6"><SubscriptionsTab /></TabsContent>
           <TabsContent value="services" className="mt-6"><ServicesTab /></TabsContent>
+          <TabsContent value="inventory" className="mt-6"><AccountInventoryTab /></TabsContent>
           <TabsContent value="testimonials" className="mt-6"><TestimonialsTab /></TabsContent>
           <TabsContent value="updates" className="mt-6"><UpdatesTab /></TabsContent>
           <TabsContent value="referrals" className="mt-6"><ReferralsTab /></TabsContent>

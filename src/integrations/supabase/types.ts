@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_inventory: {
+        Row: {
+          account_email: string
+          account_password: string
+          assigned_customer_name: string | null
+          assigned_customer_phone: string | null
+          assigned_order_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          profile_slot: string | null
+          service_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_email: string
+          account_password: string
+          assigned_customer_name?: string | null
+          assigned_customer_phone?: string | null
+          assigned_order_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          profile_slot?: string | null
+          service_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_email?: string
+          account_password?: string
+          assigned_customer_name?: string | null
+          assigned_customer_phone?: string | null
+          assigned_order_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          profile_slot?: string | null
+          service_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_points: {
         Row: {
           created_at: string
@@ -48,6 +93,8 @@ export type Database = {
           customer_email: string | null
           customer_name: string
           customer_phone: string
+          duration_days: number | null
+          expires_at: string | null
           id: string
           notes: string | null
           payment_status: string
@@ -64,6 +111,8 @@ export type Database = {
           customer_email?: string | null
           customer_name: string
           customer_phone: string
+          duration_days?: number | null
+          expires_at?: string | null
           id?: string
           notes?: string | null
           payment_status?: string
@@ -80,6 +129,8 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string
           customer_phone?: string
+          duration_days?: number | null
+          expires_at?: string | null
           id?: string
           notes?: string | null
           payment_status?: string
@@ -99,6 +150,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      page_visits: {
+        Row: {
+          created_at: string
+          id: string
+          path: string
+          referer: string | null
+          session_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          path?: string
+          referer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          path?: string
+          referer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       point_events: {
         Row: {
@@ -467,6 +545,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_page_visit: {
+        Args: { _path: string; _referer: string; _session: string; _ua: string }
+        Returns: undefined
       }
       record_referral_visit: {
         Args: { _code: string; _referer: string; _user_agent: string }

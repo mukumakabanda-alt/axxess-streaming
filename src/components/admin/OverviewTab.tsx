@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, ShoppingCart, Clock, CheckCircle, Users, AlertCircle, DollarSign, Activity } from "lucide-react";
+import { TrendingUp, ShoppingCart, Clock, CheckCircle, Users, AlertCircle, DollarSign, Activity, Eye, Target } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 type Stats = {
@@ -12,9 +12,12 @@ type Stats = {
   revenue: number;
   bestSeller: string;
   repeatCustomers: number;
-  trend: { date: string; orders: number }[];
+  trend: { date: string; orders: number; visits: number }[];
   recent: { id: string; customer_name: string; service_name_snapshot: string; status: string; created_at: string }[];
   referralsCount: number;
+  visitsToday: number;
+  visitsTotal: number;
+  conversionRate: number; // %
 };
 
 export function OverviewTab() {
@@ -22,10 +25,16 @@ export function OverviewTab() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: orders }, { data: subs }, { count: refCount }] = await Promise.all([
+      const since = new Date();
+      since.setDate(since.getDate() - 13);
+      since.setHours(0, 0, 0, 0);
+
+      const [{ data: orders }, { data: subs }, { count: refCount }, { data: visits }, { count: visitsTotal }] = await Promise.all([
         supabase.from("orders").select("*").order("created_at", { ascending: false }),
         supabase.from("subscriptions").select("*"),
         supabase.from("referrals").select("id", { count: "exact", head: true }),
+        supabase.from("page_visits").select("id, created_at, session_id").gte("created_at", since.toISOString()),
+        supabase.from("page_visits").select("id", { count: "exact", head: true }),
       ]);
 
       const all = orders ?? [];
@@ -36,32 +45,48 @@ export function OverviewTab() {
         .filter((o) => o.status === "completed" || o.status === "approved")
         .reduce((sum, o) => sum + Number(o.price_snapshot), 0);
 
-      // Best seller
       const counts: Record<string, number> = {};
       all.forEach((o) => { counts[o.service_name_snapshot] = (counts[o.service_name_snapshot] ?? 0) + 1; });
       const bestSeller = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
-      // Repeat customers (by phone)
       const phones: Record<string, number> = {};
       all.forEach((o) => { phones[o.customer_phone] = (phones[o.customer_phone] ?? 0) + 1; });
       const repeatCustomers = Object.values(phones).filter((n) => n > 1).length;
 
-      // Subs
       const today = new Date(); today.setHours(0,0,0,0);
       const in7 = new Date(today); in7.setDate(in7.getDate() + 7);
       const activeSubs = (subs ?? []).filter((s) => s.is_active && new Date(s.end_date) >= today).length;
       const expiringSoon = (subs ?? []).filter((s) => s.is_active && new Date(s.end_date) >= today && new Date(s.end_date) <= in7).length;
 
-      // 14-day trend
-      const trend: { date: string; orders: number }[] = [];
+      const visitsArr = visits ?? [];
+      const visitsToday = visitsArr.filter((v) => new Date(v.created_at) >= today).length;
+
+      // Conversion = orders today / unique sessions today
+      const sessionsToday = new Set(
+        visitsArr.filter((v) => new Date(v.created_at) >= today).map((v) => v.session_id ?? v.id),
+      ).size;
+      const ordersToday = all.filter((o) => new Date(o.created_at) >= today).length;
+      const conversionRate = sessionsToday > 0 ? (ordersToday / sessionsToday) * 100 : 0;
+
+      // 14-day trend (orders + unique-session visits per day)
+      const trend: { date: string; orders: number; visits: number }[] = [];
       for (let i = 13; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
         const next = new Date(d); next.setDate(next.getDate() + 1);
-        const count = all.filter((o) => {
+        const oCount = all.filter((o) => {
           const od = new Date(o.created_at);
           return od >= d && od < next;
         }).length;
-        trend.push({ date: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }), orders: count });
+        const vSet = new Set(
+          visitsArr
+            .filter((v) => { const vd = new Date(v.created_at); return vd >= d && vd < next; })
+            .map((v) => v.session_id ?? v.id),
+        );
+        trend.push({
+          date: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+          orders: oCount,
+          visits: vSet.size,
+        });
       }
 
       setS({
@@ -69,6 +94,9 @@ export function OverviewTab() {
         revenue, bestSeller, repeatCustomers, trend,
         recent: all.slice(0, 6) as any,
         referralsCount: refCount ?? 0,
+        visitsToday,
+        visitsTotal: visitsTotal ?? 0,
+        conversionRate,
       });
     })();
   }, []);
@@ -76,6 +104,9 @@ export function OverviewTab() {
   if (!s) return <div className="py-10 text-center text-sm text-muted-foreground">Loading…</div>;
 
   const cards = [
+    { label: "Visits today", value: s.visitsToday, icon: Eye, color: "text-primary" },
+    { label: "Conversion", value: `${s.conversionRate.toFixed(1)}%`, icon: Target, color: "text-green-400" },
+    { label: "Total visits", value: s.visitsTotal, icon: Activity, color: "text-primary" },
     { label: "Total orders", value: s.totalOrders, icon: ShoppingCart, color: "text-primary" },
     { label: "Pending", value: s.pendingOrders, icon: Clock, color: "text-yellow-400" },
     { label: "Completed", value: s.completedOrders, icon: CheckCircle, color: "text-green-400" },
@@ -83,25 +114,24 @@ export function OverviewTab() {
     { label: "Expiring ≤7d", value: s.expiringSoon, icon: AlertCircle, color: "text-yellow-400" },
     { label: "Revenue", value: `K${s.revenue.toFixed(0)}`, icon: DollarSign, color: "text-green-400" },
     { label: "Best seller", value: s.bestSeller, icon: TrendingUp, color: "text-primary" },
-    { label: "Repeat customers", value: s.repeatCustomers, icon: Activity, color: "text-primary" },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-2xl border border-border gradient-card p-5">
+          <div key={c.label} className="rounded-2xl border border-border gradient-card p-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{c.label}</p>
               <c.icon className={`h-4 w-4 ${c.color}`} />
             </div>
-            <p className="mt-2 font-display text-2xl font-bold">{c.value}</p>
+            <p className="mt-2 font-display text-xl font-bold">{c.value}</p>
           </div>
         ))}
       </div>
 
       <div className="rounded-2xl border border-border gradient-card p-6">
-        <h3 className="font-display text-lg font-bold">Sales trend (14 days)</h3>
+        <h3 className="font-display text-lg font-bold">Visits vs orders (14 days)</h3>
         <div className="mt-4 h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={s.trend}>
@@ -109,7 +139,8 @@ export function OverviewTab() {
               <XAxis dataKey="date" stroke="oklch(0.55 0 0)" fontSize={11} />
               <YAxis stroke="oklch(0.55 0 0)" fontSize={11} allowDecimals={false} />
               <Tooltip contentStyle={{ background: "oklch(0.07 0 0)", border: "1px solid oklch(0.18 0 0)", borderRadius: 12 }} />
-              <Line type="monotone" dataKey="orders" stroke="oklch(0.628 0.258 25.5)" strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="visits" stroke="oklch(0.7 0.18 145)" strokeWidth={2} dot={{ r: 2 }} name="Visits" />
+              <Line type="monotone" dataKey="orders" stroke="oklch(0.628 0.258 25.5)" strokeWidth={2.5} dot={{ r: 3 }} name="Orders" />
             </LineChart>
           </ResponsiveContainer>
         </div>

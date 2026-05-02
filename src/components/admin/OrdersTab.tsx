@@ -22,6 +22,8 @@ type Order = {
   notes: string | null;
   admin_notes: string | null;
   referral_code: string | null;
+  duration_days: number | null;
+  expires_at: string | null;
   created_at: string;
 };
 
@@ -56,12 +58,12 @@ export function OrdersTab() {
     const { error } = await supabase.from("orders").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) return toast.error(error.message);
 
-    // Auto-create subscription on approval
     if (status === "approved") {
       const o = items.find((x) => x.id === id);
       if (o) {
+        const days = o.duration_days ?? 30;
         const start = new Date();
-        const end = new Date(); end.setDate(end.getDate() + 30);
+        const end = new Date(); end.setDate(end.getDate() + days);
         await supabase.from("subscriptions").insert({
           order_id: id,
           customer_name: o.customer_name,
@@ -73,6 +75,13 @@ export function OrdersTab() {
       }
     }
     toast.success(`Marked ${status}`);
+    load();
+  };
+
+  const updateDuration = async (id: string, days: number) => {
+    const expires = new Date();
+    expires.setDate(expires.getDate() + days);
+    await supabase.from("orders").update({ duration_days: days, expires_at: expires.toISOString() }).eq("id", id);
     load();
   };
 
@@ -120,13 +129,14 @@ export function OrdersTab() {
                 <th className="p-3 text-left">Customer</th>
                 <th className="p-3 text-left">Service</th>
                 <th className="p-3 text-left">Status</th>
+                <th className="p-3 text-left">Days</th>
                 <th className="p-3 text-left">Date</th>
                 <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">No orders</td></tr>
+                <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No orders</td></tr>
               )}
               {filtered.map((o) => (
                 <tr key={o.id} className="border-t border-border">
@@ -145,6 +155,15 @@ export function OrdersTab() {
                         {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                  </td>
+                  <td className="p-3">
+                    <Input
+                      type="number"
+                      min={1}
+                      defaultValue={o.duration_days ?? 30}
+                      onBlur={(e) => updateDuration(o.id, Number(e.target.value) || 30)}
+                      className="h-8 w-20 text-xs"
+                    />
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</td>
                   <td className="p-3">

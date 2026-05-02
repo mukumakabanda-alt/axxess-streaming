@@ -47,6 +47,8 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
     }
 
     setSubmitting(true);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
     const { error } = await supabase.from("orders").insert({
       customer_name: parsed.data.customer_name,
       customer_phone: parsed.data.customer_phone,
@@ -56,6 +58,8 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
       price_snapshot: service.price_kwacha,
       notes: parsed.data.notes || null,
       referral_code: parsed.data.referral_code || null,
+      duration_days: 30,
+      expires_at: expiresAt.toISOString(),
     });
     setSubmitting(false);
 
