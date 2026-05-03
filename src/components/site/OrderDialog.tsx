@@ -19,8 +19,6 @@ type Service = {
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Name is too short").max(80),
   customer_phone: z.string().trim().min(9, "Enter a valid phone").max(20),
-  customer_email: z.string().trim().email().max(120).optional().or(z.literal("")),
-  notes: z.string().trim().max(500).optional().or(z.literal("")),
   referral_code: z.string().trim().max(20).optional().or(z.literal("")),
 });
 
@@ -37,8 +35,6 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
     const parsed = schema.safeParse({
       customer_name: fd.get("customer_name"),
       customer_phone: fd.get("customer_phone"),
-      customer_email: fd.get("customer_email") || "",
-      notes: fd.get("notes") || "",
       referral_code: fd.get("referral_code") || "",
     });
 
@@ -54,11 +50,11 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
     const { error } = await supabase.from("orders").insert({
       customer_name: parsed.data.customer_name,
       customer_phone: parsed.data.customer_phone,
-      customer_email: parsed.data.customer_email || null,
+      customer_email: null,
       service_id: service.id,
       service_name_snapshot: service.name,
       price_snapshot: isTrial ? 0 : service.price_kwacha,
-      notes: isTrial ? `[FREE 2-DAY TRIAL] ${parsed.data.notes || ""}`.trim() : (parsed.data.notes || null),
+      notes: isTrial ? "[FREE 2-DAY TRIAL]" : null,
       referral_code: parsed.data.referral_code || null,
       duration_days: days,
       expires_at: expiresAt.toISOString(),
@@ -115,7 +111,7 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
 
   return (
     <Dialog open={!!service} onOpenChange={(o) => !o && close()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         {!done ? (
           <>
             <DialogHeader>
@@ -139,16 +135,8 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
                 <Input id="customer_phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} />
               </div>
               <div>
-                <Label htmlFor="customer_email">Email (optional)</Label>
-                <Input id="customer_email" name="customer_email" type="email" maxLength={120} />
-              </div>
-              <div>
                 <Label htmlFor="referral_code">Referral code (optional)</Label>
                 <Input id="referral_code" name="referral_code" maxLength={20} />
-              </div>
-              <div>
-                <Label htmlFor="notes">Notes (optional)</Label>
-                <Textarea id="notes" name="notes" rows={3} maxLength={500} />
               </div>
 
               <Button
