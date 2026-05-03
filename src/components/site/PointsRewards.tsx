@@ -9,7 +9,7 @@ const REWARDS = [
   { points: 5, label: "+2 days bonus" },
   { points: 15, label: "Loyalty Gold Badge" },
   { points: 30, label: "K5 off next subscription" },
-  { points: 50, label: "Unlock All-Access bundle" },
+  { points: 50, label: "Unlock Premium Bundle" },
   { points: 100, label: "Free month" },
 ];
 
@@ -171,11 +171,11 @@ export function PointsRewards() {
                     {allAccessUnlocked ? <Sparkles className="h-6 w-6" /> : <Lock className="h-6 w-6" />}
                   </div>
                   <div>
-                    <p className="font-display text-lg font-bold">All-Access Bundle</p>
+                    <p className="font-display text-lg font-bold">Premium Bundle</p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {allAccessUnlocked
-                        ? "🎉 Unlocked! Contact us on WhatsApp to claim your All-Access bundle."
-                        : `Earn ${50 - points} more points to unlock the All-Access bundle (Netflix + Spotify + Prime + Disney+).`}
+                        ? "🎉 Unlocked! Contact us on WhatsApp to claim your Premium Bundle (HBO Max · Disney+ · Hulu)."
+                        : `Earn ${50 - points} more points to unlock the Premium Bundle (HBO Max · Disney+ · Hulu).`}
                     </p>
                   </div>
                 </div>

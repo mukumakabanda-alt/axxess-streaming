@@ -44,11 +44,18 @@ export function Hero() {
           Premium entertainment for better prices.
         </p>
 
-        <div className="mt-7 flex justify-center">
-          <a href="#plans" className="btn-primary-cta">
-            Order Now
+        <div className="mt-7 flex flex-col items-center gap-2">
+          <a
+            href="#plans"
+            onClick={() => { try { sessionStorage.setItem("axx_trial", "1"); } catch {} }}
+            className="btn-primary-cta text-base px-9 py-4"
+          >
+            Start Free Trial
             <ArrowRight className="h-4 w-4" />
           </a>
+          <p className="text-xs text-muted-foreground">
+            2-day free trial — pick any package below to begin.
+          </p>
         </div>
 
         {/* Intro video */}

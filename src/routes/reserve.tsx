@@ -32,7 +32,7 @@ function ReservePage() {
           <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
             {[
               { Icon: Sparkles, t: "Free to reserve", d: "No commitment, no charge today" },
-              { Icon: Clock, t: "Held for 7 days", d: "We hold your slot for a full week" },
+              { Icon: Clock, t: "Held for 1 month", d: "We keep your slot for a full 30 days" },
               { Icon: MessageCircle, t: "WhatsApp reply", d: "We reach out as soon as it's available" },
             ].map(({ Icon, t, d }) => (
               <div key={t} className="rounded-2xl border border-border gradient-card p-4 text-left">

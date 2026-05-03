@@ -75,7 +75,7 @@ export function Reserve() {
             <h2 className="font-display text-2xl font-bold sm:text-3xl">Not ready yet? Reserve your slot</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               No money right now, or your favourite package is full? Save a spot — we'll
-              hold it and message you the moment it's available.
+              hold it for <span className="font-semibold text-primary">1 full month</span> and message you the moment it's available.
             </p>
           </div>
         </div>
