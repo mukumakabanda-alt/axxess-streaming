@@ -19,8 +19,6 @@ type Service = {
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Name is too short").max(80),
   customer_phone: z.string().trim().min(9, "Enter a valid phone").max(20),
-  customer_email: z.string().trim().email().max(120).optional().or(z.literal("")),
-  notes: z.string().trim().max(500).optional().or(z.literal("")),
   referral_code: z.string().trim().max(20).optional().or(z.literal("")),
 });
 
