@@ -135,16 +135,8 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
                 <Input id="customer_phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} />
               </div>
               <div>
-                <Label htmlFor="customer_email">Email (optional)</Label>
-                <Input id="customer_email" name="customer_email" type="email" maxLength={120} />
-              </div>
-              <div>
                 <Label htmlFor="referral_code">Referral code (optional)</Label>
                 <Input id="referral_code" name="referral_code" maxLength={20} />
-              </div>
-              <div>
-                <Label htmlFor="notes">Notes (optional)</Label>
-                <Textarea id="notes" name="notes" rows={3} maxLength={500} />
               </div>
 
               <Button
