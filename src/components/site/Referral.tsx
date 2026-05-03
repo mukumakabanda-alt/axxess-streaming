@@ -63,7 +63,7 @@ export function Referral() {
           </div>
           <div>
             <h2 className="font-display text-2xl font-bold sm:text-3xl">Refer a friend</h2>
-            <p className="text-sm text-muted-foreground">Get <span className="text-primary font-semibold">K5 off</span> your next subscription.</p>
+            <p className="text-sm text-muted-foreground">Earn <span className="text-primary font-semibold">+5 points</span> for every friend who joins.</p>
           </div>
         </div>
 
@@ -97,7 +97,7 @@ export function Referral() {
               {copied ? "Copied!" : "Copy link"}
             </button>
             <p className="mt-4 text-xs text-muted-foreground">
-              Share this link. When friends visit through it, your visits count grows in our system, and you get K5 off your next subscription.
+              Share this link. When friends visit through it, your visits count grows in our system, and you earn <span className="font-semibold text-primary">+5 points</span> per visit toward your rewards.
             </p>
           </div>
         )}

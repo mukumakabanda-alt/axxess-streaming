@@ -58,20 +58,29 @@ export function OrdersTab() {
     const { error } = await supabase.from("orders").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) return toast.error(error.message);
 
-    if (status === "approved") {
+    if (status === "approved" || status === "completed") {
       const o = items.find((x) => x.id === id);
       if (o) {
-        const days = o.duration_days ?? 30;
-        const start = new Date();
-        const end = new Date(); end.setDate(end.getDate() + days);
-        await supabase.from("subscriptions").insert({
-          order_id: id,
-          customer_name: o.customer_name,
-          customer_phone: o.customer_phone,
-          service_name: o.service_name_snapshot,
-          start_date: start.toISOString().slice(0,10),
-          end_date: end.toISOString().slice(0,10),
-        });
+        // Avoid duplicate subscription
+        const { data: existing } = await supabase
+          .from("subscriptions")
+          .select("id")
+          .eq("order_id", id)
+          .maybeSingle();
+        if (!existing) {
+          const days = o.duration_days ?? 30;
+          const start = new Date();
+          const end = new Date(); end.setDate(end.getDate() + days);
+          await supabase.from("subscriptions").insert({
+            order_id: id,
+            customer_name: o.customer_name,
+            customer_phone: o.customer_phone,
+            service_name: o.service_name_snapshot,
+            start_date: start.toISOString().slice(0,10),
+            end_date: end.toISOString().slice(0,10),
+          });
+          toast.success(`Subscription created (${days} days)`);
+        }
       }
     }
     toast.success(`Marked ${status}`);
