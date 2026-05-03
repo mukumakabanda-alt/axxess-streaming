@@ -46,8 +46,7 @@ export function Hero() {
 
         <div className="mt-7 flex flex-col items-center gap-2">
           <a
-            href="#plans"
-            onClick={() => { try { sessionStorage.setItem("axx_trial", "1"); } catch {} }}
+            href="/trial"
             className="btn-primary-cta text-base px-9 py-4"
           >
             Start Free Trial
