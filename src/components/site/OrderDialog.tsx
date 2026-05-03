@@ -109,6 +109,7 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
 
   const close = () => {
     setDone(false);
+    try { sessionStorage.removeItem("axx_trial"); } catch {}
     onClose();
   };
 
