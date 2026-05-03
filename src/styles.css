@@ -170,6 +170,10 @@
   }
 }
 
+@utility transition-smooth {
+  transition: var(--transition-smooth);
+}
+
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 0 0 oklch(0.628 0.258 25.5 / 0.5); }
   50% { box-shadow: 0 0 0 12px oklch(0.628 0.258 25.5 / 0); }
