@@ -143,7 +143,7 @@
   .shadow-glow-green { box-shadow: var(--shadow-glow-green); }
   .shadow-elegant { box-shadow: var(--shadow-elegant); }
   .shadow-card { box-shadow: var(--shadow-card); }
-  .transition-smooth { transition: var(--transition-smooth); }
+  
 
   .text-gradient-red {
     background: linear-gradient(135deg, oklch(1 0 0), oklch(0.7 0.27 25.5));
@@ -168,6 +168,10 @@
   .btn-secondary-cta {
     @apply inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card/70 px-6 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-primary/50 hover:bg-card;
   }
+}
+
+@utility transition-smooth {
+  transition: var(--transition-smooth);
 }
 
 @keyframes pulse-glow {
