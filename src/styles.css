@@ -162,11 +162,11 @@
   .scrollbar-none::-webkit-scrollbar { display: none; }
 
   .btn-primary-cta {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground transition-smooth hover:scale-[1.02] hover:bg-primary/90 active:scale-[0.99];
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 active:scale-[0.99];
     box-shadow: 0 0 0 1px oklch(0.7 0.27 25.5 / 0.45), var(--shadow-glow-red);
   }
   .btn-secondary-cta {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card/70 px-6 py-3.5 text-sm font-semibold text-foreground transition-smooth hover:border-primary/50 hover:bg-card;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card/70 px-6 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-primary/50 hover:bg-card;
   }
 }
 
