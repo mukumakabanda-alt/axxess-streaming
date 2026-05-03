@@ -111,7 +111,7 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
 
   return (
     <Dialog open={!!service} onOpenChange={(o) => !o && close()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         {!done ? (
           <>
             <DialogHeader>
