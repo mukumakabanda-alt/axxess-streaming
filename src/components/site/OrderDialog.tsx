@@ -35,8 +35,6 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
     const parsed = schema.safeParse({
       customer_name: fd.get("customer_name"),
       customer_phone: fd.get("customer_phone"),
-      customer_email: fd.get("customer_email") || "",
-      notes: fd.get("notes") || "",
       referral_code: fd.get("referral_code") || "",
     });
 
@@ -52,11 +50,11 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
     const { error } = await supabase.from("orders").insert({
       customer_name: parsed.data.customer_name,
       customer_phone: parsed.data.customer_phone,
-      customer_email: parsed.data.customer_email || null,
+      customer_email: null,
       service_id: service.id,
       service_name_snapshot: service.name,
       price_snapshot: isTrial ? 0 : service.price_kwacha,
-      notes: isTrial ? `[FREE 2-DAY TRIAL] ${parsed.data.notes || ""}`.trim() : (parsed.data.notes || null),
+      notes: isTrial ? "[FREE 2-DAY TRIAL]" : null,
       referral_code: parsed.data.referral_code || null,
       duration_days: days,
       expires_at: expiresAt.toISOString(),
