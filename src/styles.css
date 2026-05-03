@@ -143,7 +143,7 @@
   .shadow-glow-green { box-shadow: var(--shadow-glow-green); }
   .shadow-elegant { box-shadow: var(--shadow-elegant); }
   .shadow-card { box-shadow: var(--shadow-card); }
-  .transition-smooth { transition: var(--transition-smooth); }
+  
 
   .text-gradient-red {
     background: linear-gradient(135deg, oklch(1 0 0), oklch(0.7 0.27 25.5));
