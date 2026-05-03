@@ -27,6 +27,7 @@ const schema = z.object({
 export function OrderDialog({ service, onClose }: { service: Service | null; onClose: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const isTrial = typeof window !== "undefined" && sessionStorage.getItem("axx_trial") === "1";
 
   if (!service) return null;
 
@@ -47,18 +48,19 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
     }
 
     setSubmitting(true);
+    const days = isTrial ? 2 : 30;
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+    expiresAt.setDate(expiresAt.getDate() + days);
     const { error } = await supabase.from("orders").insert({
       customer_name: parsed.data.customer_name,
       customer_phone: parsed.data.customer_phone,
       customer_email: parsed.data.customer_email || null,
       service_id: service.id,
       service_name_snapshot: service.name,
-      price_snapshot: service.price_kwacha,
-      notes: parsed.data.notes || null,
+      price_snapshot: isTrial ? 0 : service.price_kwacha,
+      notes: isTrial ? `[FREE 2-DAY TRIAL] ${parsed.data.notes || ""}`.trim() : (parsed.data.notes || null),
       referral_code: parsed.data.referral_code || null,
-      duration_days: 30,
+      duration_days: days,
       expires_at: expiresAt.toISOString(),
     });
     setSubmitting(false);
@@ -117,10 +119,12 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
           <>
             <DialogHeader>
               <DialogTitle className="font-display text-2xl">
-                Order {service.name}
+                {isTrial ? `Start your 2-day free trial — ${service.name}` : `Order ${service.name}`}
               </DialogTitle>
               <DialogDescription>
-                K{Number(service.price_kwacha)}/month — fill in your details and we'll confirm on WhatsApp.
+                {isTrial
+                  ? "No payment today. Fill in your details and we'll set up your free 2-day trial on WhatsApp."
+                  : `K${Number(service.price_kwacha)}/month — fill in your details and we'll confirm on WhatsApp.`}
               </DialogDescription>
             </DialogHeader>
 
@@ -151,7 +155,7 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
                 disabled={submitting}
                 className="w-full rounded-full bg-primary py-6 text-base font-semibold shadow-glow-red hover:bg-primary/90"
               >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Order"}
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (isTrial ? "Start Free Trial" : "Submit Order")}
               </Button>
             </form>
           </>
