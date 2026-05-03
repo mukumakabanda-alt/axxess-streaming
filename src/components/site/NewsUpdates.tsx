@@ -40,40 +40,53 @@ export function NewsUpdates() {
   if (items.length === 0) return null;
 
   return (
-    <section className="px-4 py-16 sm:px-6">
+    <section className="relative px-4 py-20 sm:px-6">
+      <div className="absolute inset-x-0 top-0 -z-10 h-40 gradient-radial-red opacity-60" />
       <div className="mx-auto max-w-5xl">
-        <div className="flex items-center gap-3">
-          <Megaphone className="h-5 w-5 text-primary" />
-          <h2 className="font-display text-2xl font-bold sm:text-3xl">Latest updates</h2>
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+              <Megaphone className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-primary">Newsroom</p>
+              <h2 className="font-display text-2xl font-bold sm:text-3xl">Fresh from Axxess</h2>
+            </div>
+          </div>
+          <a href="/news" className="text-xs font-semibold text-primary hover:underline">View all →</a>
         </div>
 
         <Carousel
           setApi={setApi}
           plugins={[autoplay.current]}
           opts={{ loop: true, align: "start" }}
-          className="mt-6"
+          className="mt-8"
         >
           <CarouselContent>
-            {items.map((u) => (
-              <CarouselItem key={u.id} className="sm:basis-1/2">
-                <article className="neon-red-glow h-full rounded-2xl border-2 gradient-card p-5">
-                  <h3 className="font-display text-lg font-bold">{u.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{u.body}</p>
-                  <time className="mt-3 block text-xs text-muted-foreground/60">
-                    {new Date(u.created_at).toLocaleDateString()}
+            {items.map((u, idx) => (
+              <CarouselItem key={u.id} className="sm:basis-1/2 lg:basis-1/3">
+                <article className="group relative h-full overflow-hidden rounded-3xl border border-border gradient-card p-6 transition-smooth hover:-translate-y-1 hover:border-primary/50">
+                  <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/15 blur-3xl transition-smooth group-hover:bg-primary/30" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                    #{String(idx + 1).padStart(2, "0")} · New
+                  </span>
+                  <h3 className="mt-4 font-display text-lg font-bold leading-tight">{u.title}</h3>
+                  <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{u.body}</p>
+                  <time className="mt-4 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                    {new Date(u.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
                   </time>
                 </article>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <div className="mt-4 flex items-center justify-center gap-2">
+          <div className="mt-5 flex items-center justify-center gap-2">
             {items.map((_, i) => (
               <button
                 key={i}
                 aria-label={`Go to slide ${i + 1}`}
                 onClick={() => api?.scrollTo(i)}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
+                  i === current ? "w-8 bg-primary shadow-glow-red" : "w-1.5 bg-muted-foreground/30"
                 }`}
               />
             ))}
