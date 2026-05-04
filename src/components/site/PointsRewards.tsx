@@ -19,8 +19,11 @@ export function PointsRewards() {
   const [phone, setPhone] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [points, setPoints] = useState(0);
+  const [displayPct, setDisplayPct] = useState(0);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const prevPointsRef = useRef<number | null>(null);
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
@@ -37,7 +40,8 @@ export function PointsRewards() {
       .select("points,customer_name")
       .eq("customer_phone", p.trim())
       .maybeSingle();
-    setPoints(data?.points ?? 0);
+    const newPoints = data?.points ?? 0;
+    setPoints(newPoints);
     setName(data?.customer_name ?? "");
     setLoaded(true);
     setLoading(false);
@@ -56,10 +60,32 @@ export function PointsRewards() {
     setLoaded(false);
     setPoints(0);
     setName("");
+    prevPointsRef.current = null;
   };
 
   const maxPoints = 100;
   const pct = Math.min(100, (points / maxPoints) * 100);
+
+  // Animate bar + celebrate when points increase
+  useEffect(() => {
+    const t = setTimeout(() => setDisplayPct(pct), 80);
+    if (prevPointsRef.current !== null && points > prevPointsRef.current) {
+      setCelebrate(true);
+      const c = setTimeout(() => setCelebrate(false), 1800);
+      return () => { clearTimeout(t); clearTimeout(c); };
+    }
+    prevPointsRef.current = points;
+    return () => clearTimeout(t);
+  }, [points, pct]);
+
+  // Poll for point updates while loaded (catches new points earned in same session)
+  useEffect(() => {
+    if (!loaded || !phone) return;
+    const interval = setInterval(() => lookup(phone), 6000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, phone]);
+
   const allAccessUnlocked = points >= 50;
 
   return (
