@@ -38,11 +38,24 @@ export function OrdersTab() {
   const [services, setServices] = useState<string[]>([]);
   const [showNew, setShowNew] = useState(false);
 
+  const [pointsByPhone, setPointsByPhone] = useState<Record<string, number>>({});
+
   const load = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
     setItems((data ?? []) as Order[]);
     const uniq = Array.from(new Set((data ?? []).map((d: any) => d.service_name_snapshot)));
     setServices(uniq);
+    // Fetch points for all unique phones
+    const phones = Array.from(new Set((data ?? []).map((d: any) => d.customer_phone)));
+    if (phones.length) {
+      const { data: pts } = await supabase
+        .from("customer_points")
+        .select("customer_phone, points")
+        .in("customer_phone", phones);
+      const map: Record<string, number> = {};
+      (pts ?? []).forEach((p: any) => { map[p.customer_phone] = p.points; });
+      setPointsByPhone(map);
+    }
   };
   useEffect(() => { load(); }, []);
 
@@ -152,6 +165,11 @@ export function OrdersTab() {
                   <td className="p-3">
                     <p className="font-semibold">{o.customer_name}</p>
                     <p className="text-xs text-muted-foreground">{o.customer_phone}</p>
+                    {pointsByPhone[o.customer_phone] !== undefined && (
+                      <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-primary">
+                        ⭐ {pointsByPhone[o.customer_phone]} pts
+                      </p>
+                    )}
                   </td>
                   <td className="p-3">
                     {o.service_name_snapshot}
