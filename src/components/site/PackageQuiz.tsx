@@ -208,10 +208,17 @@ export function PackageQuiz() {
 
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <Button asChild className="rounded-full bg-primary px-8 py-6 font-bold shadow-glow-red hover:bg-primary/90">
-                  <Link to="/" hash={rec.anchor.slice(1)}>
-                    {rec.available ? "See pricing" : "Reserve my slot"}
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Link>
+                  {rec.available ? (
+                    <Link to="/" hash="plans">
+                      See pricing
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <Link to="/reserve">
+                      Reserve my slot
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Link>
+                  )}
                 </Button>
                 <Button onClick={restart} variant="outline" className="rounded-full px-6 py-6">
                   <RotateCcw className="mr-1 h-4 w-4" /> Retake quiz

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +19,11 @@ export function PointsRewards() {
   const [phone, setPhone] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [points, setPoints] = useState(0);
+  const [displayPct, setDisplayPct] = useState(0);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const prevPointsRef = useRef<number | null>(null);
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
@@ -37,7 +40,8 @@ export function PointsRewards() {
       .select("points,customer_name")
       .eq("customer_phone", p.trim())
       .maybeSingle();
-    setPoints(data?.points ?? 0);
+    const newPoints = data?.points ?? 0;
+    setPoints(newPoints);
     setName(data?.customer_name ?? "");
     setLoaded(true);
     setLoading(false);
@@ -56,10 +60,32 @@ export function PointsRewards() {
     setLoaded(false);
     setPoints(0);
     setName("");
+    prevPointsRef.current = null;
   };
 
   const maxPoints = 100;
   const pct = Math.min(100, (points / maxPoints) * 100);
+
+  // Animate bar + celebrate when points increase
+  useEffect(() => {
+    const t = setTimeout(() => setDisplayPct(pct), 80);
+    if (prevPointsRef.current !== null && points > prevPointsRef.current) {
+      setCelebrate(true);
+      const c = setTimeout(() => setCelebrate(false), 1800);
+      return () => { clearTimeout(t); clearTimeout(c); };
+    }
+    prevPointsRef.current = points;
+    return () => clearTimeout(t);
+  }, [points, pct]);
+
+  // Poll for point updates while loaded (catches new points earned in same session)
+  useEffect(() => {
+    if (!loaded || !phone) return;
+    const interval = setInterval(() => lookup(phone), 6000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, phone]);
+
   const allAccessUnlocked = points >= 50;
 
   return (
@@ -97,13 +123,28 @@ export function PointsRewards() {
               </p>
             </form>
           ) : (
-            <div>
+            <div className="relative">
+              {celebrate && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center overflow-hidden">
+                  {Array.from({ length: 14 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="absolute h-2 w-2 rounded-sm animate-confetti"
+                      style={{
+                        left: `${10 + (i * 6)}%`,
+                        background: ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#a855f7"][i % 5],
+                        animationDelay: `${i * 60}ms`,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">
                     {name ? `Hi, ${name}` : phone}
                   </p>
-                  <p className="mt-1 font-display text-5xl font-bold text-gradient-red">
+                  <p className={`mt-1 font-display text-5xl font-bold text-gradient-red ${celebrate ? "animate-bounce" : ""}`}>
                     {points} <span className="text-2xl text-muted-foreground">pts</span>
                   </p>
                 </div>
@@ -116,8 +157,8 @@ export function PointsRewards() {
               <div className="mt-6">
                 <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
                   <div
-                    className="h-full bg-gradient-to-r from-primary to-primary-glow shadow-glow-red transition-all duration-700"
-                    style={{ width: `${pct}%` }}
+                    className="h-full bg-gradient-to-r from-primary to-primary-glow shadow-glow-red transition-all duration-1000 ease-out"
+                    style={{ width: `${displayPct}%` }}
                   />
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">

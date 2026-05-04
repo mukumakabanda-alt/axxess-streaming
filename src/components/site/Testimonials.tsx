@@ -151,12 +151,31 @@ export function Testimonials() {
     load();
   };
 
+  const ratedItems = items.filter((t) => typeof t.rating === "number" && t.rating! > 0);
+  const avgRating = ratedItems.length
+    ? ratedItems.reduce((sum, t) => sum + (t.rating ?? 0), 0) / ratedItems.length
+    : 0;
+
   return (
     <section id="reviews" className="px-4 py-16 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Real People</p>
           <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">Loved by customers</h2>
+          {avgRating > 0 && (
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2">
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star
+                    key={n}
+                    className={`h-4 w-4 ${n <= Math.round(avgRating) ? "fill-primary text-primary" : "text-muted-foreground/40"}`}
+                  />
+                ))}
+              </div>
+              <span className="font-display text-sm font-bold">{avgRating.toFixed(1)}</span>
+              <span className="text-xs text-muted-foreground">({ratedItems.length} review{ratedItems.length === 1 ? "" : "s"})</span>
+            </div>
+          )}
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
             Leave a review &amp; earn <span className="font-semibold text-primary">+5 points</span>.
           </p>

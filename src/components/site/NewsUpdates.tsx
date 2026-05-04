@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Megaphone } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   Carousel,
   CarouselContent,
@@ -53,7 +54,7 @@ export function NewsUpdates() {
               <h2 className="font-display text-2xl font-bold sm:text-3xl">Fresh from Axxess</h2>
             </div>
           </div>
-          <a href="/news" className="text-xs font-semibold text-primary hover:underline">View all →</a>
+          <Link to="/news" className="text-xs font-semibold text-primary hover:underline">View all →</Link>
         </div>
 
         <Carousel
