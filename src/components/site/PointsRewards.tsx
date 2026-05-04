@@ -123,13 +123,28 @@ export function PointsRewards() {
               </p>
             </form>
           ) : (
-            <div>
+            <div className="relative">
+              {celebrate && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center overflow-hidden">
+                  {Array.from({ length: 14 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="absolute h-2 w-2 rounded-sm animate-confetti"
+                      style={{
+                        left: `${10 + (i * 6)}%`,
+                        background: ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#a855f7"][i % 5],
+                        animationDelay: `${i * 60}ms`,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">
                     {name ? `Hi, ${name}` : phone}
                   </p>
-                  <p className="mt-1 font-display text-5xl font-bold text-gradient-red">
+                  <p className={`mt-1 font-display text-5xl font-bold text-gradient-red ${celebrate ? "animate-bounce" : ""}`}>
                     {points} <span className="text-2xl text-muted-foreground">pts</span>
                   </p>
                 </div>
@@ -142,8 +157,8 @@ export function PointsRewards() {
               <div className="mt-6">
                 <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
                   <div
-                    className="h-full bg-gradient-to-r from-primary to-primary-glow shadow-glow-red transition-all duration-700"
-                    style={{ width: `${pct}%` }}
+                    className="h-full bg-gradient-to-r from-primary to-primary-glow shadow-glow-red transition-all duration-1000 ease-out"
+                    style={{ width: `${displayPct}%` }}
                   />
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
