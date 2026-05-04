@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Home, BookmarkPlus, Award, Headphones, Newspaper } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ITEMS = [
   { to: "/", label: "Home", Icon: Home },
@@ -9,8 +11,35 @@ const ITEMS = [
   { to: "/news", label: "News", Icon: Newspaper },
 ] as const;
 
+const NEWS_READ_KEY = "axx_news_last_read";
+
 export function BottomNav() {
   const { pathname } = useLocation();
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const check = async () => {
+      const { data } = await supabase
+        .from("updates")
+        .select("created_at")
+        .eq("is_published", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!mounted || !data) return;
+      const lastRead = typeof window !== "undefined" ? localStorage.getItem(NEWS_READ_KEY) : null;
+      setHasUnread(!lastRead || new Date(data.created_at) > new Date(lastRead));
+    };
+    check();
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname.startsWith("/news") && typeof window !== "undefined") {
+      localStorage.setItem(NEWS_READ_KEY, new Date().toISOString());
+      setHasUnread(false);
+    }
+  }, [pathname]);
 
   return (
     <nav
@@ -20,6 +49,7 @@ export function BottomNav() {
       <ul className="mx-auto grid max-w-md grid-cols-5 px-2 pt-1.5 pb-2">
         {ITEMS.map(({ to, label, Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+          const showDot = to === "/news" && hasUnread && !active;
           return (
             <li key={to} className="flex">
               <Link
@@ -34,6 +64,12 @@ export function BottomNav() {
                   }`}
                 >
                   <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.4 : 2} />
+                  {showDot && (
+                    <span className="absolute right-1 top-1 flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                    </span>
+                  )}
                 </span>
                 <span
                   className={`text-[10px] font-semibold tracking-tight transition-smooth ${
