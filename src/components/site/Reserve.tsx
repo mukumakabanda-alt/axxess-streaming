@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Heart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
 
 type Svc = { id: string; name: string; is_full: boolean };
 
@@ -59,6 +60,7 @@ export function Reserve() {
       toast.error("Could not reserve: " + error.message);
       return;
     }
+    rememberCustomer(parsed.data.customer_name, parsed.data.customer_phone);
     toast.success("Slot reserved! We'll reach out as soon as space opens up.");
     (e.currentTarget as HTMLFormElement).reset();
     setServiceId("");
@@ -83,11 +85,11 @@ export function Reserve() {
         <form onSubmit={handleSubmit} className="mt-8 grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="r-name">Your name</Label>
-            <Input id="r-name" name="customer_name" required maxLength={80} />
+            <Input id="r-name" name="customer_name" required maxLength={80} defaultValue={getRememberedName()} />
           </div>
           <div>
             <Label htmlFor="r-phone">WhatsApp number</Label>
-            <Input id="r-phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} />
+            <Input id="r-phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} defaultValue={getRememberedPhone()} />
           </div>
           <div className="sm:col-span-2">
             <Label>Package you want</Label>
