@@ -285,6 +285,21 @@ export function OrdersTab() {
                 <p><span className="text-muted-foreground">Email:</span> {editing.customer_email ?? "—"}</p>
                 <p><span className="text-muted-foreground">Referral:</span> {editing.referral_code ?? "—"}</p>
                 <p><span className="text-muted-foreground">Customer notes:</span> {editing.notes ?? "—"}</p>
+                <div className="flex items-center justify-between rounded-xl border border-border bg-secondary/40 p-3">
+                  <div>
+                    <p className="font-semibold flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-primary" /> Free trial</p>
+                    <p className="text-xs text-muted-foreground">
+                      Toggle to convert between a paid order and a 2-day free trial.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={(editing.notes ?? "").includes("[FREE 2-DAY TRIAL]") || Number(editing.price_snapshot) === 0}
+                    onCheckedChange={async (v) => {
+                      await toggleTrial(editing, v);
+                      setEditing(null);
+                    }}
+                  />
+                </div>
                 <div>
                   <Label>Admin notes</Label>
                   <Textarea
