@@ -333,6 +333,36 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_unlocks: {
+        Row: {
+          acknowledged: boolean
+          created_at: string
+          customer_name: string | null
+          customer_phone: string
+          id: string
+          tier_label: string
+          tier_points: number
+        }
+        Insert: {
+          acknowledged?: boolean
+          created_at?: string
+          customer_name?: string | null
+          customer_phone: string
+          id?: string
+          tier_label: string
+          tier_points: number
+        }
+        Update: {
+          acknowledged?: boolean
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string
+          id?: string
+          tier_label?: string
+          tier_points?: number
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           accent_color: string | null
