@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, ShoppingCart, Clock, CheckCircle, Users, AlertCircle, DollarSign, Activity, Eye, Target } from "lucide-react";
+import { TrendingUp, ShoppingCart, Clock, CheckCircle, Users, AlertCircle, DollarSign, Target, Sparkles, Bell } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type Stats = {
   totalOrders: number;
@@ -12,29 +14,41 @@ type Stats = {
   revenue: number;
   bestSeller: string;
   repeatCustomers: number;
-  trend: { date: string; orders: number; visits: number }[];
+  trend: { date: string; orders: number; completed: number }[];
   recent: { id: string; customer_name: string; service_name_snapshot: string; status: string; created_at: string }[];
   referralsCount: number;
-  visitsToday: number;
-  visitsTotal: number;
-  conversionRate: number; // %
+  conversionRate: number; // completed / (pending + completed)
+};
+
+type RewardUnlock = {
+  id: string;
+  customer_phone: string;
+  customer_name: string | null;
+  tier_points: number;
+  tier_label: string;
+  acknowledged: boolean;
+  created_at: string;
 };
 
 export function OverviewTab() {
   const [s, setS] = useState<Stats | null>(null);
+  const [unlocks, setUnlocks] = useState<RewardUnlock[]>([]);
+
+  const loadUnlocks = async () => {
+    const { data } = await supabase
+      .from("reward_unlocks")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(40);
+    setUnlocks((data ?? []) as RewardUnlock[]);
+  };
 
   useEffect(() => {
     (async () => {
-      const since = new Date();
-      since.setDate(since.getDate() - 13);
-      since.setHours(0, 0, 0, 0);
-
-      const [{ data: orders }, { data: subs }, { count: refCount }, { data: visits }, { count: visitsTotal }] = await Promise.all([
+      const [{ data: orders }, { data: subs }, { count: refCount }] = await Promise.all([
         supabase.from("orders").select("*").order("created_at", { ascending: false }),
         supabase.from("subscriptions").select("*"),
         supabase.from("referrals").select("id", { count: "exact", head: true }),
-        supabase.from("page_visits").select("id, created_at, session_id").gte("created_at", since.toISOString()),
-        supabase.from("page_visits").select("id", { count: "exact", head: true }),
       ]);
 
       const all = orders ?? [];
@@ -58,34 +72,23 @@ export function OverviewTab() {
       const activeSubs = (subs ?? []).filter((s) => s.is_active && new Date(s.end_date) >= today).length;
       const expiringSoon = (subs ?? []).filter((s) => s.is_active && new Date(s.end_date) >= today && new Date(s.end_date) <= in7).length;
 
-      const visitsArr = visits ?? [];
-      const visitsToday = visitsArr.filter((v) => new Date(v.created_at) >= today).length;
+      // Conversion = completed / (pending + completed)
+      const denom = pendingOrders + completedOrders;
+      const conversionRate = denom > 0 ? (completedOrders / denom) * 100 : 0;
 
-      // Conversion = orders today / unique sessions today
-      const sessionsToday = new Set(
-        visitsArr.filter((v) => new Date(v.created_at) >= today).map((v) => v.session_id ?? v.id),
-      ).size;
-      const ordersToday = all.filter((o) => new Date(o.created_at) >= today).length;
-      const conversionRate = sessionsToday > 0 ? (ordersToday / sessionsToday) * 100 : 0;
-
-      // 14-day trend (orders + unique-session visits per day)
-      const trend: { date: string; orders: number; visits: number }[] = [];
+      // 14-day trend (orders + completed per day)
+      const trend: { date: string; orders: number; completed: number }[] = [];
       for (let i = 13; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
         const next = new Date(d); next.setDate(next.getDate() + 1);
-        const oCount = all.filter((o) => {
+        const inDay = all.filter((o) => {
           const od = new Date(o.created_at);
           return od >= d && od < next;
-        }).length;
-        const vSet = new Set(
-          visitsArr
-            .filter((v) => { const vd = new Date(v.created_at); return vd >= d && vd < next; })
-            .map((v) => v.session_id ?? v.id),
-        );
+        });
         trend.push({
           date: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-          orders: oCount,
-          visits: vSet.size,
+          orders: inDay.length,
+          completed: inDay.filter((o) => o.status === "completed").length,
         });
       }
 
@@ -94,31 +97,46 @@ export function OverviewTab() {
         revenue, bestSeller, repeatCustomers, trend,
         recent: all.slice(0, 6) as any,
         referralsCount: refCount ?? 0,
-        visitsToday,
-        visitsTotal: visitsTotal ?? 0,
         conversionRate,
       });
     })();
+    loadUnlocks();
+    // Refresh unlocks every 15s so the admin sees them quickly
+    const t = setInterval(loadUnlocks, 15000);
+    return () => clearInterval(t);
   }, []);
+
+  const acknowledge = async (id: string) => {
+    await supabase.from("reward_unlocks").update({ acknowledged: true }).eq("id", id);
+    setUnlocks((prev) => prev.map((u) => (u.id === id ? { ...u, acknowledged: true } : u)));
+  };
+
+  const acknowledgeAll = async () => {
+    const ids = unlocks.filter((u) => !u.acknowledged).map((u) => u.id);
+    if (!ids.length) return;
+    await supabase.from("reward_unlocks").update({ acknowledged: true }).in("id", ids);
+    toast.success("All unlock notifications cleared");
+    loadUnlocks();
+  };
 
   if (!s) return <div className="py-10 text-center text-sm text-muted-foreground">Loading…</div>;
 
   const cards = [
-    { label: "Visits today", value: s.visitsToday, icon: Eye, color: "text-primary" },
-    { label: "Conversion", value: `${s.conversionRate.toFixed(1)}%`, icon: Target, color: "text-green-400" },
-    { label: "Total visits", value: s.visitsTotal, icon: Activity, color: "text-primary" },
     { label: "Total orders", value: s.totalOrders, icon: ShoppingCart, color: "text-primary" },
     { label: "Pending", value: s.pendingOrders, icon: Clock, color: "text-yellow-400" },
     { label: "Completed", value: s.completedOrders, icon: CheckCircle, color: "text-green-400" },
+    { label: "Conversion", value: `${s.conversionRate.toFixed(1)}%`, icon: Target, color: "text-green-400" },
     { label: "Active subs", value: s.activeSubs, icon: Users, color: "text-primary" },
     { label: "Expiring ≤7d", value: s.expiringSoon, icon: AlertCircle, color: "text-yellow-400" },
     { label: "Revenue", value: `K${s.revenue.toFixed(0)}`, icon: DollarSign, color: "text-green-400" },
     { label: "Best seller", value: s.bestSeller, icon: TrendingUp, color: "text-primary" },
   ];
 
+  const newUnlocks = unlocks.filter((u) => !u.acknowledged);
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (
           <div key={c.label} className="rounded-2xl border border-border gradient-card p-4">
             <div className="flex items-center justify-between">
@@ -130,8 +148,57 @@ export function OverviewTab() {
         ))}
       </div>
 
+      {/* Reward unlock notifications */}
       <div className="rounded-2xl border border-border gradient-card p-6">
-        <h3 className="font-display text-lg font-bold">Visits vs orders (14 days)</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Bell className="h-4 w-4 text-primary" />
+              {newUnlocks.length > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
+                </span>
+              )}
+            </div>
+            <h3 className="font-display text-lg font-bold">Reward unlocks</h3>
+            {newUnlocks.length > 0 && (
+              <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
+                {newUnlocks.length} NEW
+              </span>
+            )}
+          </div>
+          {newUnlocks.length > 0 && (
+            <Button size="sm" variant="outline" onClick={acknowledgeAll}>Mark all read</Button>
+          )}
+        </div>
+        <ul className="mt-4 divide-y divide-border">
+          {unlocks.length === 0 && <li className="py-3 text-sm text-muted-foreground">No reward unlocks yet.</li>}
+          {unlocks.slice(0, 8).map((u) => (
+            <li key={u.id} className={`flex items-center justify-between gap-3 py-3 ${!u.acknowledged ? "" : "opacity-60"}`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">
+                    {u.customer_name || u.customer_phone} unlocked <span className="text-primary">{u.tier_label}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {u.tier_points} pts · {u.customer_phone} · {new Date(u.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              {!u.acknowledged && (
+                <Button size="sm" variant="ghost" onClick={() => acknowledge(u.id)}>Mark read</Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded-2xl border border-border gradient-card p-6">
+        <h3 className="font-display text-lg font-bold">Orders vs completed (14 days)</h3>
         <div className="mt-4 h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={s.trend}>
@@ -139,8 +206,8 @@ export function OverviewTab() {
               <XAxis dataKey="date" stroke="oklch(0.55 0 0)" fontSize={11} />
               <YAxis stroke="oklch(0.55 0 0)" fontSize={11} allowDecimals={false} />
               <Tooltip contentStyle={{ background: "oklch(0.07 0 0)", border: "1px solid oklch(0.18 0 0)", borderRadius: 12 }} />
-              <Line type="monotone" dataKey="visits" stroke="oklch(0.7 0.18 145)" strokeWidth={2} dot={{ r: 2 }} name="Visits" />
               <Line type="monotone" dataKey="orders" stroke="oklch(0.628 0.258 25.5)" strokeWidth={2.5} dot={{ r: 3 }} name="Orders" />
+              <Line type="monotone" dataKey="completed" stroke="oklch(0.7 0.18 145)" strokeWidth={2} dot={{ r: 2 }} name="Completed" />
             </LineChart>
           </ResponsiveContainer>
         </div>
