@@ -3,11 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CheckCircle2, MessageCircle, Loader2 } from "lucide-react";
 import { WHATSAPP_PRIMARY, waLink, orderMessage } from "@/lib/whatsapp";
+import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
 import { z } from "zod";
 
 type Service = {
@@ -66,39 +66,8 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
       return;
     }
 
-    // Award 5 points for placing an order + remember phone for rewards section
-    try {
-      localStorage.setItem("axx_customer_phone", parsed.data.customer_phone);
-      await supabase.rpc("award_points", {
-        _phone: parsed.data.customer_phone,
-        _name: parsed.data.customer_name,
-        _delta: 5,
-        _reason: `Subscribed to ${service.name}`,
-      });
-
-      // If they used a referral code, give the referrer 10 points too
-      if (parsed.data.referral_code) {
-        const { data: ref } = await supabase
-          .from("referrals")
-          .select("owner_phone, owner_name, uses_count")
-          .eq("code", parsed.data.referral_code)
-          .maybeSingle();
-        if (ref) {
-          await supabase.rpc("award_points", {
-            _phone: ref.owner_phone,
-            _name: ref.owner_name,
-            _delta: 10,
-            _reason: `Friend used referral code ${parsed.data.referral_code}`,
-          });
-          await supabase
-            .from("referrals")
-            .update({ uses_count: (ref.uses_count ?? 0) + 1 })
-            .eq("code", parsed.data.referral_code);
-        }
-      }
-    } catch {
-      /* points are best-effort */
-    }
+    // Remember the customer + referral code for later (points are awarded on completion, not now)
+    rememberCustomer(parsed.data.customer_name, parsed.data.customer_phone);
 
     setDone(true);
   };
@@ -128,11 +97,11 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
             <form onSubmit={handleSubmit} className="space-y-4 pt-2">
               <div>
                 <Label htmlFor="customer_name">Full name *</Label>
-                <Input id="customer_name" name="customer_name" required maxLength={80} />
+                <Input id="customer_name" name="customer_name" required maxLength={80} defaultValue={getRememberedName()} />
               </div>
               <div>
                 <Label htmlFor="customer_phone">WhatsApp number *</Label>
-                <Input id="customer_phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} />
+                <Input id="customer_phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} defaultValue={getRememberedPhone()} />
               </div>
               <div>
                 <Label htmlFor="referral_code">Referral code (optional)</Label>
