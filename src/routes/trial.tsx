@@ -10,6 +10,7 @@ import { Sparkles, Loader2, CheckCircle2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { WHATSAPP_PRIMARY, waLink, orderMessage } from "@/lib/whatsapp";
+import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
 
 export const Route = createFileRoute("/trial")({
   head: () => ({
@@ -78,15 +79,8 @@ function TrialPage() {
       toast.error("Could not start trial. Please try WhatsApp.");
       return;
     }
-    try {
-      localStorage.setItem("axx_customer_phone", parsed.data.customer_phone);
-      await supabase.rpc("award_points", {
-        _phone: parsed.data.customer_phone,
-        _name: parsed.data.customer_name,
-        _delta: 5,
-        _reason: `Started free trial — ${svc.name}`,
-      });
-    } catch {}
+    // Remember user, but DO NOT award points for free trial
+    rememberCustomer(parsed.data.customer_name, parsed.data.customer_phone);
     setDone({ name: svc.name });
   };
 
@@ -119,11 +113,11 @@ function TrialPage() {
               </div>
               <div>
                 <Label htmlFor="t-name">Full name *</Label>
-                <Input id="t-name" name="customer_name" required maxLength={80} />
+                <Input id="t-name" name="customer_name" required maxLength={80} defaultValue={getRememberedName()} />
               </div>
               <div>
                 <Label htmlFor="t-phone">WhatsApp number *</Label>
-                <Input id="t-phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} />
+                <Input id="t-phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} defaultValue={getRememberedPhone()} />
               </div>
               <Button
                 type="submit"
