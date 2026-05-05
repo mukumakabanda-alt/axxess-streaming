@@ -7,8 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, Copy, Trash2, Pencil, MessageSquare, Plus } from "lucide-react";
+import { Search, Copy, Trash2, Pencil, MessageSquare, Plus, Sparkles } from "lucide-react";
 import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
+import { Switch } from "@/components/ui/switch";
+import { recordRewardUnlocks } from "@/lib/rewards";
 
 type Order = {
   id: string;
@@ -68,11 +70,11 @@ export function OrdersTab() {
   }), [items, q, statusF, serviceF]);
 
   const updateStatus = async (id: string, status: Order["status"]) => {
+    const o = items.find((x) => x.id === id);
     const { error } = await supabase.from("orders").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) return toast.error(error.message);
 
     if (status === "approved" || status === "completed") {
-      const o = items.find((x) => x.id === id);
       if (o) {
         // Avoid duplicate subscription
         const { data: existing } = await supabase
@@ -96,7 +98,67 @@ export function OrdersTab() {
         }
       }
     }
+
+    // Award points ONLY when status becomes "completed" AND it's a paid order (not a free trial)
+    if (status === "completed" && o && Number(o.price_snapshot) > 0) {
+      const { data: prev } = await supabase
+        .from("customer_points")
+        .select("points")
+        .eq("customer_phone", o.customer_phone)
+        .maybeSingle();
+      const prevPoints = prev?.points ?? 0;
+      const { data: newTotal } = await supabase.rpc("award_points", {
+        _phone: o.customer_phone,
+        _name: o.customer_name,
+        _delta: 5,
+        _reason: `Subscribed to ${o.service_name_snapshot}`,
+      });
+      const newPoints = (newTotal as number) ?? prevPoints + 5;
+      await recordRewardUnlocks(o.customer_phone, o.customer_name, prevPoints, newPoints);
+
+      // Award referrer 10 pts if referral_code present (also gated on completion)
+      if (o.referral_code) {
+        const { data: ref } = await supabase
+          .from("referrals")
+          .select("owner_phone, owner_name, uses_count")
+          .eq("code", o.referral_code)
+          .maybeSingle();
+        if (ref) {
+          const { data: refPrev } = await supabase
+            .from("customer_points").select("points").eq("customer_phone", ref.owner_phone).maybeSingle();
+          const refPrevPts = refPrev?.points ?? 0;
+          const { data: refNew } = await supabase.rpc("award_points", {
+            _phone: ref.owner_phone,
+            _name: ref.owner_name,
+            _delta: 10,
+            _reason: `Friend used referral code ${o.referral_code}`,
+          });
+          await recordRewardUnlocks(ref.owner_phone, ref.owner_name, refPrevPts, (refNew as number) ?? refPrevPts + 10);
+          await supabase.from("referrals")
+            .update({ uses_count: (ref.uses_count ?? 0) + 1 })
+            .eq("code", o.referral_code);
+        }
+      }
+    }
+
     toast.success(`Marked ${status}`);
+    load();
+  };
+
+  const toggleTrial = async (o: Order, makeTrial: boolean) => {
+    const days = makeTrial ? 2 : 30;
+    const expires = new Date(); expires.setDate(expires.getDate() + days);
+    const newNotes = makeTrial
+      ? (o.notes?.includes("[FREE 2-DAY TRIAL]") ? o.notes : `[FREE 2-DAY TRIAL] ${o.notes ?? ""}`.trim())
+      : (o.notes ?? "").replace("[FREE 2-DAY TRIAL]", "").trim() || null;
+    const newPrice = makeTrial ? 0 : o.price_snapshot;
+    await supabase.from("orders").update({
+      duration_days: days,
+      expires_at: expires.toISOString(),
+      notes: newNotes,
+      price_snapshot: newPrice,
+    }).eq("id", o.id);
+    toast.success(makeTrial ? "Converted to free trial" : "Converted to normal order");
     load();
   };
 
