@@ -127,7 +127,7 @@ function TrialPage() {
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start Free Trial"}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                Trial lasts 2 days. No card required.
+                Trial lasts 2 days. No card required. Points are earned only on paid subscriptions.
               </p>
             </form>
           ) : (
