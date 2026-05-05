@@ -4,14 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Award, Lock, Check, Sparkles, Loader2 } from "lucide-react";
+import { REWARD_TIERS, recordRewardUnlocks } from "@/lib/rewards";
+import { showRewardUnlock } from "./RewardUnlockToast";
 
-const REWARDS = [
-  { points: 5, label: "+2 days bonus" },
-  { points: 15, label: "Loyalty Gold Badge" },
-  { points: 30, label: "K5 off next subscription" },
-  { points: 50, label: "Unlock Premium Bundle" },
-  { points: 100, label: "Free month" },
-];
+const REWARDS = REWARD_TIERS.map((r) => ({
+  points: r.points,
+  label: r.points === 50 ? "Unlock Premium Bundle" : r.label,
+}));
 
 const STORAGE_KEY = "axx_customer_phone";
 
@@ -23,6 +22,7 @@ export function PointsRewards() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [burstKey, setBurstKey] = useState(0);
   const prevPointsRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -41,10 +41,17 @@ export function PointsRewards() {
       .eq("customer_phone", p.trim())
       .maybeSingle();
     const newPoints = data?.points ?? 0;
+    const prev = prevPointsRef.current;
     setPoints(newPoints);
     setName(data?.customer_name ?? "");
     setLoaded(true);
     setLoading(false);
+
+    // If points went up while user is on the page, check for tier unlocks
+    if (prev !== null && newPoints > prev) {
+      const unlocks = await recordRewardUnlocks(p.trim(), data?.customer_name ?? null, prev, newPoints);
+      unlocks.forEach((u) => showRewardUnlock(u.points, u.label));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,7 +78,9 @@ export function PointsRewards() {
     const t = setTimeout(() => setDisplayPct(pct), 80);
     if (prevPointsRef.current !== null && points > prevPointsRef.current) {
       setCelebrate(true);
-      const c = setTimeout(() => setCelebrate(false), 1800);
+      setBurstKey((k) => k + 1);
+      const c = setTimeout(() => setCelebrate(false), 2400);
+      prevPointsRef.current = points;
       return () => { clearTimeout(t); clearTimeout(c); };
     }
     prevPointsRef.current = points;
@@ -125,26 +134,40 @@ export function PointsRewards() {
           ) : (
             <div className="relative">
               {celebrate && (
-                <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center overflow-hidden">
-                  {Array.from({ length: 14 }).map((_, i) => (
+                <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+                  {/* Confetti rain */}
+                  {Array.from({ length: 28 }).map((_, i) => (
                     <span
-                      key={i}
-                      className="absolute h-2 w-2 rounded-sm animate-confetti"
+                      key={`c-${burstKey}-${i}`}
+                      className="absolute h-2.5 w-1.5 rounded-sm animate-confetti"
                       style={{
-                        left: `${10 + (i * 6)}%`,
-                        background: ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#a855f7"][i % 5],
-                        animationDelay: `${i * 60}ms`,
+                        left: `${4 + i * 3.4}%`,
+                        background: ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#a855f7", "#ec4899"][i % 6],
+                        animationDelay: `${i * 35}ms`,
                       }}
                     />
                   ))}
+                  {/* Radial burst rings around the points number */}
+                  <span
+                    key={`r1-${burstKey}`}
+                    className="absolute left-1/2 top-12 -translate-x-1/2 h-24 w-24 rounded-full border-2 border-primary/70 animate-burst-ring"
+                  />
+                  <span
+                    key={`r2-${burstKey}`}
+                    className="absolute left-1/2 top-12 -translate-x-1/2 h-24 w-24 rounded-full border border-primary/40 animate-burst-ring"
+                    style={{ animationDelay: "180ms" }}
+                  />
                 </div>
               )}
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                    {name ? `Hi, ${name}` : phone}
+                    {name ? `Hi, ${name} 👋` : phone}
                   </p>
-                  <p className={`mt-1 font-display text-5xl font-bold text-gradient-red ${celebrate ? "animate-bounce" : ""}`}>
+                  <p
+                    key={`pts-${points}`}
+                    className={`mt-1 font-display text-6xl font-bold text-gradient-red ${celebrate ? "animate-points-pop" : ""}`}
+                  >
                     {points} <span className="text-2xl text-muted-foreground">pts</span>
                   </p>
                 </div>
@@ -153,13 +176,15 @@ export function PointsRewards() {
                 </button>
               </div>
 
-              {/* Progress bar */}
+              {/* Progress bar with shimmer */}
               <div className="mt-6">
-                <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
+                <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary border border-border">
                   <div
-                    className="h-full bg-gradient-to-r from-primary to-primary-glow shadow-glow-red transition-all duration-1000 ease-out"
+                    className="relative h-full overflow-hidden bg-gradient-to-r from-primary via-primary-glow to-primary shadow-glow-red transition-all duration-[1400ms] ease-[cubic-bezier(.34,1.56,.64,1)]"
                     style={{ width: `${displayPct}%` }}
-                  />
+                  >
+                    <div className="absolute inset-0 bar-shimmer" />
+                  </div>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   {points >= 100 ? "🏆 Max tier reached!" : `${100 - points} pts to free month`}

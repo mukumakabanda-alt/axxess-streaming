@@ -209,6 +209,7 @@ export type Database = {
           is_approved: boolean
           message: string
           name: string
+          rating: number | null
           screenshot_url: string | null
         }
         Insert: {
@@ -217,6 +218,7 @@ export type Database = {
           is_approved?: boolean
           message: string
           name: string
+          rating?: number | null
           screenshot_url?: string | null
         }
         Update: {
@@ -225,6 +227,7 @@ export type Database = {
           is_approved?: boolean
           message?: string
           name?: string
+          rating?: number | null
           screenshot_url?: string | null
         }
         Relationships: []
@@ -330,6 +333,36 @@ export type Database = {
           service_name?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reward_unlocks: {
+        Row: {
+          acknowledged: boolean
+          created_at: string
+          customer_name: string | null
+          customer_phone: string
+          id: string
+          tier_label: string
+          tier_points: number
+        }
+        Insert: {
+          acknowledged?: boolean
+          created_at?: string
+          customer_name?: string | null
+          customer_phone: string
+          id?: string
+          tier_label: string
+          tier_points: number
+        }
+        Update: {
+          acknowledged?: boolean
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string
+          id?: string
+          tier_label?: string
+          tier_points?: number
         }
         Relationships: []
       }

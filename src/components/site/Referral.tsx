@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Gift, Copy, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
 
 const schema = z.object({
   owner_name: z.string().trim().min(2).max(80),
@@ -44,6 +45,7 @@ export function Referral() {
       toast.error("Could not generate link. Try again.");
       return;
     }
+    rememberCustomer(parsed.data.owner_name, parsed.data.owner_phone);
     setCode(newCode);
     toast.success("Your referral link is ready!");
   };
@@ -71,11 +73,11 @@ export function Referral() {
           <form onSubmit={handleSubmit} className="mt-8 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-1">
               <Label htmlFor="owner_name">Your name</Label>
-              <Input id="owner_name" name="owner_name" required maxLength={80} />
+              <Input id="owner_name" name="owner_name" required maxLength={80} defaultValue={getRememberedName()} />
             </div>
             <div className="sm:col-span-1">
               <Label htmlFor="owner_phone">WhatsApp number</Label>
-              <Input id="owner_phone" name="owner_phone" placeholder="+260 ..." required maxLength={20} />
+              <Input id="owner_phone" name="owner_phone" placeholder="+260 ..." required maxLength={20} defaultValue={getRememberedPhone()} />
             </div>
             <Button
               type="submit"

@@ -5,6 +5,7 @@ import { SiteHeader } from "./SiteHeader";
 import { BottomNav } from "./BottomNav";
 import { WhatsAppFab } from "./WhatsAppFab";
 import { PageTransition } from "./PageTransition";
+import { RewardUnlockToaster } from "./RewardUnlockToast";
 
 const SESSION_KEY = "axx_session_id";
 const VISIT_LOGGED_KEY = "axx_visit_logged_paths";
@@ -68,6 +69,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         <PageTransition>{children}</PageTransition>
       </main>
       <WhatsAppFab />
+      <RewardUnlockToaster />
       <BottomNav />
     </div>
   );

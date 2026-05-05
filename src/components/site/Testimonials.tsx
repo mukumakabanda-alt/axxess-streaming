@@ -14,6 +14,9 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
+import { recordRewardUnlocks } from "@/lib/rewards";
+import { showRewardUnlock } from "./RewardUnlockToast";
 
 type Testimonial = {
   id: string;
@@ -28,12 +31,13 @@ type PublicMessage = {
   name: string;
   message: string;
   screenshot_url: string | null;
+  rating: number | null;
   created_at?: string;
 };
 
 type Card =
   | { kind: "t"; id: string; name: string; message: string; screenshot_url: string | null; rating: number | null }
-  | { kind: "m"; id: string; name: string; message: string; screenshot_url: string | null };
+  | { kind: "m"; id: string; name: string; message: string; screenshot_url: string | null; rating: number | null };
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name too short").max(80),
@@ -66,7 +70,7 @@ export function Testimonials() {
       supabase.from("testimonials").select("*").eq("is_approved", true).order("sort_order"),
       supabase
         .from("public_messages")
-        .select("id,name,message,screenshot_url,created_at")
+        .select("id,name,message,screenshot_url,created_at,rating")
         .eq("is_approved", true)
         .order("created_at", { ascending: false })
         .limit(12),
@@ -89,7 +93,7 @@ export function Testimonials() {
       screenshot_url: t.screenshot_url, rating: t.rating,
     })),
     ...messages.map<Card>((m) => ({
-      kind: "m", id: m.id, name: m.name, message: m.message, screenshot_url: m.screenshot_url,
+      kind: "m", id: m.id, name: m.name, message: m.message, screenshot_url: m.screenshot_url, rating: m.rating ?? null,
     })),
   ];
 
@@ -124,6 +128,7 @@ export function Testimonials() {
       name: parsed.data.name,
       message: finalMessage,
       screenshot_url: null,
+      rating: rating || null,
     });
 
     if (error) {
@@ -132,14 +137,25 @@ export function Testimonials() {
       return;
     }
 
+    rememberCustomer(parsed.data.name, parsed.data.phone);
+
     try {
-      localStorage.setItem("axx_customer_phone", parsed.data.phone);
-      await supabase.rpc("award_points", {
+      // Award points and check for reward unlocks
+      const { data: prev } = await supabase
+        .from("customer_points")
+        .select("points")
+        .eq("customer_phone", parsed.data.phone)
+        .maybeSingle();
+      const prevPoints = prev?.points ?? 0;
+      const { data: newTotal } = await supabase.rpc("award_points", {
         _phone: parsed.data.phone,
         _name: parsed.data.name,
         _delta: 5,
         _reason: "Left a review",
       });
+      const newPoints = (newTotal as number) ?? prevPoints + 5;
+      const unlocks = await recordRewardUnlocks(parsed.data.phone, parsed.data.name, prevPoints, newPoints);
+      unlocks.forEach((u) => showRewardUnlock(u.points, u.label));
       toast.success("Thanks! +5 points added to your rewards 🎉");
     } catch {
       toast.success("Thanks for the feedback!");
@@ -151,10 +167,12 @@ export function Testimonials() {
     load();
   };
 
-  const ratedItems = items.filter((t) => typeof t.rating === "number" && t.rating! > 0);
-  const avgRating = ratedItems.length
-    ? ratedItems.reduce((sum, t) => sum + (t.rating ?? 0), 0) / ratedItems.length
-    : 0;
+  // Combine all real ratings from both testimonials and public messages
+  const ratedTestimonials = items.filter((t) => typeof t.rating === "number" && t.rating! > 0);
+  const ratedMessages = messages.filter((m) => typeof m.rating === "number" && m.rating! > 0);
+  const allRatings = [...ratedTestimonials.map((t) => t.rating!), ...ratedMessages.map((m) => m.rating!)];
+  const avgRating = allRatings.length ? allRatings.reduce((a, b) => a + b, 0) / allRatings.length : 0;
+  const ratedCount = allRatings.length;
 
   return (
     <section id="reviews" className="px-4 py-16 sm:px-6 sm:py-20">
@@ -173,7 +191,7 @@ export function Testimonials() {
                 ))}
               </div>
               <span className="font-display text-sm font-bold">{avgRating.toFixed(1)}</span>
-              <span className="text-xs text-muted-foreground">({ratedItems.length} review{ratedItems.length === 1 ? "" : "s"})</span>
+              <span className="text-xs text-muted-foreground">({ratedCount} review{ratedCount === 1 ? "" : "s"})</span>
             </div>
           )}
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">

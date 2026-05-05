@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Sparkles, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { firstName, getRememberedName } from "@/lib/customer";
 import heroGlow from "@/assets/hero-glow.jpg";
 
 export function Hero() {
   const [videoUrl, setVideoUrl] = useState<string>("");
+  const [name, setName] = useState<string>("");
 
   useEffect(() => {
+    setName(firstName(getRememberedName()));
     supabase
       .from("site_settings")
       .select("value")
@@ -33,15 +36,15 @@ export function Hero() {
       <div className="mx-auto max-w-3xl px-4 pb-12 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-24">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
           <Sparkles className="h-3 w-3" />
-          Trusted by streamers across Zambia
+          {name ? `Welcome back, ${name} 👋` : "Trusted by streamers across Zambia"}
         </div>
 
         <h1 className="mt-5 font-display text-[2.6rem] font-bold leading-[1.05] tracking-tight sm:text-6xl">
-          Welcome to <span className="text-gradient-red">Axxess Streaming</span>
+          {name ? <>Glad to see you again, <span className="text-gradient-red">{name}</span></> : <>Welcome to <span className="text-gradient-red">Axxess Streaming</span></>}
         </h1>
 
         <p className="mx-auto mt-4 max-w-lg text-base text-muted-foreground sm:text-lg">
-          Premium entertainment for better prices.
+          {name ? "Your spot is saved. Pick up right where you left off." : "Premium entertainment for better prices."}
         </p>
 
         <div className="mt-7 flex flex-col items-center gap-2">
