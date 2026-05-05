@@ -209,6 +209,7 @@ export type Database = {
           is_approved: boolean
           message: string
           name: string
+          rating: number | null
           screenshot_url: string | null
         }
         Insert: {
@@ -217,6 +218,7 @@ export type Database = {
           is_approved?: boolean
           message: string
           name: string
+          rating?: number | null
           screenshot_url?: string | null
         }
         Update: {
@@ -225,6 +227,7 @@ export type Database = {
           is_approved?: boolean
           message?: string
           name?: string
+          rating?: number | null
           screenshot_url?: string | null
         }
         Relationships: []
