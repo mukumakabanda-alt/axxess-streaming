@@ -4,14 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Award, Lock, Check, Sparkles, Loader2 } from "lucide-react";
+import { REWARD_TIERS, recordRewardUnlocks } from "@/lib/rewards";
+import { showRewardUnlock } from "./RewardUnlockToast";
 
-const REWARDS = [
-  { points: 5, label: "+2 days bonus" },
-  { points: 15, label: "Loyalty Gold Badge" },
-  { points: 30, label: "K5 off next subscription" },
-  { points: 50, label: "Unlock Premium Bundle" },
-  { points: 100, label: "Free month" },
-];
+const REWARDS = REWARD_TIERS.map((r) => ({
+  points: r.points,
+  label: r.points === 50 ? "Unlock Premium Bundle" : r.label,
+}));
 
 const STORAGE_KEY = "axx_customer_phone";
 
@@ -23,6 +22,7 @@ export function PointsRewards() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [burstKey, setBurstKey] = useState(0);
   const prevPointsRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -41,10 +41,17 @@ export function PointsRewards() {
       .eq("customer_phone", p.trim())
       .maybeSingle();
     const newPoints = data?.points ?? 0;
+    const prev = prevPointsRef.current;
     setPoints(newPoints);
     setName(data?.customer_name ?? "");
     setLoaded(true);
     setLoading(false);
+
+    // If points went up while user is on the page, check for tier unlocks
+    if (prev !== null && newPoints > prev) {
+      const unlocks = await recordRewardUnlocks(p.trim(), data?.customer_name ?? null, prev, newPoints);
+      unlocks.forEach((u) => showRewardUnlock(u.points, u.label));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,7 +78,9 @@ export function PointsRewards() {
     const t = setTimeout(() => setDisplayPct(pct), 80);
     if (prevPointsRef.current !== null && points > prevPointsRef.current) {
       setCelebrate(true);
-      const c = setTimeout(() => setCelebrate(false), 1800);
+      setBurstKey((k) => k + 1);
+      const c = setTimeout(() => setCelebrate(false), 2400);
+      prevPointsRef.current = points;
       return () => { clearTimeout(t); clearTimeout(c); };
     }
     prevPointsRef.current = points;
