@@ -191,7 +191,7 @@ export function Testimonials() {
                 ))}
               </div>
               <span className="font-display text-sm font-bold">{avgRating.toFixed(1)}</span>
-              <span className="text-xs text-muted-foreground">({ratedItems.length} review{ratedItems.length === 1 ? "" : "s"})</span>
+              <span className="text-xs text-muted-foreground">({ratedCount} review{ratedCount === 1 ? "" : "s"})</span>
             </div>
           )}
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
