@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, Loader2 } from "lucide-react";
-import { OrderDialog } from "./OrderDialog";
+import { CheckoutFlow } from "./CheckoutFlow";
 import { PremiumBundleTeaser } from "./PremiumBundleTeaser";
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 
@@ -164,7 +164,7 @@ export function Pricing() {
         )}
       </div>
 
-      <OrderDialog service={selected} onClose={() => setSelected(null)} />
+      <CheckoutFlow service={selected} onClose={() => setSelected(null)} />
     </section>
   );
 }
