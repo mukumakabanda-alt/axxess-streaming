@@ -86,6 +86,80 @@ export type Database = {
         }
         Relationships: []
       }
+      netflix_accounts: {
+        Row: {
+          account_email: string
+          account_password: string
+          created_at: string
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_email: string
+          account_password: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_email?: string
+          account_password?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      netflix_profiles: {
+        Row: {
+          account_id: string
+          assigned_customer: string | null
+          created_at: string
+          id: string
+          pin: string | null
+          profile_index: number
+          profile_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          assigned_customer?: string | null
+          created_at?: string
+          id?: string
+          pin?: string | null
+          profile_index: number
+          profile_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          assigned_customer?: string | null
+          created_at?: string
+          id?: string
+          pin?: string | null
+          profile_index?: number
+          profile_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "netflix_profiles_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "netflix_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           admin_notes: string | null
