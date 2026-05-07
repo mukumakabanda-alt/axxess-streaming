@@ -191,7 +191,7 @@ export function PointsRewards() {
                     key={`pts-${points}`}
                     className={`mt-1 font-display text-6xl font-bold text-gradient-red ${celebrate ? "animate-points-pop" : ""}`}
                   >
-                    {points} <span className="text-2xl text-muted-foreground">pts</span>
+                    {displayPoints} <span className="text-2xl text-muted-foreground">pts</span>
                   </p>
                 </div>
                 <button onClick={reset} className="text-xs font-semibold text-muted-foreground hover:text-primary">
