@@ -1,9 +1,42 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Flame, AlertTriangle } from "lucide-react";
 import { CheckoutFlow } from "./CheckoutFlow";
 import { PremiumBundleTeaser } from "./PremiumBundleTeaser";
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
+
+// Daily rotating "social proof" counts per plan (deterministic, varied across plans).
+const DAILY_ORDER_COUNTS: Record<string, number[]> = {
+  netflix: [4, 6, 3, 7, 5, 8, 4, 6, 9, 5],
+  spotify: [3, 5, 7, 4, 6, 3, 8, 5, 4, 7],
+  bundle:  [2, 4, 3, 6, 5, 7, 4, 3, 6, 5],
+  default: [3, 5, 4, 6, 5, 7, 4, 6, 5, 4],
+};
+function ordersToday(slug: string) {
+  const key = slug.toLowerCase().includes("netflix") ? "netflix"
+    : slug.toLowerCase().includes("spotify") ? "spotify"
+    : slug.toLowerCase().includes("all") || slug.toLowerCase().includes("bundle") ? "bundle"
+    : "default";
+  const arr = DAILY_ORDER_COUNTS[key];
+  return arr[new Date().getDate() % arr.length];
+}
+// Real prices for anchor / "vs going direct" copy
+const REAL_PRICE: Record<string, number> = { netflix: 197, spotify: 117, bundle: 315 };
+function realPriceFor(slug: string, name: string): number | null {
+  const s = (slug + " " + name).toLowerCase();
+  if (s.includes("netflix")) return REAL_PRICE.netflix;
+  if (s.includes("spotify")) return REAL_PRICE.spotify;
+  if (s.includes("all") || s.includes("bundle")) return REAL_PRICE.bundle;
+  return null;
+}
+// TODO: UPDATE — manual scarcity values per plan
+const SLOTS_LEFT: Record<string, number> = { netflix: 3, bundle: 2 };
+function slotsLeftFor(slug: string, name: string): number | null {
+  const s = (slug + " " + name).toLowerCase();
+  if (s.includes("netflix")) return SLOTS_LEFT.netflix;
+  if (s.includes("all") || s.includes("bundle")) return SLOTS_LEFT.bundle;
+  return null;
+}
 
 type Service = {
   id: string;
