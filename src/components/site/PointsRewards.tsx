@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Award, Lock, Check, Sparkles, Loader2 } from "lucide-react";
 import { REWARD_TIERS, recordRewardUnlocks } from "@/lib/rewards";
+import { getUser } from "@/lib/customer";
 import { showRewardUnlock } from "./RewardUnlockToast";
 
 const REWARDS = REWARD_TIERS.map((r) => ({
@@ -26,12 +27,34 @@ export function PointsRewards() {
   const prevPointsRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+    if (typeof window === "undefined") return;
+    const u = getUser();
+    const stored = u?.whatsapp || localStorage.getItem(STORAGE_KEY);
     if (stored) {
       setPhone(stored);
       lookup(stored);
     }
   }, []);
+
+  // Animated count-up for points display
+  const [displayPoints, setDisplayPoints] = useState(0);
+  useEffect(() => {
+    if (points === displayPoints) return;
+    const start = displayPoints;
+    const diff = points - start;
+    const duration = 1800;
+    const t0 = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - t0) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplayPoints(Math.round(start + diff * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points]);
 
   const lookup = async (p: string) => {
     setLoading(true);
