@@ -32,7 +32,8 @@ const PAY_DETAILS = {
   airtel: { name: "Ngoma Audrian", number: "0574161927", label: "Airtel", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/40" },
 };
 
-const WA_NUMBER = "260765101494";
+import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
+const WA_NUMBER = WHATSAPP_PRIMARY;
 
 export function CheckoutFlow({ service, onClose }: { service: Service | null; onClose: () => void }) {
   const [step, setStep] = useState<Step>("details");
