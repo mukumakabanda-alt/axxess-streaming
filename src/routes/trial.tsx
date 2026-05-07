@@ -35,8 +35,13 @@ const schema = z.object({
 function TrialPage() {
   const [services, setServices] = useState<Svc[]>([]);
   const [serviceId, setServiceId] = useState("");
+  const [phone, setPhone] = useState(getRememberedPhone());
+  const [months, setMonths] = useState<number>(1);
+  const [customMonths, setCustomMonths] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ name: string } | null>(null);
+  const selectedSvc = services.find((s) => s.id === serviceId);
+  const effectiveMonths = months === 0 ? customMonths : months;
 
   useEffect(() => {
     supabase
