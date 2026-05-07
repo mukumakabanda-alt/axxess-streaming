@@ -208,7 +208,7 @@ export function Testimonials() {
           >
             <CarouselContent>
               {cards.map((c, idx) => (
-                <CarouselItem key={`${c.kind}-${c.id}`} className="basis-[88%] sm:basis-1/2 lg:basis-1/3">
+                <CarouselItem key={`${c.kind}-${c.id}`} className="basis-[72%] sm:basis-[40%] lg:basis-[28%]">
                   <article className="relative h-full overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card to-background/60 shadow-card transition-smooth hover:-translate-y-0.5">
                     {/* Instagram-style top bar */}
                     <div className={`h-1 w-full bg-gradient-to-r ${ACCENT_BARS[idx % ACCENT_BARS.length]}`} />
@@ -275,6 +275,13 @@ export function Testimonials() {
             </div>
           </Carousel>
         )}
+
+        {/* Full-width trust bar */}
+        <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4 text-center">
+          <p className="text-sm font-semibold text-emerald-200">
+            Join 60+ subscribers already streaming across Zambia 🇿🇲
+          </p>
+        </div>
 
         {/* Submit form — simple */}
         <div className="mx-auto mt-10 max-w-md rounded-3xl border border-border gradient-card p-6 sm:p-8">
