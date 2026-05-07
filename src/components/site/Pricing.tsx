@@ -142,7 +142,15 @@ export function Pricing() {
                     <p className="mt-1 text-sm text-muted-foreground">{s.description}</p>
                   )}
 
-                  <div className="mt-6 flex items-baseline gap-1">
+                  {(() => {
+                    const real = realPriceFor(s.slug, s.name);
+                    return real ? (
+                      <p className="mt-5 text-xs text-muted-foreground">
+                        <span className="line-through">K{real}/mo</span> direct price
+                      </p>
+                    ) : null;
+                  })()}
+                  <div className={`flex items-baseline gap-1 ${realPriceFor(s.slug, s.name) ? "mt-1" : "mt-6"}`}>
                     <span className="text-xs font-semibold text-muted-foreground">K</span>
                     <span
                       className="font-display text-5xl font-bold tracking-tight"
@@ -152,6 +160,11 @@ export function Pricing() {
                     </span>
                     <span className="text-sm text-muted-foreground">/month</span>
                   </div>
+                  {(s.badge === "Most Popular" || s.badge === "Best Value") && realPriceFor(s.slug, s.name) && (
+                    <p className="mt-1 text-xs font-bold text-emerald-400">
+                      Save K{realPriceFor(s.slug, s.name)! - Number(s.price_kwacha)}/mo vs going direct
+                    </p>
+                  )}
 
                   <ul className="mt-6 flex-1 space-y-2.5">
                     {s.features.map((f, i) => (
@@ -166,6 +179,15 @@ export function Pricing() {
                       </li>
                     ))}
                   </ul>
+
+                  {(() => {
+                    const slots = slotsLeftFor(s.slug, s.name);
+                    return !isFull && slots ? (
+                      <p className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-300">
+                        <AlertTriangle className="h-3 w-3" /> Only {slots} slots left
+                      </p>
+                    ) : null;
+                  })()}
 
                   {isFull ? (
                     <a
