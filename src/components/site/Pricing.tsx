@@ -209,6 +209,9 @@ export function Pricing() {
                       Get Access
                     </button>
                   )}
+                  <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Flame className="h-3 w-3 text-orange-400" /> {ordersToday(s.slug + s.name)} people ordered this today
+                  </p>
                 </div>
               );
             })}
