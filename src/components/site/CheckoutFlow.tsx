@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Lock, Unlock, Copy, Check, ArrowRight, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
-import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
 import { toast } from "sonner";
 
 type Service = { id: string; name: string; price_kwacha: number };
@@ -33,7 +32,7 @@ const PAY_DETAILS = {
   airtel: { name: "Ngoma Audrian", number: "0574161927", label: "Airtel", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/40" },
 };
 
-const WA_NUMBER = WHATSAPP_PRIMARY;
+const WA_NUMBER = "260765101494";
 
 export function CheckoutFlow({ service, onClose }: { service: Service | null; onClose: () => void }) {
   const [step, setStep] = useState<Step>("details");

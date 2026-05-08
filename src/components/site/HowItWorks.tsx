@@ -1,40 +1,36 @@
-import { MousePointer2, MessageSquare, Send, Smartphone, Unlock } from "lucide-react";
+import { ShoppingBag, CreditCard, Sparkles } from "lucide-react";
 
-const STEPS = [
-  { Icon: MousePointer2, t: "Pick your plan above", d: "Tap the plan you want — Netflix, Spotify, or All Access." },
-  { Icon: MessageSquare, t: "Enter your name & WhatsApp", d: "That's it. No card. No bank details." },
-  { Icon: Send, t: "We send payment instructions", d: "We'll WhatsApp you within 5 minutes with the exact amount and mobile money number to use." },
-  { Icon: Smartphone, t: "Send payment via mobile money", d: "Use MTN Mobile Money or Airtel Money. We'll tell you which number based on your network." },
-  { Icon: Unlock, t: "We activate your account", d: "Within 15 minutes of confirmed payment, your streaming access is live with login details on WhatsApp." },
+const steps = [
+  { icon: ShoppingBag, title: "Choose your service", body: "Pick Spotify, Netflix, or the All Access bundle." },
+  { icon: CreditCard, title: "Make payment", body: "Pay via Mobile Money or bank transfer — we'll guide you on WhatsApp." },
+  { icon: Sparkles, title: "Receive access details", body: "Login details delivered to your WhatsApp within minutes." },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how" className="px-4 py-16 sm:px-6">
-      <div className="mx-auto max-w-3xl">
+    <section id="how" className="px-4 py-20 sm:px-6">
+      <div className="mx-auto max-w-5xl">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">How it works</p>
-          <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">How to get access</h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground">
-            Five simple steps. No card. No stress. Live in under 15 minutes.
-          </p>
+          <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">3 simple steps</h2>
         </div>
-        <ol className="mt-10 space-y-3">
-          {STEPS.map(({ Icon, t, d }, i) => (
-            <li key={i} className="flex items-start gap-4 rounded-2xl border border-border gradient-card p-4 sm:p-5">
-              <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-                <Icon className="h-5 w-5" />
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                  {i + 1}
+
+        <div className="mt-12 grid gap-5 sm:grid-cols-3">
+          {steps.map((step, i) => (
+            <div key={i} className="group relative rounded-3xl border border-border gradient-card p-6 transition-smooth hover:border-primary/40">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <step.icon className="h-5 w-5" />
+                </div>
+                <span className="font-display text-3xl font-bold text-muted-foreground/30">
+                  0{i + 1}
                 </span>
               </div>
-              <div className="flex-1">
-                <p className="font-display text-base font-bold">{t}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">{d}</p>
-              </div>
-            </li>
+              <h3 className="mt-5 font-display text-lg font-bold">{step.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{step.body}</p>
+            </div>
           ))}
-        </ol>
+        </div>
       </div>
     </section>
   );

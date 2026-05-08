@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Award, Lock, Check, Sparkles, Loader2 } from "lucide-react";
 import { REWARD_TIERS, recordRewardUnlocks } from "@/lib/rewards";
-import { getUser } from "@/lib/customer";
 import { showRewardUnlock } from "./RewardUnlockToast";
 
 const REWARDS = REWARD_TIERS.map((r) => ({
@@ -27,34 +26,12 @@ export function PointsRewards() {
   const prevPointsRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const u = getUser();
-    const stored = u?.whatsapp || localStorage.getItem(STORAGE_KEY);
+    const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
     if (stored) {
       setPhone(stored);
       lookup(stored);
     }
   }, []);
-
-  // Animated count-up for points display
-  const [displayPoints, setDisplayPoints] = useState(0);
-  useEffect(() => {
-    if (points === displayPoints) return;
-    const start = displayPoints;
-    const diff = points - start;
-    const duration = 1800;
-    const t0 = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - t0) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setDisplayPoints(Math.round(start + diff * eased));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points]);
 
   const lookup = async (p: string) => {
     setLoading(true);
@@ -191,7 +168,7 @@ export function PointsRewards() {
                     key={`pts-${points}`}
                     className={`mt-1 font-display text-6xl font-bold text-gradient-red ${celebrate ? "animate-points-pop" : ""}`}
                   >
-                    {displayPoints} <span className="text-2xl text-muted-foreground">pts</span>
+                    {points} <span className="text-2xl text-muted-foreground">pts</span>
                   </p>
                 </div>
                 <button onClick={reset} className="text-xs font-semibold text-muted-foreground hover:text-primary">

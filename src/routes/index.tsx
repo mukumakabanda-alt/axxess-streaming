@@ -2,10 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site/SiteShell";
 import { Hero } from "@/components/site/Hero";
 import { Pricing } from "@/components/site/Pricing";
-import { HowItWorks } from "@/components/site/HowItWorks";
 import { PackageQuiz } from "@/components/site/PackageQuiz";
 import { Testimonials } from "@/components/site/Testimonials";
-import { RenewalBanner } from "@/components/site/RenewalBanner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,10 +20,8 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   return (
     <SiteShell>
-      <RenewalBanner />
       <Hero />
       <Pricing />
-      <HowItWorks />
       <PackageQuiz />
       <Testimonials />
     </SiteShell>
