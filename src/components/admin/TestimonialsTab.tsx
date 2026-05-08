@@ -67,17 +67,11 @@ export function TestimonialsTab() {
   };
 
   const approveMsg = async (m: M, approve: boolean) => {
-    const { error } = await supabase.from("public_messages").update({ is_approved: approve }).eq("id", m.id);
-    if (error) return toast.error("Could not update: " + error.message);
-    toast.success(approve ? "Review approved" : "Review hidden");
+    await supabase.from("public_messages").update({ is_approved: approve }).eq("id", m.id);
     load();
   };
   const removeMsg = async (id: string) => {
-    if (!confirm("Delete this review permanently?")) return;
-    const { error, count } = await supabase.from("public_messages").delete({ count: "exact" }).eq("id", id);
-    if (error) return toast.error("Could not delete: " + error.message);
-    if (!count) return toast.error("Delete blocked by permissions");
-    toast.success("Review deleted");
+    await supabase.from("public_messages").delete().eq("id", id);
     load();
   };
 
