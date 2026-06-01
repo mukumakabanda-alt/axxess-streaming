@@ -130,35 +130,7 @@ function TrialPage() {
               <div>
                 <Label htmlFor="t-phone">WhatsApp number *</Label>
                 <Input id="t-phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} value={phone} onChange={(e) => setPhone(e.target.value)} />
-                <NetworkPaymentHint phone={phone} />
               </div>
-
-              {/* Subtle duration upsell */}
-              {selectedSvc && (
-                <div className="rounded-2xl border border-dashed border-border bg-secondary/40 p-4">
-                  <p className="text-xs font-semibold text-muted-foreground">Want it for longer? <span className="text-foreground/60">(Optional)</span></p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {[1, 2, 3, 6].map((m) => (
-                      <button key={m} type="button" onClick={() => setMonths(m)}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${months === m ? "border-primary bg-primary/15 text-primary" : "border-border bg-card text-foreground/70 hover:border-primary/40"}`}>
-                        {m} month{m > 1 ? "s" : ""}
-                      </button>
-                    ))}
-                    <button type="button" onClick={() => setMonths(0)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${months === 0 ? "border-primary bg-primary/15 text-primary" : "border-border bg-card text-foreground/70 hover:border-primary/40"}`}>
-                      Custom
-                    </button>
-                  </div>
-                  {months === 0 && (
-                    <input type="number" min={1} max={12} value={customMonths}
-                      onChange={(e) => setCustomMonths(Math.max(1, Math.min(12, parseInt(e.target.value) || 1)))}
-                      className="mt-2 w-24 rounded-lg border border-border bg-card px-3 py-1.5 text-sm" />
-                  )}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Total if you continue: <span className="font-bold text-foreground">K{(selectedSvc.price_kwacha * effectiveMonths).toFixed(0)}</span> for {effectiveMonths} month{effectiveMonths > 1 ? "s" : ""}
-                  </p>
-                </div>
-              )}
 
               <Button
                 type="submit"
