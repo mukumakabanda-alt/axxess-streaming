@@ -21,20 +21,13 @@ function ordersToday(slug: string) {
   return arr[new Date().getDate() % arr.length];
 }
 // Real prices for anchor / "vs going direct" copy
-const REAL_PRICE: Record<string, number> = { netflix: 197, spotify: 117, bundle: 315 };
+const REAL_PRICE: Record<string, number> = { netflix: 197, spotify: 117, bundle: 315, prime: 170 };
 function realPriceFor(slug: string, name: string): number | null {
   const s = (slug + " " + name).toLowerCase();
   if (s.includes("netflix")) return REAL_PRICE.netflix;
   if (s.includes("spotify")) return REAL_PRICE.spotify;
+  if (s.includes("prime")) return REAL_PRICE.prime;
   if (s.includes("all") || s.includes("bundle")) return REAL_PRICE.bundle;
-  return null;
-}
-// TODO: UPDATE — manual scarcity values per plan
-const SLOTS_LEFT: Record<string, number> = { netflix: 3, bundle: 2 };
-function slotsLeftFor(slug: string, name: string): number | null {
-  const s = (slug + " " + name).toLowerCase();
-  if (s.includes("netflix")) return SLOTS_LEFT.netflix;
-  if (s.includes("all") || s.includes("bundle")) return SLOTS_LEFT.bundle;
   return null;
 }
 
