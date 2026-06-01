@@ -110,48 +110,11 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       await navigator.clipboard.writeText(payInfo.number);
       setCopied(true);
     } catch {}
-
-    // Zamtel: go straight to dialer (no app)
-    if (network === "zamtel") {
-      setLaunching(true);
-      setLaunchMsg("Opening dialer…");
-      goToDialer();
-      return;
-    }
-
-    // MTN / Airtel: try app deep link, fall back to dialer if no app handles it
-    const intent = network === "mtn" ? APP_INTENT.mtn : network === "airtel" ? APP_INTENT.airtel : null;
-    if (!intent) {
-      goToDialer();
-      return;
-    }
-
     setLaunching(true);
-    setLaunchMsg(network === "mtn" ? "Opening MTN MoMo app…" : "Opening MyAirtel app…");
-
-    const start = Date.now();
-    let handled = false;
-    const onHide = () => { if (document.hidden) handled = true; };
-    document.addEventListener("visibilitychange", onHide);
-
-    // Attempt the app launch
-    try { window.location.href = intent; } catch {}
-
-    // Fallback after 2.2s if the app didn't take over
-    setTimeout(() => {
-      document.removeEventListener("visibilitychange", onHide);
-      if (handled || Date.now() - start > 10000) {
-        // App opened — user returned later; move on
-        setLaunching(false);
-        setLaunchMsg(null);
-        setStep("checking");
-        runCheckSequence();
-        return;
-      }
-      setLaunchMsg("Opening app failed. Switching to dialer…");
-      setTimeout(goToDialer, 600);
-    }, 2200);
+    setLaunchMsg("Opening dialer…");
+    goToDialer();
   };
+
 
   const runCheckSequence = () => {
     setStatusText("Checking payment…");
