@@ -6,6 +6,8 @@ import { BottomNav } from "./BottomNav";
 import { WhatsAppFab } from "./WhatsAppFab";
 import { PageTransition } from "./PageTransition";
 import { RewardUnlockToaster } from "./RewardUnlockToast";
+import { WelcomeBackToast } from "./WelcomeBackToast";
+import { NewsPopup } from "./NewsPopup";
 
 const SESSION_KEY = "axx_session_id";
 const VISIT_LOGGED_KEY = "axx_visit_logged_paths";
@@ -70,6 +72,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       </main>
       <WhatsAppFab />
       <RewardUnlockToaster />
+      <WelcomeBackToast />
+      <NewsPopup />
       <BottomNav />
     </div>
   );

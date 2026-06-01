@@ -253,3 +253,12 @@
   100% { transform: translateX(120%); opacity: 0; }
 }
 .animate-reward-slide { animation: reward-slide 4.5s cubic-bezier(.4,0,.2,1) forwards; }
+
+@keyframes reveal-line {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes news-slide-up {
+  from { transform: translateY(120%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

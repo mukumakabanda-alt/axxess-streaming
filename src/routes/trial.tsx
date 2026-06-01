@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { WHATSAPP_PRIMARY, waLink, orderMessage } from "@/lib/whatsapp";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
+import { NetworkPaymentHint } from "@/components/site/NetworkPaymentHint";
+import { ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/trial")({
   head: () => ({
@@ -33,8 +35,13 @@ const schema = z.object({
 function TrialPage() {
   const [services, setServices] = useState<Svc[]>([]);
   const [serviceId, setServiceId] = useState("");
+  const [phone, setPhone] = useState(getRememberedPhone());
+  const [months, setMonths] = useState<number>(1);
+  const [customMonths, setCustomMonths] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ name: string } | null>(null);
+  const selectedSvc = services.find((s) => s.id === serviceId);
+  const effectiveMonths = months === 0 ? customMonths : months;
 
   useEffect(() => {
     supabase
@@ -96,6 +103,11 @@ function TrialPage() {
             <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
               No payment today. Pick a package, drop your name and WhatsApp, and we'll set you up.
             </p>
+            <div className="mx-auto mt-4 inline-flex items-center gap-3 rounded-full border border-border bg-card/60 px-4 py-2 text-[11px] font-semibold text-foreground/80 backdrop-blur">
+              <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-emerald-400" /> No card needed</span>
+              <span className="text-border">|</span>
+              <span>Cancel anytime</span>
+            </div>
           </div>
 
           {!done ? (
@@ -106,7 +118,7 @@ function TrialPage() {
                   <SelectTrigger><SelectValue placeholder="Choose a package" /></SelectTrigger>
                   <SelectContent>
                     {services.filter((s) => !s.is_full).map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      <SelectItem key={s.id} value={s.id}>{s.name} — K{s.price_kwacha}/mo</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -117,8 +129,37 @@ function TrialPage() {
               </div>
               <div>
                 <Label htmlFor="t-phone">WhatsApp number *</Label>
-                <Input id="t-phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} defaultValue={getRememberedPhone()} />
+                <Input id="t-phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <NetworkPaymentHint phone={phone} />
               </div>
+
+              {/* Subtle duration upsell */}
+              {selectedSvc && (
+                <div className="rounded-2xl border border-dashed border-border bg-secondary/40 p-4">
+                  <p className="text-xs font-semibold text-muted-foreground">Want it for longer? <span className="text-foreground/60">(Optional)</span></p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {[1, 2, 3, 6].map((m) => (
+                      <button key={m} type="button" onClick={() => setMonths(m)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${months === m ? "border-primary bg-primary/15 text-primary" : "border-border bg-card text-foreground/70 hover:border-primary/40"}`}>
+                        {m} month{m > 1 ? "s" : ""}
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => setMonths(0)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${months === 0 ? "border-primary bg-primary/15 text-primary" : "border-border bg-card text-foreground/70 hover:border-primary/40"}`}>
+                      Custom
+                    </button>
+                  </div>
+                  {months === 0 && (
+                    <input type="number" min={1} max={12} value={customMonths}
+                      onChange={(e) => setCustomMonths(Math.max(1, Math.min(12, parseInt(e.target.value) || 1)))}
+                      className="mt-2 w-24 rounded-lg border border-border bg-card px-3 py-1.5 text-sm" />
+                  )}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Total if you continue: <span className="font-bold text-foreground">K{(selectedSvc.price_kwacha * effectiveMonths).toFixed(0)}</span> for {effectiveMonths} month{effectiveMonths > 1 ? "s" : ""}
+                  </p>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 disabled={submitting || !serviceId}
@@ -127,7 +168,7 @@ function TrialPage() {
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start Free Trial"}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                Trial lasts 2 days. No card required. Points are earned only on paid subscriptions.
+                Trial lasts 2 days. Points are earned only on paid subscriptions.
               </p>
             </form>
           ) : (
