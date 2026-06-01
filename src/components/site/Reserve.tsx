@@ -8,7 +8,7 @@ import { Crown, Loader2, Lock, ShieldCheck, Star } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
-import { NetworkPaymentHint } from "./NetworkPaymentHint";
+
 
 type Svc = { id: string; name: string; is_full: boolean };
 
