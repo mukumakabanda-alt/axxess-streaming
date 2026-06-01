@@ -221,16 +221,29 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <p className="mt-1 text-sm text-muted-foreground">Pay <span className="font-bold text-foreground">K{Number(service.price_kwacha)}</span> for {service.name}</p>
               </div>
 
+              {/* Step summary */}
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className={`inline-flex items-center gap-1.5`}><span className={`h-1.5 w-1.5 rounded-full ${payInfo.dot}`} /> {payInfo.label} detected</span>
+                <span className="text-border">›</span>
+                <span>Pay K{Number(service.price_kwacha)}</span>
+                <span className="text-border">›</span>
+                <span>Confirm</span>
+              </div>
+
               <div className={`rounded-2xl border ${payInfo.border} ${payInfo.bg} p-5`}>
                 <p className={`text-xs font-bold uppercase tracking-wider ${payInfo.color}`}>{payInfo.label} Mobile Money</p>
                 <p className="mt-3 text-sm text-muted-foreground">Send payment to:</p>
                 <p className="mt-1 font-display text-3xl font-bold tracking-tight">{payInfo.number}</p>
                 <p className="mt-2 text-sm">Name: <span className="font-semibold">{payInfo.name}</span></p>
+                <p className="mt-3 text-xs text-muted-foreground">Amount: <span className="font-bold text-foreground">K{Number(service.price_kwacha)}</span></p>
               </div>
 
-              <Button onClick={copyAndDial} className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-glow-red hover:bg-primary/90">
-                {copied ? <><Check className="mr-2 h-5 w-5" /> Copied — Opening *115#</> : <><Copy className="mr-2 h-5 w-5" /> Copy Number & Proceed</>}
+              <Button onClick={payNow} disabled={launching} className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-glow-red hover:bg-primary/90">
+                {launching ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {launchMsg ?? "Opening…"}</> : <>Pay now <ArrowRight className="ml-1 h-4 w-4" /></>}
               </Button>
+              <p className="-mt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                {copied ? <><Check className="h-3 w-3 text-emerald-400" /> Number copied to clipboard</> : <><Copy className="h-3 w-3" /> Number will be copied automatically</>}
+              </p>
               <button onClick={() => { setStep("checking"); runCheckSequence(); }} className="block w-full text-center text-xs text-muted-foreground hover:text-foreground">
                 I've already paid — continue
               </button>
