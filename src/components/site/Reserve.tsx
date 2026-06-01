@@ -8,7 +8,7 @@ import { Crown, Loader2, Lock, ShieldCheck, Star } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
-import { NetworkPaymentHint } from "./NetworkPaymentHint";
+
 
 type Svc = { id: string; name: string; is_full: boolean };
 
@@ -166,7 +166,7 @@ export function Reserve() {
               <div>
                 <Label htmlFor="r-phone">WhatsApp number</Label>
                 <Input id="r-phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} value={phone} onChange={(e) => setPhone(e.target.value)} />
-                <NetworkPaymentHint phone={phone} />
+                
               </div>
             </div>
             <div>

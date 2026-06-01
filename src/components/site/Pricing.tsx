@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, Loader2, Flame, AlertTriangle } from "lucide-react";
+import { Check, Loader2, Flame } from "lucide-react";
 import { CheckoutFlow } from "./CheckoutFlow";
 import { PremiumBundleTeaser } from "./PremiumBundleTeaser";
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
@@ -21,20 +21,13 @@ function ordersToday(slug: string) {
   return arr[new Date().getDate() % arr.length];
 }
 // Real prices for anchor / "vs going direct" copy
-const REAL_PRICE: Record<string, number> = { netflix: 197, spotify: 117, bundle: 315 };
+const REAL_PRICE: Record<string, number> = { netflix: 197, spotify: 117, bundle: 315, prime: 170 };
 function realPriceFor(slug: string, name: string): number | null {
   const s = (slug + " " + name).toLowerCase();
   if (s.includes("netflix")) return REAL_PRICE.netflix;
   if (s.includes("spotify")) return REAL_PRICE.spotify;
+  if (s.includes("prime")) return REAL_PRICE.prime;
   if (s.includes("all") || s.includes("bundle")) return REAL_PRICE.bundle;
-  return null;
-}
-// TODO: UPDATE — manual scarcity values per plan
-const SLOTS_LEFT: Record<string, number> = { netflix: 3, bundle: 2 };
-function slotsLeftFor(slug: string, name: string): number | null {
-  const s = (slug + " " + name).toLowerCase();
-  if (s.includes("netflix")) return SLOTS_LEFT.netflix;
-  if (s.includes("all") || s.includes("bundle")) return SLOTS_LEFT.bundle;
   return null;
 }
 
@@ -145,8 +138,8 @@ export function Pricing() {
                   {(() => {
                     const real = realPriceFor(s.slug, s.name);
                     return real ? (
-                      <p className="mt-5 text-xs text-muted-foreground">
-                        <span className="line-through">K{real}/mo</span> direct price
+                      <p className="mt-5 text-sm font-semibold text-foreground/70">
+                        <span className="line-through decoration-primary/70 decoration-2">K{real}/mo</span> <span className="text-muted-foreground font-normal">direct price</span>
                       </p>
                     ) : null;
                   })()}
@@ -180,14 +173,8 @@ export function Pricing() {
                     ))}
                   </ul>
 
-                  {(() => {
-                    const slots = slotsLeftFor(s.slug, s.name);
-                    return !isFull && slots ? (
-                      <p className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-300">
-                        <AlertTriangle className="h-3 w-3" /> Only {slots} slots left
-                      </p>
-                    ) : null;
-                  })()}
+
+
 
                   {isFull ? (
                     <a
