@@ -138,8 +138,8 @@ export function Pricing() {
                   {(() => {
                     const real = realPriceFor(s.slug, s.name);
                     return real ? (
-                      <p className="mt-5 text-xs text-muted-foreground">
-                        <span className="line-through">K{real}/mo</span> direct price
+                      <p className="mt-5 text-sm font-semibold text-foreground/70">
+                        <span className="line-through decoration-primary/70 decoration-2">K{real}/mo</span> <span className="text-muted-foreground font-normal">direct price</span>
                       </p>
                     ) : null;
                   })()}
