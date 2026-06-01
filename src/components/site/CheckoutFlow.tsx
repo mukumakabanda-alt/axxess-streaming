@@ -202,6 +202,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                     <div className="mt-2 flex items-center gap-2 text-xs">
                       {network === "mtn" && <span className="rounded-full bg-yellow-500/15 px-2.5 py-1 font-semibold text-yellow-400">● MTN Number</span>}
                       {network === "airtel" && <span className="rounded-full bg-red-500/15 px-2.5 py-1 font-semibold text-red-400">● Airtel Number</span>}
+                      {network === "zamtel" && <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-400">● Zamtel Number</span>}
                       {network === "unknown" && phone.length >= 6 && <span className="text-muted-foreground">Network not detected — check number</span>}
                     </div>
                   )}
