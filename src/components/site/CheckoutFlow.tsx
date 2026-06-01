@@ -63,7 +63,12 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   }, [service]);
 
   const network = useMemo(() => detectNetwork(phone), [phone]);
-  const payInfo = network === "mtn" ? PAY_DETAILS.mtn : network === "airtel" ? PAY_DETAILS.airtel : null;
+  const payInfo =
+    network === "mtn" ? PAY_DETAILS.mtn :
+    network === "airtel" ? PAY_DETAILS.airtel :
+    network === "zamtel" ? PAY_DETAILS.zamtel : null;
+  const [launching, setLaunching] = useState(false);
+  const [launchMsg, setLaunchMsg] = useState<string | null>(null);
 
   if (!service) return null;
 
@@ -89,18 +94,63 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
     setStep("pay");
   };
 
-  const copyAndDial = async () => {
+  const goToDialer = () => {
+    window.location.href = "tel:*115%23";
+    setTimeout(() => {
+      setLaunching(false);
+      setLaunchMsg(null);
+      setStep("checking");
+      runCheckSequence();
+    }, 800);
+  };
+
+  const payNow = async () => {
     if (!payInfo) return;
     try {
       await navigator.clipboard.writeText(payInfo.number);
       setCopied(true);
     } catch {}
-    // Try to open dialer with USSD
-    window.location.href = "tel:*115%23";
+
+    // Zamtel: go straight to dialer (no app)
+    if (network === "zamtel") {
+      setLaunching(true);
+      setLaunchMsg("Opening dialer…");
+      goToDialer();
+      return;
+    }
+
+    // MTN / Airtel: try app deep link, fall back to dialer if no app handles it
+    const intent = network === "mtn" ? APP_INTENT.mtn : network === "airtel" ? APP_INTENT.airtel : null;
+    if (!intent) {
+      goToDialer();
+      return;
+    }
+
+    setLaunching(true);
+    setLaunchMsg(network === "mtn" ? "Opening MTN MoMo app…" : "Opening MyAirtel app…");
+
+    const start = Date.now();
+    let handled = false;
+    const onHide = () => { if (document.hidden) handled = true; };
+    document.addEventListener("visibilitychange", onHide);
+
+    // Attempt the app launch
+    try { window.location.href = intent; } catch {}
+
+    // Fallback after 2.2s if the app didn't take over
     setTimeout(() => {
-      setStep("checking");
-      runCheckSequence();
-    }, 600);
+      document.removeEventListener("visibilitychange", onHide);
+      if (handled || Date.now() - start > 10000) {
+        // App opened — user returned later; move on
+        setLaunching(false);
+        setLaunchMsg(null);
+        setStep("checking");
+        runCheckSequence();
+        return;
+      }
+      setLaunchMsg("Opening app failed. Switching to dialer…");
+      setTimeout(goToDialer, 600);
+    }, 2200);
   };
 
   const runCheckSequence = () => {
