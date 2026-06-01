@@ -166,7 +166,7 @@ export function Reserve() {
               <div>
                 <Label htmlFor="r-phone">WhatsApp number</Label>
                 <Input id="r-phone" name="customer_phone" placeholder="+260 ..." required maxLength={20} value={phone} onChange={(e) => setPhone(e.target.value)} />
-                <NetworkPaymentHint phone={phone} />
+                
               </div>
             </div>
             <div>
