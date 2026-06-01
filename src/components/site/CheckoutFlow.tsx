@@ -11,26 +11,34 @@ import { toast } from "sonner";
 
 type Service = { id: string; name: string; price_kwacha: number };
 type Step = "details" | "pay" | "checking" | "verify";
-type Network = "mtn" | "airtel" | "unknown";
+type Network = "mtn" | "airtel" | "zamtel" | "unknown";
 
 const MTN_PREFIXES = ["96", "76"];
-const AIRTEL_PREFIXES = ["97", "77", "95", "75"]; // 95/75 (Zamtel) routed to Airtel per spec
+const AIRTEL_PREFIXES = ["97", "77", "57"];
+const ZAMTEL_PREFIXES = ["95", "75"];
 
 function detectNetwork(raw: string): Network {
   const digits = raw.replace(/\D/g, "");
-  // strip leading 260 or 0
   let local = digits;
   if (local.startsWith("260")) local = local.slice(3);
   if (local.startsWith("0")) local = local.slice(1);
   const prefix = local.slice(0, 2);
   if (MTN_PREFIXES.includes(prefix)) return "mtn";
   if (AIRTEL_PREFIXES.includes(prefix)) return "airtel";
+  if (ZAMTEL_PREFIXES.includes(prefix)) return "zamtel";
   return "unknown";
 }
 
 const PAY_DETAILS = {
-  mtn: { name: "Stanley Kabanda", number: "0765101494", label: "MTN", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/40" },
-  airtel: { name: "Ngoma Audrian", number: "0574161927", label: "Airtel", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/40" },
+  mtn: { name: "Stanley Kabanda", number: "0765101494", label: "MTN", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/40", dot: "bg-yellow-400" },
+  airtel: { name: "Ngoma Audrian", number: "0574161927", label: "Airtel", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/40", dot: "bg-red-400" },
+  zamtel: { name: "Ngoma Audrian", number: "0574161927", label: "Zamtel", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/40", dot: "bg-emerald-400" },
+};
+
+// Android intent deep links — try app, fall back to dialer on timeout
+const APP_INTENT: Record<"mtn" | "airtel", string> = {
+  mtn: "intent://#Intent;scheme=mtnmomo;package=com.mtn.mobilemoney.zambia;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.mtn.mobilemoney.zambia;end",
+  airtel: "intent://#Intent;scheme=myairtel;package=com.myairtelapp;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.myairtelapp;end",
 };
 
 const WA_NUMBER = WHATSAPP_PRIMARY;
