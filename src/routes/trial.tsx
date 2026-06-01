@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { WHATSAPP_PRIMARY, waLink, orderMessage } from "@/lib/whatsapp";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
-import { NetworkPaymentHint } from "@/components/site/NetworkPaymentHint";
+
 import { ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/trial")({
