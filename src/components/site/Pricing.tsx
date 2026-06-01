@@ -173,14 +173,8 @@ export function Pricing() {
                     ))}
                   </ul>
 
-                  {(() => {
-                    const slots = slotsLeftFor(s.slug, s.name);
-                    return !isFull && slots ? (
-                      <p className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-300">
-                        <AlertTriangle className="h-3 w-3" /> Only {slots} slots left
-                      </p>
-                    ) : null;
-                  })()}
+
+
 
                   {isFull ? (
                     <a
