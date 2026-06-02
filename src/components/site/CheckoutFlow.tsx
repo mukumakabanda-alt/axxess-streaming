@@ -82,15 +82,16 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
 
     setSubmitting(true);
     rememberCustomer(name, phone);
+    const durationDays = 30 * months;
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+    expiresAt.setDate(expiresAt.getDate() + durationDays);
     await supabase.from("orders").insert({
       customer_name: name.trim(),
       customer_phone: phone.trim(),
       service_id: service.id,
-      service_name_snapshot: service.name,
-      price_snapshot: service.price_kwacha,
-      duration_days: 30,
+      service_name_snapshot: months > 1 ? `${service.name} (${months} months)` : service.name,
+      price_snapshot: totalPrice,
+      duration_days: durationDays,
       expires_at: expiresAt.toISOString(),
     });
     setSubmitting(false);
@@ -154,7 +155,10 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
               </div>
               <div className="rounded-2xl border border-border bg-card p-4">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">{service.name}</p>
-                <p className="mt-1 font-display text-3xl font-bold">K{Number(service.price_kwacha)}<span className="text-sm font-normal text-muted-foreground">/month</span></p>
+                <p className="mt-1 font-display text-3xl font-bold">K{totalPrice}<span className="text-sm font-normal text-muted-foreground">{months > 1 ? ` / ${months} months` : "/month"}</span></p>
+                {months > 1 && (
+                  <p className="mt-1 text-[11px] text-muted-foreground">K{Number(service.price_kwacha)} × {months} months</p>
+                )}
               </div>
               <div className="space-y-3">
                 <div>
@@ -172,6 +176,35 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                       {network === "unknown" && phone.length >= 6 && <span className="text-muted-foreground">Network not detected — check number</span>}
                     </div>
                   )}
+                </div>
+                {/* Duration upsell */}
+                <div>
+                  <Label>Duration</Label>
+                  <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+                    {[1, 2, 3, 6].map((m) => {
+                      const active = months === m;
+                      const save = m >= 3;
+                      return (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setMonths(m)}
+                          className={`relative rounded-xl border px-2 py-2 text-center transition-smooth ${
+                            active
+                              ? "border-primary bg-primary/10 text-foreground"
+                              : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                          }`}
+                        >
+                          <div className="text-sm font-bold leading-tight">{m}<span className="text-[10px] font-normal"> mo</span></div>
+                          <div className="text-[10px] leading-tight opacity-80">K{Number(service.price_kwacha) * m}</div>
+                          {save && active && (
+                            <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[8px] font-bold text-black">SAVE</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">Pay once, enjoy longer. No need to renew every month.</p>
                 </div>
               </div>
               <Button onClick={submitDetails} disabled={submitting} className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-glow-red hover:bg-primary/90">
