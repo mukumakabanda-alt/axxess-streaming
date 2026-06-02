@@ -157,7 +157,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">{service.name}</p>
                 <p className="mt-1 font-display text-3xl font-bold">K{totalPrice}<span className="text-sm font-normal text-muted-foreground">{months > 1 ? ` / ${months} months` : "/month"}</span></p>
                 {months > 1 && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">K{Number(service.price_kwacha)} × {months} months</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">K{totalPrice} × {months} months</p>
                 )}
               </div>
               <div className="space-y-3">
@@ -217,14 +217,14 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>
                 <h2 className="font-display text-2xl font-bold">Send Payment</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Pay <span className="font-bold text-foreground">K{Number(service.price_kwacha)}</span> for {service.name}</p>
+                <p className="mt-1 text-sm text-muted-foreground">Pay <span className="font-bold text-foreground">K{totalPrice}</span> for {service.name}</p>
               </div>
 
               {/* Step summary */}
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span className={`inline-flex items-center gap-1.5`}><span className={`h-1.5 w-1.5 rounded-full ${payInfo.dot}`} /> {payInfo.label} detected</span>
                 <span className="text-border">›</span>
-                <span>Pay K{Number(service.price_kwacha)}</span>
+                <span>Pay K{totalPrice}</span>
                 <span className="text-border">›</span>
                 <span>Confirm</span>
               </div>
@@ -234,7 +234,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <p className="mt-3 text-sm text-muted-foreground">Send payment to:</p>
                 <p className="mt-1 font-display text-3xl font-bold tracking-tight">{payInfo.number}</p>
                 <p className="mt-2 text-sm">Name: <span className="font-semibold">{payInfo.name}</span></p>
-                <p className="mt-3 text-xs text-muted-foreground">Amount: <span className="font-bold text-foreground">K{Number(service.price_kwacha)}</span></p>
+                <p className="mt-3 text-xs text-muted-foreground">Amount: <span className="font-bold text-foreground">K{totalPrice}</span></p>
               </div>
 
               <Button onClick={payNow} disabled={launching} className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-glow-red hover:bg-primary/90">
