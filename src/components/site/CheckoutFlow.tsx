@@ -157,7 +157,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">{service.name}</p>
                 <p className="mt-1 font-display text-3xl font-bold">K{totalPrice}<span className="text-sm font-normal text-muted-foreground">{months > 1 ? ` / ${months} months` : "/month"}</span></p>
                 {months > 1 && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">K{totalPrice} × {months} months</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">K{Number(service.price_kwacha)} × {months} months</p>
                 )}
               </div>
               <div className="space-y-3">
