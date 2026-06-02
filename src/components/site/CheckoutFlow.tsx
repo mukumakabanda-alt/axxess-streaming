@@ -47,6 +47,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   const [step, setStep] = useState<Step>("details");
   const [name, setName] = useState(getRememberedName());
   const [phone, setPhone] = useState(getRememberedPhone());
+  const [months, setMonths] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
@@ -57,6 +58,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       setStep("details");
       setName(getRememberedName());
       setPhone(getRememberedPhone());
+      setMonths(1);
       setCopied(false);
       setUnlocked(false);
     }
@@ -71,6 +73,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   const [launchMsg, setLaunchMsg] = useState<string | null>(null);
 
   if (!service) return null;
+  const totalPrice = Number(service.price_kwacha) * months;
 
   const submitDetails = async () => {
     if (name.trim().length < 2) return toast.error("Enter your name");
