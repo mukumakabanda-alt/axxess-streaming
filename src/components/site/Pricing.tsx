@@ -5,21 +5,6 @@ import { CheckoutFlow } from "./CheckoutFlow";
 import { PremiumBundleTeaser } from "./PremiumBundleTeaser";
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 
-// Daily rotating "social proof" counts per plan (deterministic, varied across plans).
-const DAILY_ORDER_COUNTS: Record<string, number[]> = {
-  netflix: [4, 6, 3, 7, 5, 8, 4, 6, 9, 5],
-  spotify: [3, 5, 7, 4, 6, 3, 8, 5, 4, 7],
-  bundle:  [2, 4, 3, 6, 5, 7, 4, 3, 6, 5],
-  default: [3, 5, 4, 6, 5, 7, 4, 6, 5, 4],
-};
-function ordersToday(slug: string) {
-  const key = slug.toLowerCase().includes("netflix") ? "netflix"
-    : slug.toLowerCase().includes("spotify") ? "spotify"
-    : slug.toLowerCase().includes("all") || slug.toLowerCase().includes("bundle") ? "bundle"
-    : "default";
-  const arr = DAILY_ORDER_COUNTS[key];
-  return arr[new Date().getDate() % arr.length];
-}
 // Real prices for anchor / "vs going direct" copy
 const REAL_PRICE: Record<string, number> = { netflix: 197, spotify: 117, bundle: 315, prime: 170 };
 function realPriceFor(slug: string, name: string): number | null {
