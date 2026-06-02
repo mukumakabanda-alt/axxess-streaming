@@ -34,6 +34,7 @@ export function Pricing() {
   const [services, setServices] = useState<Service[] | null>(null);
   const [selected, setSelected] = useState<Service | null>(null);
   const [bundleUnlocked, setBundleUnlocked] = useState(false);
+  const [ordersToday, setOrdersToday] = useState<Record<string, number>>({});
 
   useEffect(() => {
     supabase
@@ -50,7 +51,23 @@ export function Pricing() {
         );
       });
 
-    // Check unlock status
+    // Real "people ordered today" counts per service
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    supabase
+      .from("orders")
+      .select("service_id, service_name_snapshot")
+      .gte("created_at", startOfDay.toISOString())
+      .then(({ data }) => {
+        const counts: Record<string, number> = {};
+        (data ?? []).forEach((o: any) => {
+          const key = o.service_id || o.service_name_snapshot;
+          if (!key) return;
+          counts[key] = (counts[key] ?? 0) + 1;
+        });
+        setOrdersToday(counts);
+      });
+
     if (typeof window === "undefined") return;
     const phone = localStorage.getItem(POINTS_KEY);
     if (!phone) return;
@@ -181,9 +198,15 @@ export function Pricing() {
                       Get Access
                     </button>
                   )}
-                  <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-                    <Flame className="h-3 w-3 text-orange-400" /> {ordersToday(s.slug + s.name)} people ordered this today
-                  </p>
+                  {(() => {
+                    const count = ordersToday[s.id] ?? ordersToday[s.name] ?? 0;
+                    if (count <= 0) return null;
+                    return (
+                      <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                        <Flame className="h-3 w-3 text-orange-400" /> {count} {count === 1 ? "person" : "people"} ordered this today
+                      </p>
+                    );
+                  })()}
                 </div>
               );
             })}
