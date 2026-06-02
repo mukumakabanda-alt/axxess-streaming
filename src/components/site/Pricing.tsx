@@ -5,21 +5,6 @@ import { CheckoutFlow } from "./CheckoutFlow";
 import { PremiumBundleTeaser } from "./PremiumBundleTeaser";
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 
-// Daily rotating "social proof" counts per plan (deterministic, varied across plans).
-const DAILY_ORDER_COUNTS: Record<string, number[]> = {
-  netflix: [4, 6, 3, 7, 5, 8, 4, 6, 9, 5],
-  spotify: [3, 5, 7, 4, 6, 3, 8, 5, 4, 7],
-  bundle:  [2, 4, 3, 6, 5, 7, 4, 3, 6, 5],
-  default: [3, 5, 4, 6, 5, 7, 4, 6, 5, 4],
-};
-function ordersToday(slug: string) {
-  const key = slug.toLowerCase().includes("netflix") ? "netflix"
-    : slug.toLowerCase().includes("spotify") ? "spotify"
-    : slug.toLowerCase().includes("all") || slug.toLowerCase().includes("bundle") ? "bundle"
-    : "default";
-  const arr = DAILY_ORDER_COUNTS[key];
-  return arr[new Date().getDate() % arr.length];
-}
 // Real prices for anchor / "vs going direct" copy
 const REAL_PRICE: Record<string, number> = { netflix: 197, spotify: 117, bundle: 315, prime: 170 };
 function realPriceFor(slug: string, name: string): number | null {
@@ -49,6 +34,7 @@ export function Pricing() {
   const [services, setServices] = useState<Service[] | null>(null);
   const [selected, setSelected] = useState<Service | null>(null);
   const [bundleUnlocked, setBundleUnlocked] = useState(false);
+  const [ordersToday, setOrdersToday] = useState<Record<string, number>>({});
 
   useEffect(() => {
     supabase
@@ -65,7 +51,23 @@ export function Pricing() {
         );
       });
 
-    // Check unlock status
+    // Real "people ordered today" counts per service
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    supabase
+      .from("orders")
+      .select("service_id, service_name_snapshot")
+      .gte("created_at", startOfDay.toISOString())
+      .then(({ data }) => {
+        const counts: Record<string, number> = {};
+        (data ?? []).forEach((o: any) => {
+          const key = o.service_id || o.service_name_snapshot;
+          if (!key) return;
+          counts[key] = (counts[key] ?? 0) + 1;
+        });
+        setOrdersToday(counts);
+      });
+
     if (typeof window === "undefined") return;
     const phone = localStorage.getItem(POINTS_KEY);
     if (!phone) return;
@@ -105,7 +107,7 @@ export function Pricing() {
               return (
                 <div
                   key={s.id}
-                  className={`group relative flex flex-col overflow-hidden rounded-3xl border p-6 transition-smooth sm:p-8 gradient-card ${
+                  className={`group relative flex flex-col overflow-hidden rounded-3xl border p-5 transition-smooth sm:p-6 gradient-card ${
                     isFull ? "opacity-80" : "hover:-translate-y-1"
                   }`}
                   style={{
@@ -118,75 +120,77 @@ export function Pricing() {
                   }}
                 >
                   {isFull ? (
-                    <span className="absolute right-4 top-4 rounded-full bg-destructive px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-destructive-foreground">
+                    <span className="absolute right-4 top-4 rounded-full bg-destructive px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-destructive-foreground">
                       Full
                     </span>
                   ) : s.badge && (
                     <span
-                      className="absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
+                      className="absolute right-4 top-4 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                       style={{ color: buttonTextColor, backgroundColor: accentHex }}
                     >
                       {s.badge}
                     </span>
                   )}
 
-                  <h3 className="font-display text-2xl font-bold">{s.name}</h3>
+                  <h3 className="font-display text-xl font-bold">{s.name}</h3>
                   {s.description && (
-                    <p className="mt-1 text-sm text-muted-foreground">{s.description}</p>
+                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{s.description}</p>
                   )}
 
-                  {(() => {
-                    const real = realPriceFor(s.slug, s.name);
-                    return real ? (
-                      <p className="mt-5 text-sm font-semibold text-foreground/70">
-                        <span className="line-through decoration-primary/70 decoration-2">K{real}/mo</span> <span className="text-muted-foreground font-normal">direct price</span>
-                      </p>
-                    ) : null;
-                  })()}
-                  <div className={`flex items-baseline gap-1 ${realPriceFor(s.slug, s.name) ? "mt-1" : "mt-6"}`}>
-                    <span className="text-xs font-semibold text-muted-foreground">K</span>
-                    <span
-                      className="font-display text-5xl font-bold tracking-tight"
-                      style={{ color: accentHex }}
-                    >
-                      {Number(s.price_kwacha)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">/month</span>
+                  <div className="mt-4 flex items-end justify-between gap-3">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs font-semibold text-muted-foreground">K</span>
+                      <span
+                        className="font-display text-4xl font-bold tracking-tight leading-none"
+                        style={{ color: accentHex }}
+                      >
+                        {Number(s.price_kwacha)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">/mo</span>
+                    </div>
+                    {(() => {
+                      const real = realPriceFor(s.slug, s.name);
+                      return real ? (
+                        <div className="text-right">
+                          <p className="text-[11px] font-semibold text-foreground/70 leading-tight">
+                            <span className="line-through decoration-primary/70">K{real}</span>
+                            <span className="text-muted-foreground font-normal"> direct</span>
+                          </p>
+                          {(s.badge === "Most Popular" || s.badge === "Best Value") && (
+                            <p className="text-[10px] font-bold text-emerald-400 leading-tight">
+                              Save K{real - Number(s.price_kwacha)}/mo
+                            </p>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
-                  {(s.badge === "Most Popular" || s.badge === "Best Value") && realPriceFor(s.slug, s.name) && (
-                    <p className="mt-1 text-xs font-bold text-emerald-400">
-                      Save K{realPriceFor(s.slug, s.name)! - Number(s.price_kwacha)}/mo vs going direct
-                    </p>
-                  )}
 
-                  <ul className="mt-6 flex-1 space-y-2.5">
-                    {s.features.map((f, i) => (
-                      <li key={i} className="flex items-start gap-2.5 text-sm">
+                  <ul className="mt-5 flex-1 space-y-2">
+                    {s.features.slice(0, 4).map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[13px]">
                         <span
                           className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
                           style={{ backgroundColor: `color-mix(in oklab, ${accentHex} 18%, transparent)` }}
                         >
                           <Check className="h-2.5 w-2.5" style={{ color: accentHex }} />
                         </span>
-                        <span className="text-foreground/90">{f}</span>
+                        <span className="text-foreground/90 leading-snug">{f}</span>
                       </li>
                     ))}
                   </ul>
 
-
-
-
                   {isFull ? (
                     <a
                       href="/reserve"
-                      className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-smooth hover:bg-accent"
+                      className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground transition-smooth hover:bg-accent"
                     >
                       Reserve a slot
                     </a>
                   ) : (
                     <button
                       onClick={() => setSelected(s)}
-                      className="mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-smooth hover:opacity-90"
+                      className="mt-5 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-smooth hover:opacity-90"
                       style={{
                         backgroundColor: accentHex,
                         color: buttonTextColor,
@@ -196,9 +200,15 @@ export function Pricing() {
                       Get Access
                     </button>
                   )}
-                  <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-                    <Flame className="h-3 w-3 text-orange-400" /> {ordersToday(s.slug + s.name)} people ordered this today
-                  </p>
+                  {(() => {
+                    const count = ordersToday[s.id] ?? ordersToday[s.name] ?? 0;
+                    if (count <= 0) return null;
+                    return (
+                      <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                        <Flame className="h-3 w-3 text-orange-400" /> {count} {count === 1 ? "person" : "people"} ordered this today
+                      </p>
+                    );
+                  })()}
                 </div>
               );
             })}

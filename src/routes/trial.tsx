@@ -113,9 +113,11 @@ function TrialPage() {
                 <Select value={serviceId} onValueChange={setServiceId}>
                   <SelectTrigger><SelectValue placeholder="Choose a package" /></SelectTrigger>
                   <SelectContent>
-                    {services.filter((s) => !s.is_full).map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name} — K{s.price_kwacha}/mo</SelectItem>
-                    ))}
+                    {services
+                      .filter((s) => !s.is_full && !/all\s*access|bundle/i.test(s.name))
+                      .map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} — K{s.price_kwacha}/mo</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

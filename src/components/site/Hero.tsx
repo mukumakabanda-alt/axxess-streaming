@@ -7,9 +7,16 @@ import heroGlow from "@/assets/hero-glow.jpg";
 export function Hero() {
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [name, setName] = useState<string>("");
+  const [activeCount, setActiveCount] = useState<number | null>(null);
 
   useEffect(() => {
     setName(firstName(getRememberedName()));
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "completed")
+      .gt("expires_at", new Date().toISOString())
+      .then(({ count }) => setActiveCount(count ?? 0));
     supabase
       .from("site_settings")
       .select("value")
@@ -33,11 +40,11 @@ export function Hero() {
             <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
           </span>
-          60 active subscribers
+          {activeCount ?? "—"} active subscribers
         </div>
 
         <h1 className="mt-4 font-display text-[2.4rem] font-bold leading-[1.05] tracking-tight sm:text-6xl">
-          STREAM MORE. <span className="text-gradient-red">SPEND LESS.</span> LIVE BETTER.
+          THE <span className="text-gradient-red">ENTERTAINMENT</span> YOU DESERVE.
         </h1>
 
         <p className="mx-auto mt-4 max-w-lg text-base text-muted-foreground sm:text-lg">

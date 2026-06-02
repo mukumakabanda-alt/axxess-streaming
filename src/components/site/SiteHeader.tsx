@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/axxess-logo.jpg";
+import logoAsset from "@/assets/axxess-entertainment-logo.png.asset.json";
+const logo = logoAsset.url;
 
 export function SiteHeader() {
   return (
