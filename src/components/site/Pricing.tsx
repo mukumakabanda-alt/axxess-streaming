@@ -28,7 +28,6 @@ type Service = {
   is_full: boolean | null;
 };
 
-const POINTS_KEY = "axx_customer_phone";
 
 export function Pricing() {
   const [services, setServices] = useState<Service[] | null>(null);
