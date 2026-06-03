@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, Loader2, Flame } from "lucide-react";
 import { CheckoutFlow } from "./CheckoutFlow";
-import { PremiumBundleTeaser } from "./PremiumBundleTeaser";
+
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 
 // Real prices for anchor / "vs going direct" copy
