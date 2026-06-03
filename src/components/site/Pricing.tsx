@@ -67,15 +67,6 @@ export function Pricing() {
         setOrdersToday(counts);
       });
 
-    if (typeof window === "undefined") return;
-    const phone = localStorage.getItem(POINTS_KEY);
-    if (!phone) return;
-    supabase
-      .from("customer_points")
-      .select("points")
-      .eq("customer_phone", phone)
-      .maybeSingle()
-      .then(({ data }) => setBundleUnlocked((data?.points ?? 0) >= 50));
   }, []);
 
   return (
