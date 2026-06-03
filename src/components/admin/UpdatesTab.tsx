@@ -42,7 +42,10 @@ export function UpdatesTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <NewsAnalytics />
+
+
       <div className="flex justify-between">
         <h3 className="font-display text-lg font-bold">News & updates</h3>
         <Button onClick={() => setShowNew(true)} className="rounded-full bg-primary"><Plus className="mr-1 h-4 w-4" /> New post</Button>
