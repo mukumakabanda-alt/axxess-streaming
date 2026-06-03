@@ -30,10 +30,10 @@ function NewsPage() {
 
           <div className="mt-8 overflow-hidden rounded-lg">
             <iframe
-              src="https://axxess-news-engine.manus.space/widget"
+              src="https://axxessnews-lbjsc8od.manus.space/widget"
               title="Axxess News Engine"
               loading="lazy"
-              style={{ width: "100%", height: "800px", border: "none", borderRadius: "8px" }}
+              style={{ width: "100%", height: "1000px", border: "none", borderRadius: "8px" }}
             />
           </div>
         </div>
