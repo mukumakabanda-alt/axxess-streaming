@@ -11,18 +11,42 @@ export function Hero() {
 
   useEffect(() => {
     setName(firstName(getRememberedName()));
-    supabase
-      .from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "completed")
-      .gt("expires_at", new Date().toISOString())
-      .then(({ count }) => setActiveCount(count ?? 0));
+
+    const loadActive = async () => {
+      const [{ count: ordersCount }, { count: subsCount }] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "completed")
+          .gt("expires_at", new Date().toISOString()),
+        supabase
+          .from("subscriptions")
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", true)
+          .gt("end_date", new Date().toISOString()),
+      ]);
+      setActiveCount(Math.max(ordersCount ?? 0, subsCount ?? 0));
+    };
+    loadActive();
+    const interval = setInterval(loadActive, 30000);
+
+    const channel = supabase
+      .channel("hero-active-subs")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, loadActive)
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, loadActive)
+      .subscribe();
+
     supabase
       .from("site_settings")
       .select("value")
       .eq("key", "intro_video_url")
       .maybeSingle()
       .then(({ data }) => setVideoUrl(data?.value ?? ""));
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (

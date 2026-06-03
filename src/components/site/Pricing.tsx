@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, Loader2, Flame } from "lucide-react";
 import { CheckoutFlow } from "./CheckoutFlow";
-import { PremiumBundleTeaser } from "./PremiumBundleTeaser";
+
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 
 // Real prices for anchor / "vs going direct" copy
@@ -28,12 +28,10 @@ type Service = {
   is_full: boolean | null;
 };
 
-const POINTS_KEY = "axx_customer_phone";
 
 export function Pricing() {
   const [services, setServices] = useState<Service[] | null>(null);
   const [selected, setSelected] = useState<Service | null>(null);
-  const [bundleUnlocked, setBundleUnlocked] = useState(false);
   const [ordersToday, setOrdersToday] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -68,15 +66,6 @@ export function Pricing() {
         setOrdersToday(counts);
       });
 
-    if (typeof window === "undefined") return;
-    const phone = localStorage.getItem(POINTS_KEY);
-    if (!phone) return;
-    supabase
-      .from("customer_points")
-      .select("points")
-      .eq("customer_phone", phone)
-      .maybeSingle()
-      .then(({ data }) => setBundleUnlocked((data?.points ?? 0) >= 50));
   }, []);
 
   return (
@@ -212,9 +201,6 @@ export function Pricing() {
                 </div>
               );
             })}
-
-            {/* Premium bundle teaser */}
-            <PremiumBundleTeaser unlocked={bundleUnlocked} />
           </div>
         )}
       </div>

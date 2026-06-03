@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { NewsAnalytics } from "./NewsAnalytics";
 
 type U = { id: string; title: string; body: string; is_published: boolean; created_at: string };
 
@@ -41,7 +42,10 @@ export function UpdatesTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <NewsAnalytics />
+
+
       <div className="flex justify-between">
         <h3 className="font-display text-lg font-bold">News & updates</h3>
         <Button onClick={() => setShowNew(true)} className="rounded-full bg-primary"><Plus className="mr-1 h-4 w-4" /> New post</Button>
