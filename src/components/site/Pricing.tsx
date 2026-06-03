@@ -212,9 +212,6 @@ export function Pricing() {
                 </div>
               );
             })}
-
-            {/* Premium bundle teaser */}
-            <PremiumBundleTeaser unlocked={bundleUnlocked} />
           </div>
         )}
       </div>
