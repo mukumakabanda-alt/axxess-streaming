@@ -33,7 +33,6 @@ const POINTS_KEY = "axx_customer_phone";
 export function Pricing() {
   const [services, setServices] = useState<Service[] | null>(null);
   const [selected, setSelected] = useState<Service | null>(null);
-  const [bundleUnlocked, setBundleUnlocked] = useState(false);
   const [ordersToday, setOrdersToday] = useState<Record<string, number>>({});
 
   useEffect(() => {
