@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { NewsAnalytics } from "./NewsAnalytics";
 
 type U = { id: string; title: string; body: string; is_published: boolean; created_at: string };
 
