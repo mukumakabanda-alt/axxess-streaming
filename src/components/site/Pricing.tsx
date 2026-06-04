@@ -98,16 +98,37 @@ export function Pricing() {
               return (
                 <div
                   key={s.id}
-                  className={`group relative flex flex-col overflow-hidden rounded-3xl border p-5 transition-smooth sm:p-6 gradient-card ${
-                    isFull ? "opacity-80" : "hover:-translate-y-1"
+                  onMouseMove={(e) => {
+                    if (isFull) return;
+                    const el = e.currentTarget as HTMLDivElement;
+                    const r = el.getBoundingClientRect();
+                    const mx = (e.clientX - r.left) / r.width;
+                    const my = (e.clientY - r.top) / r.height;
+                    const rx = (my - 0.5) * -8;
+                    const ry = (mx - 0.5) * 8;
+                    el.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(8px)`;
+                    el.style.setProperty("--mx", `${mx * 100}%`);
+                    el.style.setProperty("--my", `${my * 100}%`);
+                    el.style.transition = "transform 120ms ease-out";
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLDivElement;
+                    el.style.transform = "perspective(1000px) rotateX(0) rotateY(0) translateZ(0)";
+                    el.style.transition = "transform 600ms cubic-bezier(0.16,1,0.3,1)";
+                  }}
+                  className={`group relative flex flex-col overflow-hidden rounded-3xl border p-5 sm:p-6 gradient-card ${
+                    isFull ? "opacity-80" : ""
                   }`}
                   style={{
                     borderColor: isFeatured
                       ? `color-mix(in oklab, ${accentHex} 45%, transparent)`
-                      : undefined,
+                      : "rgba(255,255,255,0.06)",
                     boxShadow: isFeatured
                       ? `0 0 60px -10px color-mix(in oklab, ${accentHex} 50%, transparent)`
-                      : undefined,
+                      : "0 8px 30px -12px rgba(0,0,0,0.6)",
+                    backgroundImage: `radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.06) 0%, transparent 60%), var(--gradient-card)`,
+                    transformStyle: "preserve-3d",
+                    willChange: "transform",
                   }}
                 >
                   {isFull ? (
