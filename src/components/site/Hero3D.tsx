@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import * as THREE from "three";
 import { supabase } from "@/integrations/supabase/client";
 
