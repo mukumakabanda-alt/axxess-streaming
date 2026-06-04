@@ -69,15 +69,17 @@ export function Pricing() {
   }, []);
 
   return (
-    <section id="plans" className="px-4 py-16 sm:px-6 sm:py-20">
-      <div className="mx-auto max-w-6xl">
-        <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Plans</p>
-          <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">
-            Pick your access
+    <section id="plans" className="px-6 py-[120px]">
+      <div className="mx-auto max-w-[1200px]">
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#E5192A", letterSpacing: 3, textTransform: "uppercase", marginBottom: 16 }}>
+            Plans
+          </p>
+          <h2 className="font-display" style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 800, letterSpacing: "-2px", color: "#fff", lineHeight: 1 }}>
+            Pick your plan.
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Simple monthly pricing. No hidden fees. Cancel anytime.
+          <p style={{ fontSize: "clamp(16px, 1.5vw, 20px)", color: "rgba(255,255,255,0.45)", marginTop: 16, marginBottom: 72, lineHeight: 1.6, maxWidth: 520 }}>
+            No hidden fees. No contracts. Cancel by simply not renewing.
           </p>
         </div>
 
