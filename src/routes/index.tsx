@@ -28,6 +28,7 @@ function HomePage() {
       <Hero3D />
       <MomentumStrip />
       <Pricing />
+      <IntroVideo />
       <HowItWorks />
       <PackageQuiz />
       <Testimonials />
