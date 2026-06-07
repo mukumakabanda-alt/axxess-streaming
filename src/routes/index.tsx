@@ -7,6 +7,7 @@ import { HowItWorks } from "@/components/site/HowItWorks";
 import { PackageQuiz } from "@/components/site/PackageQuiz";
 import { Testimonials } from "@/components/site/Testimonials";
 import { RenewalBanner } from "@/components/site/RenewalBanner";
+import { IntroVideo } from "@/components/site/IntroVideo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
