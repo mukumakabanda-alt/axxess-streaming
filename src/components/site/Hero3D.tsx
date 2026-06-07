@@ -3,225 +3,300 @@ import { motion, type Variants } from "framer-motion";
 import * as THREE from "three";
 import { supabase } from "@/integrations/supabase/client";
 
+/* ------------------------------------------------------------------ */
+/*  WebGL Canvas — smoother, layered, performance-friendly             */
+/* ------------------------------------------------------------------ */
 function HeroCanvas() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const mouseRef = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
-  const scrollRef = useRef(0);
+  const mouse = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
+  const scrollY = useRef(0);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const width = () => mount.clientWidth;
-    const height = () => mount.clientHeight;
+    const w = () => mount.clientWidth;
+    const h = () => mount.clientHeight;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, width() / height(), 0.1, 100);
-    camera.position.z = 6;
+    scene.fog = new THREE.FogExp2(0x080808, 0.06);
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const camera = new THREE.PerspectiveCamera(55, w() / h(), 0.1, 100);
+    camera.position.set(0, 0, 7);
+
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+      powerPreference: "high-performance",
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(width(), height());
+    renderer.setSize(w(), h());
     renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     mount.appendChild(renderer.domElement);
 
-    // ---------- Particles ----------
-    const PCOUNT = 800;
-    const particles: {
-      mesh: THREE.Mesh;
-      radius: number;
-      speed: number;
-      phase: number;
-      incY: number;
-      incZ: number;
-      floatAmp: number;
-      floatFreq: number;
-      baseY: number;
-    }[] = [];
+    /* ---------- Layered particle field (Points + additive) -------- */
+    const PCOUNT = prefersReduced ? 400 : 1400;
+    const positions = new Float32Array(PCOUNT * 3);
+    const colors = new Float32Array(PCOUNT * 3);
+    const sizes = new Float32Array(PCOUNT);
+    const seeds = new Float32Array(PCOUNT);
 
-    const colorChoices = [
-      { hex: 0xe5192a, alpha: 0.6, weight: 0.6 },
-      { hex: 0xffffff, alpha: 0.3, weight: 0.25 },
-      { hex: 0xc9a84c, alpha: 0.5, weight: 0.15 },
-    ];
-
-    const sphereGeom = new THREE.SphereGeometry(0.015, 6, 6);
+    const cRed = new THREE.Color(0xe5192a);
+    const cGold = new THREE.Color(0xc9a84c);
+    const cWhite = new THREE.Color(0xffffff);
 
     for (let i = 0; i < PCOUNT; i++) {
+      // distribute on layered shells for depth
+      const layer = Math.random();
+      const radius = 2 + layer * 8;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      positions[i * 3 + 0] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.55;
+      positions[i * 3 + 2] = radius * Math.cos(phi) - 1;
+
       const r = Math.random();
-      let c = colorChoices[0];
-      let acc = 0;
-      for (const ch of colorChoices) {
-        acc += ch.weight;
-        if (r <= acc) { c = ch; break; }
-      }
-      const mat = new THREE.MeshBasicMaterial({
-        color: c.hex,
-        transparent: true,
-        opacity: c.alpha,
-      });
-      const mesh = new THREE.Mesh(sphereGeom, mat);
-      const radius = 1.5 + Math.random() * 5.5;
-      const phase = Math.random() * Math.PI * 2;
-      const incY = (Math.random() - 0.5) * 1.2;
-      const incZ = (Math.random() - 0.5) * 0.6;
-      const baseY = (Math.random() - 0.5) * 4;
-      mesh.position.set(
-        Math.cos(phase) * radius,
-        baseY,
-        Math.sin(phase) * radius - 1,
-      );
-      scene.add(mesh);
-      particles.push({
-        mesh,
-        radius,
-        speed: 0.0002 + Math.random() * 0.0006,
-        phase,
-        incY,
-        incZ,
-        floatAmp: 0.02 + Math.random() * 0.06,
-        floatFreq: 0.4 + Math.random() * 1.2,
-        baseY,
-      });
+      const col = r < 0.55 ? cRed : r < 0.8 ? cGold : cWhite;
+      colors[i * 3 + 0] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
+      sizes[i] = 0.6 + Math.random() * 2.4;
+      seeds[i] = Math.random() * Math.PI * 2;
     }
 
-    // ---------- Icosahedron with EdgesGeometry ----------
-    const icoGeom = new THREE.IcosahedronGeometry(2, 1);
-    const basePositions = icoGeom.attributes.position.array.slice() as Float32Array;
-    const edgesGeom = new THREE.EdgesGeometry(icoGeom);
-    const edgeMatA = new THREE.LineBasicMaterial({
-      color: 0xe5192a,
+    const pGeom = new THREE.BufferGeometry();
+    pGeom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    pGeom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    pGeom.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+
+    // soft round sprite generated on the fly
+    const spriteCanvas = document.createElement("canvas");
+    spriteCanvas.width = spriteCanvas.height = 64;
+    const sctx = spriteCanvas.getContext("2d")!;
+    const grad = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, "rgba(255,255,255,1)");
+    grad.addColorStop(0.4, "rgba(255,255,255,0.35)");
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+    sctx.fillStyle = grad;
+    sctx.fillRect(0, 0, 64, 64);
+    const sprite = new THREE.CanvasTexture(spriteCanvas);
+    sprite.colorSpace = THREE.SRGBColorSpace;
+
+    const pMat = new THREE.PointsMaterial({
+      size: 0.08,
+      map: sprite,
+      vertexColors: true,
       transparent: true,
       opacity: 0.9,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
     });
-    const edges = new THREE.LineSegments(edgesGeom, edgeMatA);
-    edges.position.set(1.5, 0, 0);
-    scene.add(edges);
 
-    // soft inner translucent fill
-    const fillMat = new THREE.MeshBasicMaterial({
-      color: 0xe5192a,
-      transparent: true,
-      opacity: 0.04,
-    });
-    const fillMesh = new THREE.Mesh(icoGeom, fillMat);
-    fillMesh.position.copy(edges.position);
-    scene.add(fillMesh);
+    const points = new THREE.Points(pGeom, pMat);
+    scene.add(points);
 
-    // halo sprite-like glow using a large transparent sphere
-    const haloGeom = new THREE.SphereGeometry(2.4, 24, 24);
+    /* ---------- Wireframe icosahedra (no per-frame rebuild) ------- */
+    const makeIco = (
+      radius: number,
+      detail: number,
+      color: number,
+      opacity: number,
+    ) => {
+      const geom = new THREE.IcosahedronGeometry(radius, detail);
+      const edges = new THREE.EdgesGeometry(geom);
+      const mat = new THREE.LineBasicMaterial({
+        color,
+        transparent: true,
+        opacity,
+      });
+      const lines = new THREE.LineSegments(edges, mat);
+      return { lines, geom, edges, mat };
+    };
+
+    const ico1 = makeIco(1.9, 1, 0xe5192a, 0.85);
+    const ico2 = makeIco(2.7, 1, 0xc9a84c, 0.18);
+    const ico3 = makeIco(3.6, 0, 0xffffff, 0.07);
+    ico1.lines.position.set(1.6, 0, 0);
+    ico2.lines.position.set(1.6, 0, -0.5);
+    ico3.lines.position.set(1.6, 0, -1.2);
+    scene.add(ico1.lines, ico2.lines, ico3.lines);
+
+    // soft inner glow sphere
+    const haloGeom = new THREE.SphereGeometry(2.3, 32, 32);
     const haloMat = new THREE.MeshBasicMaterial({
       color: 0xe5192a,
       transparent: true,
-      opacity: 0.05,
+      opacity: 0.06,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
     });
     const halo = new THREE.Mesh(haloGeom, haloMat);
-    halo.position.copy(edges.position);
+    halo.position.copy(ico1.lines.position);
     scene.add(halo);
 
-    // ---------- Listeners ----------
-    const onMouseMove = (e: MouseEvent) => {
-      const rect = mount.getBoundingClientRect();
-      mouseRef.current.tx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouseRef.current.ty = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+    /* ---------- Listeners ---------------------------------------- */
+    const onMouse = (e: MouseEvent) => {
+      const r = mount.getBoundingClientRect();
+      mouse.current.tx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      mouse.current.ty = -(((e.clientY - r.top) / r.height) * 2 - 1);
     };
-    const onScroll = () => {
-      scrollRef.current = window.scrollY;
+    const onTouch = (e: TouchEvent) => {
+      if (!e.touches[0]) return;
+      const r = mount.getBoundingClientRect();
+      mouse.current.tx = ((e.touches[0].clientX - r.left) / r.width) * 2 - 1;
+      mouse.current.ty = -(((e.touches[0].clientY - r.top) / r.height) * 2 - 1);
     };
+    const onScroll = () => (scrollY.current = window.scrollY);
     const onResize = () => {
-      camera.aspect = width() / height();
+      camera.aspect = w() / h();
       camera.updateProjectionMatrix();
-      renderer.setSize(width(), height());
+      renderer.setSize(w(), h());
     };
-    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mousemove", onMouse);
+    window.addEventListener("touchmove", onTouch, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
 
-    // ---------- Animate ----------
+    /* ---------- Animate (delta-time, smoother) ------------------- */
+    const clock = new THREE.Clock();
     let raf = 0;
-    const start = performance.now();
-    const posAttr = icoGeom.attributes.position as THREE.BufferAttribute;
+    let visible = true;
+
+    const onVis = () => (visible = document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", onVis);
 
     const tick = () => {
-      const t = (performance.now() - start) / 1000;
+      raf = requestAnimationFrame(tick);
+      if (!visible) return;
 
-      // mouse easing
-      mouseRef.current.x += (mouseRef.current.tx - mouseRef.current.x) * 0.05;
-      mouseRef.current.y += (mouseRef.current.ty - mouseRef.current.y) * 0.05;
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const t = clock.elapsedTime;
 
-      // camera follows mouse
-      camera.position.x = mouseRef.current.x * 0.5;
-      camera.position.y = mouseRef.current.y * 0.3;
+      // smooth mouse easing
+      mouse.current.x += (mouse.current.tx - mouse.current.x) * 0.04;
+      mouse.current.y += (mouse.current.ty - mouse.current.y) * 0.04;
+
+      // parallax camera
+      const targetX = mouse.current.x * 0.6;
+      const targetY = mouse.current.y * 0.35;
+      camera.position.x += (targetX - camera.position.x) * 0.05;
+      camera.position.y += (targetY - camera.position.y) * 0.05;
       camera.lookAt(0, 0, 0);
 
-      // particles
-      for (const p of particles) {
-        const ang = p.phase + t * p.speed * 600;
-        p.mesh.position.x =
-          Math.cos(ang) * p.radius + mouseRef.current.x * 0.15;
-        p.mesh.position.z = Math.sin(ang) * p.radius - 1 + p.incZ;
-        p.mesh.position.y =
-          p.baseY + Math.sin(t * p.floatFreq + p.phase) * p.floatAmp + p.incY * 0.2;
-      }
+      // particle drift via uniform-ish per-frame position offset using rotation
+      points.rotation.y += dt * 0.04;
+      points.rotation.x = Math.sin(t * 0.12) * 0.08;
 
-      // ico vertex displacement (breathing)
-      for (let i = 0; i < basePositions.length; i += 3) {
-        const bx = basePositions[i];
-        const by = basePositions[i + 1];
-        const bz = basePositions[i + 2];
-        const disp = Math.sin(t * 0.3 + bx * 2) * 0.15;
-        const len = Math.sqrt(bx * bx + by * by + bz * bz) || 1;
-        posAttr.setXYZ(i / 3, bx + (bx / len) * disp, by + (by / len) * disp, bz + (bz / len) * disp);
-      }
-      posAttr.needsUpdate = true;
-      edgesGeom.dispose();
-      const newEdges = new THREE.EdgesGeometry(icoGeom);
-      edges.geometry.dispose?.();
-      (edges as any).geometry = newEdges;
+      // breathing scale on point material (cheap shimmer)
+      pMat.opacity = 0.75 + Math.sin(t * 0.7) * 0.12;
 
-      // ico transforms
-      edges.rotation.y += 0.001;
-      edges.rotation.x += 0.0005;
-      fillMesh.rotation.copy(edges.rotation);
-      const float = Math.sin(t * 0.4) * 0.15;
-      const scl = 1 + Math.sin(t * 0.6) * 0.015;
-      edges.position.set(1.5, float, 0);
-      fillMesh.position.copy(edges.position);
-      halo.position.copy(edges.position);
-      edges.scale.setScalar(scl);
-      fillMesh.scale.setScalar(scl);
+      // icosahedra: rotate at different rates for parallax
+      ico1.lines.rotation.y += dt * 0.18;
+      ico1.lines.rotation.x += dt * 0.09;
+      ico2.lines.rotation.y -= dt * 0.07;
+      ico2.lines.rotation.z += dt * 0.05;
+      ico3.lines.rotation.y += dt * 0.03;
+      ico3.lines.rotation.x -= dt * 0.04;
 
-      // edge color shimmer red <-> gold
-      const mix = 0.5 + 0.5 * Math.sin(t * 0.5);
-      const r = 0xe5 / 255;
-      const g = (0x19 + (0xa8 - 0x19) * mix * 0.5) / 255;
-      const b = (0x2a + (0x4c - 0x2a) * mix * 0.4) / 255;
-      edgeMatA.color.setRGB(r, g, b);
+      // gentle floating
+      const float = Math.sin(t * 0.5) * 0.18;
+      ico1.lines.position.y = float;
+      ico2.lines.position.y = float * 0.6;
+      ico3.lines.position.y = float * 0.3;
+      halo.position.copy(ico1.lines.position);
 
-      // scroll fade
-      const scrolled = Math.min(scrollRef.current / (window.innerHeight * 0.8), 1);
-      renderer.domElement.style.opacity = String(1 - scrolled);
-      camera.position.z = 6 + scrolled * 4;
+      // breathing scale (no geometry rebuild — much smoother)
+      const s1 = 1 + Math.sin(t * 0.9) * 0.035;
+      ico1.lines.scale.setScalar(s1);
+      halo.scale.setScalar(s1 * 1.05);
+
+      // shimmer red <-> gold on ico1 edges
+      const mix = 0.5 + 0.5 * Math.sin(t * 0.45);
+      const r = 0.898 + (0.788 - 0.898) * mix * 0.4;
+      const g = 0.098 + (0.659 - 0.098) * mix * 0.35;
+      const b = 0.165 + (0.298 - 0.165) * mix * 0.3;
+      (ico1.mat as THREE.LineBasicMaterial).color.setRGB(r, g, b);
+      haloMat.opacity = 0.05 + mix * 0.04;
+
+      // scroll fade & dolly
+      const scrolled = Math.min(scrollY.current / (window.innerHeight * 0.9), 1);
+      renderer.domElement.style.opacity = String(1 - scrolled * 0.95);
+      camera.position.z = 7 + scrolled * 4.5;
 
       renderer.render(scene, camera);
-      raf = requestAnimationFrame(tick);
     };
     tick();
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("mousemove", onMouse);
+      window.removeEventListener("touchmove", onTouch);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
       renderer.dispose();
-      sphereGeom.dispose();
-      icoGeom.dispose();
+      pGeom.dispose();
+      pMat.dispose();
+      sprite.dispose();
+      [ico1, ico2, ico3].forEach((o) => {
+        o.geom.dispose();
+        o.edges.dispose();
+        o.mat.dispose();
+      });
       haloGeom.dispose();
-      mount.removeChild(renderer.domElement);
+      haloMat.dispose();
+      if (renderer.domElement.parentNode === mount) {
+        mount.removeChild(renderer.domElement);
+      }
     };
   }, []);
 
   return <div ref={mountRef} className="absolute inset-0" aria-hidden />;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Cursor spotlight — pure DOM, follows pointer with smooth easing    */
+/* ------------------------------------------------------------------ */
+function CursorSpotlight() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    let tx = x;
+    let ty = y;
+    const move = (e: MouseEvent) => {
+      tx = e.clientX;
+      ty = e.clientY;
+    };
+    window.addEventListener("mousemove", move);
+    let raf = 0;
+    const loop = () => {
+      x += (tx - x) * 0.08;
+      y += (ty - y) * 0.08;
+      el.style.background = `radial-gradient(600px circle at ${x}px ${y}px, rgba(229,25,42,0.10), transparent 60%)`;
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => {
+      window.removeEventListener("mousemove", move);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className="pointer-events-none absolute inset-0"
+      style={{ zIndex: 4, mixBlendMode: "screen" }}
+      aria-hidden
+    />
+  );
 }
 
 const AVATARS = [
@@ -264,7 +339,7 @@ export function Hero3D() {
 
   const fadeUp: Variants = {
     hidden: { opacity: 0, y: 24 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as any } },
+    show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as any } },
   };
 
   return (
@@ -277,30 +352,32 @@ export function Hero3D() {
         <HeroCanvas />
       </div>
 
-      {/* Layer 3 overlays */}
+      {/* Layer 1.5: cursor spotlight */}
+      <CursorSpotlight />
+
+      {/* Subtle grain */}
+      <div
+        className="pointer-events-none absolute inset-0 hero-grain"
+        style={{ zIndex: 3, opacity: 0.05 }}
+        aria-hidden
+      />
+
+      {/* Vignettes */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           zIndex: 5,
           background:
-            "radial-gradient(ellipse at center, transparent 40%, rgba(8,8,8,0.6) 100%)",
+            "radial-gradient(ellipse at center, transparent 35%, rgba(8,8,8,0.7) 100%)",
         }}
       />
       <div
         className="pointer-events-none absolute top-0 left-0 w-full"
-        style={{
-          zIndex: 6,
-          height: 120,
-          background: "linear-gradient(#080808, transparent)",
-        }}
+        style={{ zIndex: 6, height: 120, background: "linear-gradient(#080808, transparent)" }}
       />
       <div
         className="pointer-events-none absolute bottom-0 left-0 w-full"
-        style={{
-          zIndex: 6,
-          height: 280,
-          background: "linear-gradient(transparent, #080808)",
-        }}
+        style={{ zIndex: 6, height: 280, background: "linear-gradient(transparent, #080808)" }}
       />
 
       {/* Layer 2: content */}
@@ -309,7 +386,7 @@ export function Hero3D() {
         style={{ zIndex: 10 }}
         initial="hidden"
         animate="show"
-        variants={{ show: { transition: { staggerChildren: 0.08 } } }}
+        variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } } }}
       >
         <div className="mx-auto w-full max-w-[900px]">
           {/* Location pill */}
@@ -430,10 +507,7 @@ export function Hero3D() {
           </motion.div>
 
           {/* CTAs */}
-          <motion.div
-            variants={fadeUp}
-            className="mt-8 flex flex-wrap justify-center gap-3"
-          >
+          <motion.div variants={fadeUp} className="mt-8 flex flex-wrap justify-center gap-3">
             <a href="/trial" className="hero-btn-primary">
               <span style={{ position: "relative", zIndex: 1 }}>Start Free Trial</span>
               <span className="hero-btn-arrow" style={{ position: "relative", zIndex: 1 }}>→</span>
@@ -451,10 +525,7 @@ export function Hero3D() {
           </motion.div>
 
           {/* Social proof */}
-          <motion.div
-            variants={fadeUp}
-            className="mt-10 flex items-center justify-center gap-4"
-          >
+          <motion.div variants={fadeUp} className="mt-10 flex items-center justify-center gap-4">
             <div className="flex">
               {AVATARS.map((a, i) => (
                 <motion.div
@@ -495,12 +566,7 @@ export function Hero3D() {
       {/* Scroll indicator */}
       <div
         className="pointer-events-none absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-        style={{
-          bottom: 40,
-          zIndex: 10,
-          opacity: scrolled ? 0 : 1,
-          transition: "opacity 400ms",
-        }}
+        style={{ bottom: 40, zIndex: 10, opacity: scrolled ? 0 : 1, transition: "opacity 400ms" }}
       >
         <span
           style={{
@@ -538,6 +604,10 @@ export function Hero3D() {
           0% { transform: scaleY(0); opacity: 0.6; }
           50% { transform: scaleY(1); opacity: 1; }
           100% { transform: scaleY(0); opacity: 0; transform-origin: bottom; }
+        }
+        .hero-grain {
+          background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+          mix-blend-mode: overlay;
         }
         .hero-trust-pill { transition: all 200ms cubic-bezier(0.25,0.46,0.45,0.94); }
         .hero-trust-pill:hover {
