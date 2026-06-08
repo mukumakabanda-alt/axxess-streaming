@@ -9,6 +9,7 @@ import { RewardUnlockToaster } from "./RewardUnlockToast";
 import { WelcomeBackToast } from "./WelcomeBackToast";
 import { NewsPopup } from "./NewsPopup";
 import { SiteFooter } from "./SiteFooter";
+
 const SESSION_KEY = "axx_session_id";
 const VISIT_LOGGED_KEY = "axx_visit_logged_paths";
 
