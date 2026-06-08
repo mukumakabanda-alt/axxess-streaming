@@ -74,6 +74,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <RewardUnlockToaster />
       <WelcomeBackToast />
       <NewsPopup />
+      <SiteFooter />
       <BottomNav />
     </div>
   );
