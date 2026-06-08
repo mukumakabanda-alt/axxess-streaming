@@ -456,42 +456,7 @@ export function Hero3D() {
             </a>
           </motion.div>
 
-          {/* Social proof */}
-          <motion.div variants={fadeUp} className="mt-10 flex items-center justify-center gap-4">
-            <div className="flex">
-              {AVATARS.map((a, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.8 + i * 0.06, type: "spring", stiffness: 300, damping: 20 }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    background: a.bg,
-                    border: "2px solid #080808",
-                    marginLeft: i === 0 ? 0 : -10,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#fff",
-                  }}
-                >
-                  {a.letters}
-                </motion.div>
-              ))}
-            </div>
-            <p style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.45)", margin: 0 }}>
-              Joined by{" "}
-              <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>
-                {activeCount ?? "—"}
-              </span>{" "}
-              in Zambia
-            </p>
-          </motion.div>
+          {/* Social proof block removed */}
         </div>
       </motion.div>
 
