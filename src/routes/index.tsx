@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site/SiteShell";
 import { Hero3D } from "@/components/site/Hero3D";
-import { MomentumStrip } from "@/components/site/MomentumStrip";
 import { Pricing } from "@/components/site/Pricing";
 import { HowItWorks } from "@/components/site/HowItWorks";
 import { PackageQuiz } from "@/components/site/PackageQuiz";
@@ -26,11 +25,10 @@ function HomePage() {
     <SiteShell>
       <RenewalBanner />
       <Hero3D />
-      <MomentumStrip />
-      <Pricing />
       <IntroVideo />
-      <HowItWorks />
+      <Pricing />
       <PackageQuiz />
+      <HowItWorks />
       <Testimonials />
     </SiteShell>
   );

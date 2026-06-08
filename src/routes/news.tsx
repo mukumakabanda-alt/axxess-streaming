@@ -28,12 +28,21 @@ function NewsPage() {
             </p>
           </header>
 
-          <div className="mt-8 overflow-hidden rounded-lg">
+          <div
+            className="mt-8 overflow-hidden rounded-lg"
+            style={{ height: "1000px", position: "relative" }}
+          >
             <iframe
               src="https://axxessnews-lbjsc8od.manus.space/widget"
               title="Axxess News Engine"
               loading="lazy"
-              style={{ width: "100%", height: "1000px", border: "none", borderRadius: "8px" }}
+              style={{
+                width: "100%",
+                height: "1180px",
+                border: "none",
+                display: "block",
+                marginTop: "-180px",
+              }}
             />
           </div>
         </div>
