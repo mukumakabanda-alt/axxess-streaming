@@ -62,7 +62,7 @@ export function Testimonials() {
   const [current, setCurrent] = useState(0);
   const [rating, setRating] = useState<number>(0);
   const autoplay = useRef(
-    Autoplay({ delay: 4500, stopOnInteraction: false, stopOnMouseEnter: true }),
+    Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }),
   );
 
   const load = async () => {
@@ -87,7 +87,7 @@ export function Testimonials() {
     api.on("select", () => setCurrent(api.selectedScrollSnap()));
   }, [api]);
 
-  const cards: Card[] = [
+  const allCards: Card[] = [
     ...items.map<Card>((t) => ({
       kind: "t", id: t.id, name: t.customer_name, message: t.message,
       screenshot_url: t.screenshot_url, rating: t.rating,
@@ -96,6 +96,16 @@ export function Testimonials() {
       kind: "m", id: m.id, name: m.name, message: m.message, screenshot_url: m.screenshot_url, rating: m.rating ?? null,
     })),
   ];
+
+  // Show 5 deterministically-rotated reviews per day
+  const cards: Card[] = (() => {
+    if (allCards.length <= 5) return allCards;
+    const dayIndex = Math.floor(Date.now() / 86_400_000);
+    const offset = dayIndex % allCards.length;
+    const out: Card[] = [];
+    for (let i = 0; i < 5; i++) out.push(allCards[(offset + i) % allCards.length]);
+    return out;
+  })();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -276,12 +286,7 @@ export function Testimonials() {
           </Carousel>
         )}
 
-        {/* Full-width trust bar */}
-        <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4 text-center">
-          <p className="text-sm font-semibold text-emerald-200">
-            Join 60+ subscribers already streaming across Zambia 🇿🇲
-          </p>
-        </div>
+        {/* trust bar removed */}
 
         {/* Submit form — simple */}
         <div className="mx-auto mt-10 max-w-md rounded-3xl border border-border gradient-card p-6 sm:p-8">
