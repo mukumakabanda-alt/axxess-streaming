@@ -21,6 +21,8 @@ const schema = z.object({
 const COUNT_KEY = "axxess_reserve_count";
 
 export function Reserve() {
+  const navigate = useNavigate();
+  const formRef = useRef<HTMLDivElement>(null);
   const [services, setServices] = useState<Svc[]>([]);
   const [serviceId, setServiceId] = useState<string>("");
   const [phone, setPhone] = useState(getRememberedPhone());
@@ -36,6 +38,31 @@ export function Reserve() {
       if (c >= 5) setSubmissionsFull(true);
     } catch {}
   }, []);
+
+  const findSvc = (matcher: (n: string) => boolean) =>
+    services.find((s) => matcher(s.name.toLowerCase()));
+
+  const dstv = findSvc((n) => n.includes("dstv"));
+  const prime = findSvc((n) => n.includes("prime"));
+  const netflix = findSvc((n) => n.includes("netflix"));
+
+  const handlePick = (kind: "dstv" | "prime" | "netflix") => {
+    const svc = kind === "dstv" ? dstv : kind === "prime" ? prime : netflix;
+    if (kind === "dstv") {
+      toast.info("DStv is unavailable at the moment — but you can still reserve your slot.");
+      if (svc) setServiceId(svc.id);
+      requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      return;
+    }
+    // Prime / Netflix
+    if (svc?.is_full) {
+      if (svc) setServiceId(svc.id);
+      toast.info(`${svc.name} is currently full — reserving your slot below.`);
+      requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      return;
+    }
+    navigate({ to: "/", hash: "plans" });
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
