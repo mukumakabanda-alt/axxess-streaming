@@ -2,13 +2,13 @@ import { useEffect, useRef } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "./SiteHeader";
+import { SiteFooter } from "./SiteFooter";
 import { BottomNav } from "./BottomNav";
 import { WhatsAppFab } from "./WhatsAppFab";
 import { PageTransition } from "./PageTransition";
 import { RewardUnlockToaster } from "./RewardUnlockToast";
 import { WelcomeBackToast } from "./WelcomeBackToast";
 import { NewsPopup } from "./NewsPopup";
-import { SiteFooter } from "./SiteFooter";
 
 const SESSION_KEY = "axx_session_id";
 const VISIT_LOGGED_KEY = "axx_visit_logged_paths";
@@ -71,11 +71,11 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <main className="pb-28">
         <PageTransition>{children}</PageTransition>
       </main>
+      <SiteFooter />
       <WhatsAppFab />
       <RewardUnlockToaster />
       <WelcomeBackToast />
       <NewsPopup />
-      <SiteFooter />
       <BottomNav />
     </div>
   );
