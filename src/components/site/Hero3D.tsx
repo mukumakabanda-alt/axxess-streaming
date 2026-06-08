@@ -100,44 +100,8 @@ function HeroCanvas() {
     const points = new THREE.Points(pGeom, pMat);
     scene.add(points);
 
-    /* ---------- Wireframe icosahedra (no per-frame rebuild) ------- */
-    const makeIco = (
-      radius: number,
-      detail: number,
-      color: number,
-      opacity: number,
-    ) => {
-      const geom = new THREE.IcosahedronGeometry(radius, detail);
-      const edges = new THREE.EdgesGeometry(geom);
-      const mat = new THREE.LineBasicMaterial({
-        color,
-        transparent: true,
-        opacity,
-      });
-      const lines = new THREE.LineSegments(edges, mat);
-      return { lines, geom, edges, mat };
-    };
+    /* Globe/icosahedra removed — keeping only the dust particle field */
 
-    const ico1 = makeIco(1.9, 1, 0xe5192a, 0.85);
-    const ico2 = makeIco(2.7, 1, 0xc9a84c, 0.18);
-    const ico3 = makeIco(3.6, 0, 0xffffff, 0.07);
-    ico1.lines.position.set(1.6, 0, 0);
-    ico2.lines.position.set(1.6, 0, -0.5);
-    ico3.lines.position.set(1.6, 0, -1.2);
-    scene.add(ico1.lines, ico2.lines, ico3.lines);
-
-    // soft inner glow sphere
-    const haloGeom = new THREE.SphereGeometry(2.3, 32, 32);
-    const haloMat = new THREE.MeshBasicMaterial({
-      color: 0xe5192a,
-      transparent: true,
-      opacity: 0.06,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    const halo = new THREE.Mesh(haloGeom, haloMat);
-    halo.position.copy(ico1.lines.position);
-    scene.add(halo);
 
     /* ---------- Listeners ---------------------------------------- */
     const onMouse = (e: MouseEvent) => {
