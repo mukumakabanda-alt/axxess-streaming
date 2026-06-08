@@ -100,44 +100,8 @@ function HeroCanvas() {
     const points = new THREE.Points(pGeom, pMat);
     scene.add(points);
 
-    /* ---------- Wireframe icosahedra (no per-frame rebuild) ------- */
-    const makeIco = (
-      radius: number,
-      detail: number,
-      color: number,
-      opacity: number,
-    ) => {
-      const geom = new THREE.IcosahedronGeometry(radius, detail);
-      const edges = new THREE.EdgesGeometry(geom);
-      const mat = new THREE.LineBasicMaterial({
-        color,
-        transparent: true,
-        opacity,
-      });
-      const lines = new THREE.LineSegments(edges, mat);
-      return { lines, geom, edges, mat };
-    };
+    /* Globe/icosahedra removed — keeping only the dust particle field */
 
-    const ico1 = makeIco(1.9, 1, 0xe5192a, 0.85);
-    const ico2 = makeIco(2.7, 1, 0xc9a84c, 0.18);
-    const ico3 = makeIco(3.6, 0, 0xffffff, 0.07);
-    ico1.lines.position.set(1.6, 0, 0);
-    ico2.lines.position.set(1.6, 0, -0.5);
-    ico3.lines.position.set(1.6, 0, -1.2);
-    scene.add(ico1.lines, ico2.lines, ico3.lines);
-
-    // soft inner glow sphere
-    const haloGeom = new THREE.SphereGeometry(2.3, 32, 32);
-    const haloMat = new THREE.MeshBasicMaterial({
-      color: 0xe5192a,
-      transparent: true,
-      opacity: 0.06,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    const halo = new THREE.Mesh(haloGeom, haloMat);
-    halo.position.copy(ico1.lines.position);
-    scene.add(halo);
 
     /* ---------- Listeners ---------------------------------------- */
     const onMouse = (e: MouseEvent) => {
@@ -195,33 +159,8 @@ function HeroCanvas() {
       // breathing scale on point material (cheap shimmer)
       pMat.opacity = 0.75 + Math.sin(t * 0.7) * 0.12;
 
-      // icosahedra: rotate at different rates for parallax
-      ico1.lines.rotation.y += dt * 0.18;
-      ico1.lines.rotation.x += dt * 0.09;
-      ico2.lines.rotation.y -= dt * 0.07;
-      ico2.lines.rotation.z += dt * 0.05;
-      ico3.lines.rotation.y += dt * 0.03;
-      ico3.lines.rotation.x -= dt * 0.04;
+      // (icosahedra removed)
 
-      // gentle floating
-      const float = Math.sin(t * 0.5) * 0.18;
-      ico1.lines.position.y = float;
-      ico2.lines.position.y = float * 0.6;
-      ico3.lines.position.y = float * 0.3;
-      halo.position.copy(ico1.lines.position);
-
-      // breathing scale (no geometry rebuild — much smoother)
-      const s1 = 1 + Math.sin(t * 0.9) * 0.035;
-      ico1.lines.scale.setScalar(s1);
-      halo.scale.setScalar(s1 * 1.05);
-
-      // shimmer red <-> gold on ico1 edges
-      const mix = 0.5 + 0.5 * Math.sin(t * 0.45);
-      const r = 0.898 + (0.788 - 0.898) * mix * 0.4;
-      const g = 0.098 + (0.659 - 0.098) * mix * 0.35;
-      const b = 0.165 + (0.298 - 0.165) * mix * 0.3;
-      (ico1.mat as THREE.LineBasicMaterial).color.setRGB(r, g, b);
-      haloMat.opacity = 0.05 + mix * 0.04;
 
       // scroll fade & dolly
       const scrolled = Math.min(scrollY.current / (window.innerHeight * 0.9), 1);
@@ -243,13 +182,6 @@ function HeroCanvas() {
       pGeom.dispose();
       pMat.dispose();
       sprite.dispose();
-      [ico1, ico2, ico3].forEach((o) => {
-        o.geom.dispose();
-        o.edges.dispose();
-        o.mat.dispose();
-      });
-      haloGeom.dispose();
-      haloMat.dispose();
       if (renderer.domElement.parentNode === mount) {
         mount.removeChild(renderer.domElement);
       }
@@ -524,42 +456,7 @@ export function Hero3D() {
             </a>
           </motion.div>
 
-          {/* Social proof */}
-          <motion.div variants={fadeUp} className="mt-10 flex items-center justify-center gap-4">
-            <div className="flex">
-              {AVATARS.map((a, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.8 + i * 0.06, type: "spring", stiffness: 300, damping: 20 }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    background: a.bg,
-                    border: "2px solid #080808",
-                    marginLeft: i === 0 ? 0 : -10,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#fff",
-                  }}
-                >
-                  {a.letters}
-                </motion.div>
-              ))}
-            </div>
-            <p style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.45)", margin: 0 }}>
-              Joined by{" "}
-              <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>
-                {activeCount ?? "—"}
-              </span>{" "}
-              in Zambia
-            </p>
-          </motion.div>
+          {/* Social proof block removed */}
         </div>
       </motion.div>
 

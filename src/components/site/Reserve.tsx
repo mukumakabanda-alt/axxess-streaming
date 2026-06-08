@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown, Loader2, Lock, ShieldCheck, Star } from "lucide-react";
+import { Crown, Loader2, Lock, ShieldCheck, Star, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useNavigate } from "@tanstack/react-router";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
 
 
@@ -21,6 +22,8 @@ const schema = z.object({
 const COUNT_KEY = "axxess_reserve_count";
 
 export function Reserve() {
+  const navigate = useNavigate();
+  const formRef = useRef<HTMLDivElement>(null);
   const [services, setServices] = useState<Svc[]>([]);
   const [serviceId, setServiceId] = useState<string>("");
   const [phone, setPhone] = useState(getRememberedPhone());
@@ -36,6 +39,31 @@ export function Reserve() {
       if (c >= 5) setSubmissionsFull(true);
     } catch {}
   }, []);
+
+  const findSvc = (matcher: (n: string) => boolean) =>
+    services.find((s) => matcher(s.name.toLowerCase()));
+
+  const dstv = findSvc((n) => n.includes("dstv"));
+  const prime = findSvc((n) => n.includes("prime"));
+  const netflix = findSvc((n) => n.includes("netflix"));
+
+  const handlePick = (kind: "dstv" | "prime" | "netflix") => {
+    const svc = kind === "dstv" ? dstv : kind === "prime" ? prime : netflix;
+    if (kind === "dstv") {
+      toast.info("DStv is unavailable at the moment — but you can still reserve your slot.");
+      if (svc) setServiceId(svc.id);
+      requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      return;
+    }
+    // Prime / Netflix
+    if (svc?.is_full) {
+      if (svc) setServiceId(svc.id);
+      toast.info(`${svc.name} is currently full — reserving your slot below.`);
+      requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      return;
+    }
+    navigate({ to: "/", hash: "plans" });
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -127,17 +155,38 @@ export function Reserve() {
         {/* What you're waiting for */}
         <div className="mt-6 rounded-2xl border border-border gradient-card p-5">
           <p className="font-display text-sm font-bold">What you're waiting for</p>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {["Premium Bundle", "Disney+", "Prime Video"].map((n) => (
-              <div key={n} className="relative overflow-hidden rounded-xl border border-border bg-secondary p-4 text-center">
-                <div className="pointer-events-none absolute inset-0 backdrop-blur-[2px]" />
-                <Lock className="relative mx-auto h-4 w-4 text-amber-400" />
-                <p className="relative mt-1 text-xs font-bold">{n}</p>
-                <p className="relative text-[10px] text-muted-foreground">Unlocks when your slot opens 🔓</p>
-              </div>
-            ))}
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {([
+              { key: "dstv" as const, name: "DStv", svc: dstv, dstvForceFull: true },
+              { key: "prime" as const, name: "Prime Video", svc: prime, dstvForceFull: false },
+              { key: "netflix" as const, name: "Netflix", svc: netflix, dstvForceFull: false },
+            ]).map((p) => {
+              const isFull = p.dstvForceFull ? true : !!p.svc?.is_full;
+              return (
+                <button
+                  type="button"
+                  key={p.key}
+                  onClick={() => handlePick(p.key)}
+                  className="group relative overflow-hidden rounded-xl border border-border bg-secondary p-4 text-center transition-smooth hover:-translate-y-0.5 hover:border-primary/50 hover:bg-card"
+                >
+                  {isFull ? (
+                    <Lock className="mx-auto h-4 w-4 text-amber-400" />
+                  ) : (
+                    <CheckCircle2 className="mx-auto h-4 w-4 text-emerald-400" />
+                  )}
+                  <p className="mt-1 text-sm font-bold">{p.name}</p>
+                  <p className={`text-[10px] ${isFull ? "text-amber-300/80" : "text-emerald-300/80"}`}>
+                    {isFull
+                      ? (p.key === "dstv" ? "Unavailable — reserve a slot" : "Full — reserve a slot")
+                      : "Still available — tap to get it"}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        <div ref={formRef} />
 
         {/* Form OR full state */}
         {submissionsFull ? (

@@ -19,17 +19,6 @@ export const Route = createFileRoute("/rewards")({
 function RewardsPage() {
   return (
     <SiteShell>
-      <section className="px-4 pt-8 sm:px-6 sm:pt-12">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="font-display text-3xl font-bold sm:text-5xl">
-            Earn points. <span className="text-gradient-red">Unlock perks.</span>
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Every subscription, referral, and review brings you closer to a free month.
-          </p>
-        </div>
-      </section>
-
       <PointsRewards />
 
       {/* Quick reach to leave a review (also earns points) */}
