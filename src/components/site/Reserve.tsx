@@ -155,17 +155,38 @@ export function Reserve() {
         {/* What you're waiting for */}
         <div className="mt-6 rounded-2xl border border-border gradient-card p-5">
           <p className="font-display text-sm font-bold">What you're waiting for</p>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {["Premium Bundle", "Disney+", "Prime Video"].map((n) => (
-              <div key={n} className="relative overflow-hidden rounded-xl border border-border bg-secondary p-4 text-center">
-                <div className="pointer-events-none absolute inset-0 backdrop-blur-[2px]" />
-                <Lock className="relative mx-auto h-4 w-4 text-amber-400" />
-                <p className="relative mt-1 text-xs font-bold">{n}</p>
-                <p className="relative text-[10px] text-muted-foreground">Unlocks when your slot opens 🔓</p>
-              </div>
-            ))}
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {([
+              { key: "dstv" as const, name: "DStv", svc: dstv, dstvForceFull: true },
+              { key: "prime" as const, name: "Prime Video", svc: prime, dstvForceFull: false },
+              { key: "netflix" as const, name: "Netflix", svc: netflix, dstvForceFull: false },
+            ]).map((p) => {
+              const isFull = p.dstvForceFull ? true : !!p.svc?.is_full;
+              return (
+                <button
+                  type="button"
+                  key={p.key}
+                  onClick={() => handlePick(p.key)}
+                  className="group relative overflow-hidden rounded-xl border border-border bg-secondary p-4 text-center transition-smooth hover:-translate-y-0.5 hover:border-primary/50 hover:bg-card"
+                >
+                  {isFull ? (
+                    <Lock className="mx-auto h-4 w-4 text-amber-400" />
+                  ) : (
+                    <CheckCircle2 className="mx-auto h-4 w-4 text-emerald-400" />
+                  )}
+                  <p className="mt-1 text-sm font-bold">{p.name}</p>
+                  <p className={`text-[10px] ${isFull ? "text-amber-300/80" : "text-emerald-300/80"}`}>
+                    {isFull
+                      ? (p.key === "dstv" ? "Unavailable — reserve a slot" : "Full — reserve a slot")
+                      : "Still available — tap to get it"}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        <div ref={formRef} />
 
         {/* Form OR full state */}
         {submissionsFull ? (
