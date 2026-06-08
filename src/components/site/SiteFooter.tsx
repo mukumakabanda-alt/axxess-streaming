@@ -39,7 +39,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Axxess Streaming. All rights reserved.
+          © {new Date().getFullYear()} Axxess Streaming. Zambia's #1 Streaming Deal.
         </div>
       </div>
     </footer>
