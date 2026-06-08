@@ -159,33 +159,8 @@ function HeroCanvas() {
       // breathing scale on point material (cheap shimmer)
       pMat.opacity = 0.75 + Math.sin(t * 0.7) * 0.12;
 
-      // icosahedra: rotate at different rates for parallax
-      ico1.lines.rotation.y += dt * 0.18;
-      ico1.lines.rotation.x += dt * 0.09;
-      ico2.lines.rotation.y -= dt * 0.07;
-      ico2.lines.rotation.z += dt * 0.05;
-      ico3.lines.rotation.y += dt * 0.03;
-      ico3.lines.rotation.x -= dt * 0.04;
+      // (icosahedra removed)
 
-      // gentle floating
-      const float = Math.sin(t * 0.5) * 0.18;
-      ico1.lines.position.y = float;
-      ico2.lines.position.y = float * 0.6;
-      ico3.lines.position.y = float * 0.3;
-      halo.position.copy(ico1.lines.position);
-
-      // breathing scale (no geometry rebuild — much smoother)
-      const s1 = 1 + Math.sin(t * 0.9) * 0.035;
-      ico1.lines.scale.setScalar(s1);
-      halo.scale.setScalar(s1 * 1.05);
-
-      // shimmer red <-> gold on ico1 edges
-      const mix = 0.5 + 0.5 * Math.sin(t * 0.45);
-      const r = 0.898 + (0.788 - 0.898) * mix * 0.4;
-      const g = 0.098 + (0.659 - 0.098) * mix * 0.35;
-      const b = 0.165 + (0.298 - 0.165) * mix * 0.3;
-      (ico1.mat as THREE.LineBasicMaterial).color.setRGB(r, g, b);
-      haloMat.opacity = 0.05 + mix * 0.04;
 
       // scroll fade & dolly
       const scrolled = Math.min(scrollY.current / (window.innerHeight * 0.9), 1);
@@ -207,13 +182,6 @@ function HeroCanvas() {
       pGeom.dispose();
       pMat.dispose();
       sprite.dispose();
-      [ico1, ico2, ico3].forEach((o) => {
-        o.geom.dispose();
-        o.edges.dispose();
-        o.mat.dispose();
-      });
-      haloGeom.dispose();
-      haloMat.dispose();
       if (renderer.domElement.parentNode === mount) {
         mount.removeChild(renderer.domElement);
       }
