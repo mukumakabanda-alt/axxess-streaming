@@ -5,12 +5,10 @@ import { CheckoutFlow } from "./CheckoutFlow";
 
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 
-// Real prices for anchor / "vs going direct" copy
-const REAL_PRICE: Record<string, number> = { netflix: 197, spotify: 117, bundle: 315, prime: 170 };
+const REAL_PRICE: Record<string, number> = { netflix: 197, bundle: 315, prime: 170 };
 function realPriceFor(slug: string, name: string): number | null {
   const s = (slug + " " + name).toLowerCase();
   if (s.includes("netflix")) return REAL_PRICE.netflix;
-  if (s.includes("spotify")) return REAL_PRICE.spotify;
   if (s.includes("prime")) return REAL_PRICE.prime;
   if (s.includes("all") || s.includes("bundle")) return REAL_PRICE.bundle;
   return null;
@@ -27,7 +25,6 @@ type Service = {
   badge: string | null;
   is_full: boolean | null;
 };
-
 
 export function Pricing() {
   const [services, setServices] = useState<Service[] | null>(null);
@@ -49,7 +46,6 @@ export function Pricing() {
         );
       });
 
-    // Real "people ordered today" counts per service
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     supabase
@@ -65,7 +61,6 @@ export function Pricing() {
         });
         setOrdersToday(counts);
       });
-
   }, []);
 
   return (
@@ -231,4 +226,4 @@ export function Pricing() {
       <CheckoutFlow service={selected} onClose={() => setSelected(null)} />
     </section>
   );
-}
+            }
