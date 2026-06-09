@@ -9,7 +9,7 @@ type Dashboard = {
   totalConversions?: number;
   netflixViews?: number;
   primeViews?: number;
-  spotifyViews?: number;
+  dstvViews?: number;
   topArticles?: Article[];
   lastRefresh?: string;
   articlesGenerated?: number;
@@ -90,7 +90,7 @@ export function NewsAnalytics() {
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Netflix" value={fmt(d.netflixViews)} color="#e50914" />
         <Stat label="Prime Video" value={fmt(d.primeViews)} color="#00a8e1" />
-        <Stat label="Spotify" value={fmt(d.spotifyViews)} color="#1db954" />
+        <Stat label="DStv" value={fmt(d.dstvViews)} color="#C9A84C" />
       </div>
 
       <h3 className="mt-7 mb-3 text-base font-bold" style={{ color: "#ffd700" }}>⚙️ Automation Status</h3>
@@ -112,4 +112,4 @@ export function NewsAnalytics() {
       </div>
     </div>
   );
-}
+          }
