@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Zap } from "lucide-react";
+import { Zap, LogOut, Loader2 } from "lucide-react";
 import { OverviewTab } from "@/components/admin/OverviewTab";
 import { OrdersTab } from "@/components/admin/OrdersTab";
 import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
@@ -12,8 +12,10 @@ import { SettingsTab } from "@/components/admin/SettingsTab";
 import { ReservationsTab } from "@/components/admin/ReservationsTab";
 import { AccountInventoryTab } from "@/components/admin/AccountInventoryTab";
 import { NetflixAccountsTab } from "@/components/admin/NetflixAccountsTab";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/admin/")({
+export const Route = createFileRoute("/admin/")(({
   head: () => ({
     meta: [
       { title: "Axxess Admin" },
@@ -21,9 +23,52 @@ export const Route = createFileRoute("/admin/")({
     ],
   }),
   component: AdminPage,
-});
+}));
 
 function AdminPage() {
+  const { loading, isAuthed, isAdmin, email } = useAdminAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isAuthed || !isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary shadow-glow-red">
+              <Zap className="h-7 w-7 text-primary-foreground" fill="currentColor" />
+            </div>
+          </div>
+          <h1 className="font-display text-2xl font-bold">Admin Access</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Sign in with your admin account to continue.
+          </p>
+          <button
+            onClick={async () => {
+              const email = prompt("Email");
+              const password = prompt("Password");
+              if (!email || !password) return;
+              const { error } = await supabase.auth.signInWithPassword({ email, password });
+              if (error) alert(error.message);
+            }}
+            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Sign in
+          </button>
+          <Link to="/" className="mt-4 block text-xs text-muted-foreground hover:text-foreground">
+            ← Back to site
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
@@ -34,15 +79,23 @@ function AdminPage() {
             </div>
             <div>
               <p className="font-display text-sm font-bold leading-none">Axxess Admin</p>
-              <p className="text-[10px] text-muted-foreground">Private dashboard</p>
+              <p className="text-[10px] text-muted-foreground">{email}</p>
             </div>
           </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
-          >
-            View site
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              View site
+            </Link>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-3 w-3" /> Sign out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -86,4 +139,4 @@ function AdminPage() {
       </main>
     </div>
   );
-}
+  }
