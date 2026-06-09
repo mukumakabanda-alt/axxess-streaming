@@ -30,18 +30,18 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Axxess Entertainment - the entertainment you deserve" },
-      { name: "description", content: "Affordable Netflix & Spotify access in Zambia. Spotify K35/mo, Netflix K70/mo, Prime Video K60/mo, and All Access K140/mo. Faster, easier. Reliable." },
-      { name: "author", content: "Axxess Streaming" },
-      { name: "keywords", content: "Netflix Zambia, Spotify Zambia, streaming Lusaka, cheap Netflix, affordable streaming Africa" },
-      { property: "og:title", content: "Axxess Entertainment - the entertainment you deserve" },
-      { property: "og:description", content: "Affordable Netflix & Spotify access in Zambia. Spotify K35/mo, Netflix K70/mo, Prime Video K60/mo, and All Access K140/mo. Faster, easier. Reliable." },
+      { title: "Axxess Entertainment — The entertainment you deserve" },
+      { name: "description", content: "Zambia's premium streaming platform. Netflix K70/mo, Prime Video K60/mo, All Access K140/mo. No card. Activated via WhatsApp in 15 minutes." },
+      { name: "author", content: "Axxess Entertainment" },
+      { name: "keywords", content: "Netflix Zambia, Prime Video Zambia, streaming Zambia, cheap Netflix Zambia, affordable streaming Africa, Axxess Entertainment" },
+      { property: "og:title", content: "Axxess Entertainment — The entertainment you deserve" },
+      { property: "og:description", content: "Zambia's premium streaming platform. Netflix K70/mo, Prime Video K60/mo, All Access K140/mo. No card. Activated via WhatsApp in 15 minutes." },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "en_ZM" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "theme-color", content: "#000000" },
-      { name: "twitter:title", content: "Axxess Entertainment - the entertainment you deserve" },
-      { name: "twitter:description", content: "Affordable Netflix & Spotify access in Zambia. Spotify K35/mo, Netflix K70/mo, Prime Video K60/mo, and All Access K140/mo. Faster, easier. Reliable." },
+      { name: "theme-color", content: "#080808" },
+      { name: "twitter:title", content: "Axxess Entertainment — The entertainment you deserve" },
+      { name: "twitter:description", content: "Zambia's premium streaming platform. Netflix K70/mo, Prime Video K60/mo, All Access K140/mo. No card. Activated via WhatsApp in 15 minutes." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/e4WfRWxkaUWNJKmI7ycjBVHpJn92/social-images/social-1777484825822-file_000000001a5471f5a722b7ad191b3fda.webp" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/e4WfRWxkaUWNJKmI7ycjBVHpJn92/social-images/social-1777484825822-file_000000001a5471f5a722b7ad191b3fda.webp" },
     ],
@@ -77,4 +77,4 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return <Outlet />;
-}
+      }
