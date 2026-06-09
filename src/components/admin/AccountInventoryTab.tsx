@@ -23,6 +23,7 @@ type Account = {
 };
 
 const STATUSES = ["available", "assigned", "expired", "issue"] as const;
+const SERVICES = ["Netflix", "Prime Video", "All-Access", "Other"];
 
 const empty = (): Partial<Account> => ({
   service_name: "Netflix",
@@ -184,7 +185,7 @@ export function AccountInventoryTab() {
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["Netflix", "Spotify", "Disney+", "Hulu", "HBO Max", "Prime Video", "All-Access", "Other"].map((s) => (
+                    {SERVICES.map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
@@ -244,4 +245,4 @@ export function AccountInventoryTab() {
       </Dialog>
     </div>
   );
-}
+  }
