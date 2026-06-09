@@ -1,7 +1,7 @@
 import { MousePointer2, MessageSquare, Send, Smartphone, Unlock } from "lucide-react";
 
 const STEPS = [
-  { Icon: MousePointer2, t: "Pick your plan above", d: "Tap the plan you want — Netflix, Spotify, or All Access." },
+  { Icon: MousePointer2, t: "Pick your plan above", d: "Tap the plan you want — Netflix, Prime Video, or All Access." },
   { Icon: MessageSquare, t: "Enter your name & WhatsApp", d: "That's it. No card. No bank details." },
   { Icon: Send, t: "We send payment instructions", d: "We'll WhatsApp you within 5 minutes with the exact amount and mobile money number to use." },
   { Icon: Smartphone, t: "Send payment via mobile money", d: "Use MTN Mobile Money or Airtel Money. We'll tell you which number based on your network." },
