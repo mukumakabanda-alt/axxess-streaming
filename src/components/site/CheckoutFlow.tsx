@@ -32,13 +32,7 @@ function detectNetwork(raw: string): Network {
 const PAY_DETAILS = {
   mtn: { name: "Stanley Kabanda", number: "0765101494", label: "MTN", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/40", dot: "bg-yellow-400" },
   airtel: { name: "Ngoma Audrian", number: "0574161927", label: "Airtel", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/40", dot: "bg-red-400" },
-  zamtel: { name: "Ngoma Audrian", number: "0574161927", label: "Zamtel", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/40", dot: "bg-emerald-400" },
-};
-
-// Android intent deep links — try app, fall back to dialer on timeout
-const APP_INTENT: Record<"mtn" | "airtel", string> = {
-  mtn: "intent://#Intent;scheme=mtnmomo;package=com.mtn.mobilemoney.zambia;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.mtn.mobilemoney.zambia;end",
-  airtel: "intent://#Intent;scheme=myairtel;package=com.myairtelapp;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.myairtelapp;end",
+  zamtel: { name: "Stanley Kabanda", number: "0765101494", label: "Zamtel", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/40", dot: "bg-emerald-400" },
 };
 
 const WA_NUMBER = WHATSAPP_PRIMARY;
@@ -52,6 +46,8 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   const [copied, setCopied] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [statusText, setStatusText] = useState("Checking payment…");
+  const [launching, setLaunching] = useState(false);
+  const [launchMsg, setLaunchMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (service) {
@@ -69,8 +65,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
     network === "mtn" ? PAY_DETAILS.mtn :
     network === "airtel" ? PAY_DETAILS.airtel :
     network === "zamtel" ? PAY_DETAILS.zamtel : null;
-  const [launching, setLaunching] = useState(false);
-  const [launchMsg, setLaunchMsg] = useState<string | null>(null);
 
   if (!service) return null;
   const totalPrice = Number(service.price_kwacha) * months;
@@ -119,7 +113,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
     goToDialer();
   };
 
-
   const runCheckSequence = () => {
     setStatusText("Checking payment…");
     setUnlocked(false);
@@ -137,16 +130,17 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
 
   return (
     <Dialog open={!!service} onOpenChange={(o) => !o && close()}>
-      <DialogContent className="max-w-md p-0 overflow-hidden border-border bg-background sm:rounded-3xl">
-        {/* Step indicator */}
-        <div className="flex h-1 w-full bg-muted">
+      <DialogContent className="max-w-md p-0 overflow-hidden border-border bg-background sm:rounded-3xl max-h-[92dvh] flex flex-col">
+        {/* Progress bar */}
+        <div className="flex h-1 w-full bg-muted flex-shrink-0">
           <div
             className="h-full bg-primary transition-all duration-500"
             style={{ width: step === "details" ? "25%" : step === "pay" ? "50%" : step === "checking" ? "75%" : "100%" }}
           />
         </div>
 
-        <div className="px-6 pb-7 pt-6">
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pt-6 pb-2">
           {step === "details" && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>
@@ -177,7 +171,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                     </div>
                   )}
                 </div>
-                {/* Duration upsell */}
                 <div>
                   <Label>Duration</Label>
                   <div className="mt-1.5 grid grid-cols-4 gap-1.5">
@@ -207,9 +200,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                   <p className="mt-1.5 text-[11px] text-muted-foreground">Pay once, enjoy longer. No need to renew every month.</p>
                 </div>
               </div>
-              <Button onClick={submitDetails} disabled={submitting} className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-glow-red hover:bg-primary/90">
-                {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Continue <ArrowRight className="ml-1 h-4 w-4" /></>}
-              </Button>
             </div>
           )}
 
@@ -219,16 +209,13 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <h2 className="font-display text-2xl font-bold">Send Payment</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Pay <span className="font-bold text-foreground">K{totalPrice}</span> for {service.name}</p>
               </div>
-
-              {/* Step summary */}
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <span className={`inline-flex items-center gap-1.5`}><span className={`h-1.5 w-1.5 rounded-full ${payInfo.dot}`} /> {payInfo.label} detected</span>
+                <span className="inline-flex items-center gap-1.5"><span className={`h-1.5 w-1.5 rounded-full ${payInfo.dot}`} /> {payInfo.label} detected</span>
                 <span className="text-border">›</span>
                 <span>Pay K{totalPrice}</span>
                 <span className="text-border">›</span>
                 <span>Confirm</span>
               </div>
-
               <div className={`rounded-2xl border ${payInfo.border} ${payInfo.bg} p-5`}>
                 <p className={`text-xs font-bold uppercase tracking-wider ${payInfo.color}`}>{payInfo.label} Mobile Money</p>
                 <p className="mt-3 text-sm text-muted-foreground">Send payment to:</p>
@@ -236,16 +223,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <p className="mt-2 text-sm">Name: <span className="font-semibold">{payInfo.name}</span></p>
                 <p className="mt-3 text-xs text-muted-foreground">Amount: <span className="font-bold text-foreground">K{totalPrice}</span></p>
               </div>
-
-              <Button onClick={payNow} disabled={launching} className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-glow-red hover:bg-primary/90">
-                {launching ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {launchMsg ?? "Opening…"}</> : <>Pay now <ArrowRight className="ml-1 h-4 w-4" /></>}
-              </Button>
-              <p className="-mt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-                {copied ? <><Check className="h-3 w-3 text-emerald-400" /> Number copied to clipboard</> : <><Copy className="h-3 w-3" /> Number will be copied automatically</>}
-              </p>
-              <button onClick={() => { setStep("checking"); runCheckSequence(); }} className="block w-full text-center text-xs text-muted-foreground hover:text-foreground">
-                I've already paid — continue
-              </button>
             </div>
           )}
 
@@ -280,14 +257,40 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <h2 className="font-display text-2xl font-bold">Complete Verification</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Tap below to finish your access request</p>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sticky bottom CTA — always visible */}
+        <div className="flex-shrink-0 px-6 pb-6 pt-3 border-t border-border bg-background">
+          {step === "details" && (
+            <Button onClick={submitDetails} disabled={submitting} className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-glow-red hover:bg-primary/90">
+              {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Continue <ArrowRight className="ml-1 h-4 w-4" /></>}
+            </Button>
+          )}
+          {step === "pay" && payInfo && (
+            <div className="space-y-3">
+              <Button onClick={payNow} disabled={launching} className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-glow-red hover:bg-primary/90">
+                {launching ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {launchMsg ?? "Opening…"}</> : <>Pay now <ArrowRight className="ml-1 h-4 w-4" /></>}
+              </Button>
+              <p className="-mt-1 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                {copied ? <><Check className="h-3 w-3 text-emerald-400" /> Number copied to clipboard</> : <><Copy className="h-3 w-3" /> Number will be copied automatically</>}
+              </p>
+              <button onClick={() => { setStep("checking"); runCheckSequence(); }} className="block w-full text-center text-xs text-muted-foreground hover:text-foreground">
+                I've already paid — continue
+              </button>
+            </div>
+          )}
+          {step === "verify" && (
+            <div className="space-y-3">
               <Button onClick={completeVerification} className="h-14 w-full rounded-full text-base font-semibold text-black hover:opacity-90" style={{ backgroundColor: "#25D366" }}>
                 <MessageCircle className="mr-2 h-5 w-5" /> Complete Verification
               </Button>
-              <button onClick={close} className="block w-full text-xs text-muted-foreground hover:text-foreground">Close</button>
+              <button onClick={close} className="block w-full text-center text-xs text-muted-foreground hover:text-foreground">Close</button>
             </div>
           )}
         </div>
       </DialogContent>
     </Dialog>
   );
-}
+        }
