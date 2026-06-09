@@ -8,7 +8,7 @@ import { Testimonials } from "@/components/site/Testimonials";
 import { RenewalBanner } from "@/components/site/RenewalBanner";
 import { IntroVideo } from "@/components/site/IntroVideo";
 
-export const Route = createFileRoute("/")(({
+export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Axxess Entertainment — Netflix & Prime Video in Zambia" },
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")(({
     ],
   }),
   component: HomePage,
-}));
+});
 
 function HomePage() {
   return (
@@ -32,4 +32,4 @@ function HomePage() {
       <Testimonials />
     </SiteShell>
   );
-}
+  }
