@@ -6,13 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Loader2, CheckCircle2, MessageCircle } from "lucide-react";
+import { Sparkles, Loader2, CheckCircle2, MessageCircle, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { WHATSAPP_PRIMARY, waLink, orderMessage } from "@/lib/whatsapp";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
-
-import { ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/trial")({
   head: () => ({
@@ -82,7 +80,6 @@ function TrialPage() {
       toast.error("Could not start trial. Please try WhatsApp.");
       return;
     }
-    // Remember user, but DO NOT award points for free trial
     rememberCustomer(parsed.data.customer_name, parsed.data.customer_phone);
     setDone({ name: svc.name });
   };
@@ -156,7 +153,7 @@ function TrialPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-black"
-                style={{ backgroundColor: "var(--color-spotify)" }}
+                style={{ backgroundColor: "#25D366" }}
               >
                 <MessageCircle className="h-4 w-4" />
                 Continue on WhatsApp
@@ -167,4 +164,4 @@ function TrialPage() {
       </section>
     </SiteShell>
   );
-}
+        }
