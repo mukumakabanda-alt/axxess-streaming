@@ -39,7 +39,6 @@ export function OrdersTab() {
   const [editing, setEditing] = useState<Order | null>(null);
   const [services, setServices] = useState<string[]>([]);
   const [showNew, setShowNew] = useState(false);
-
   const [pointsByPhone, setPointsByPhone] = useState<Record<string, number>>({});
 
   const load = async () => {
@@ -47,7 +46,6 @@ export function OrdersTab() {
     setItems((data ?? []) as Order[]);
     const uniq = Array.from(new Set((data ?? []).map((d: any) => d.service_name_snapshot)));
     setServices(uniq);
-    // Fetch points for all unique phones
     const phones = Array.from(new Set((data ?? []).map((d: any) => d.customer_phone)));
     if (phones.length) {
       const { data: pts } = await supabase
@@ -76,7 +74,6 @@ export function OrdersTab() {
 
     if (status === "approved" || status === "completed") {
       if (o) {
-        // Avoid duplicate subscription
         const { data: existing } = await supabase
           .from("subscriptions")
           .select("id")
@@ -91,15 +88,14 @@ export function OrdersTab() {
             customer_name: o.customer_name,
             customer_phone: o.customer_phone,
             service_name: o.service_name_snapshot,
-            start_date: start.toISOString().slice(0,10),
-            end_date: end.toISOString().slice(0,10),
+            start_date: start.toISOString().slice(0, 10),
+            end_date: end.toISOString().slice(0, 10),
           });
           toast.success(`Subscription created (${days} days)`);
         }
       }
     }
 
-    // Award points ONLY when status becomes "completed" AND it's a paid order (not a free trial)
     if (status === "completed" && o && Number(o.price_snapshot) > 0) {
       const { data: prev } = await supabase
         .from("customer_points")
@@ -116,7 +112,6 @@ export function OrdersTab() {
       const newPoints = (newTotal as number) ?? prevPoints + 5;
       await recordRewardUnlocks(o.customer_phone, o.customer_name, prevPoints, newPoints);
 
-      // Award referrer 10 pts if referral_code present (also gated on completion)
       if (o.referral_code) {
         const { data: ref } = await supabase
           .from("referrals")
@@ -176,7 +171,7 @@ export function OrdersTab() {
   };
 
   const copyReminder = (o: Order) => {
-    const msg = `Hi ${o.customer_name}! 👋 This is Axxess Streaming. Your *${o.service_name_snapshot}* subscription is up for renewal. Renew today for just K${Number(o.price_snapshot)} and continue uninterrupted streaming. Reply here when you're ready 🎬🎶`;
+    const msg = `Hi ${o.customer_name}! 👋 This is Axxess Streaming. Your *${o.service_name_snapshot}* subscription is up for renewal. Renew today for just K${Number(o.price_snapshot)} and continue uninterrupted streaming. Reply here when you're ready 🎬`;
     navigator.clipboard.writeText(msg);
     toast.success("Reminder copied to clipboard");
   };
@@ -258,7 +253,7 @@ export function OrdersTab() {
                   <td className="p-3">
                     <div className="flex justify-end gap-1">
                       <a href={`https://wa.me/${o.customer_phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="rounded-md p-1.5 hover:bg-muted" title="WhatsApp customer">
-                        <MessageSquare className="h-4 w-4" style={{ color: "var(--color-spotify)" }} />
+                        <MessageSquare className="h-4 w-4" style={{ color: "#25D366" }} />
                       </a>
                       <button onClick={() => copyReminder(o)} className="rounded-md p-1.5 hover:bg-muted" title="Copy renewal reminder">
                         <Copy className="h-4 w-4" />
@@ -349,4 +344,4 @@ export function OrdersTab() {
       </Dialog>
     </div>
   );
-}
+      }
