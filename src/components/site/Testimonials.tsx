@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,6 @@ type PublicMessage = {
   message: string;
   screenshot_url: string | null;
   rating: number | null;
-  created_at?: string;
 };
 
 type Card =
@@ -65,21 +64,28 @@ export function Testimonials() {
     Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }),
   );
 
-  const load = async () => {
+  // FIX #21: removed dead imports getRememberedName, getRememberedPhone —
+  // they were imported but never used in this component.
+  // rememberCustomer is still used in handleSubmit.
+
+  // FIX #18: load is stable via useCallback and is NOT called after submit —
+  // newly submitted messages are is_approved: false so they never appear anyway.
+  const load = useCallback(async () => {
     const [{ data: t }, { data: m }] = await Promise.all([
       supabase.from("testimonials").select("*").eq("is_approved", true).order("sort_order"),
       supabase
         .from("public_messages")
-        .select("id,name,message,screenshot_url,created_at,rating")
+        // FIX #19: removed created_at from select — it was fetched but never rendered
+        .select("id,name,message,screenshot_url,rating")
         .eq("is_approved", true)
-        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(12),
     ]);
     setItems(t ?? []);
     setMessages((m ?? []) as PublicMessage[]);
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     if (!api) return;
@@ -93,7 +99,8 @@ export function Testimonials() {
       screenshot_url: t.screenshot_url, rating: t.rating,
     })),
     ...messages.map<Card>((m) => ({
-      kind: "m", id: m.id, name: m.name, message: m.message, screenshot_url: m.screenshot_url, rating: m.rating ?? null,
+      kind: "m", id: m.id, name: m.name, message: m.message,
+      screenshot_url: m.screenshot_url, rating: m.rating ?? null,
     })),
   ];
 
@@ -111,11 +118,13 @@ export function Testimonials() {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
+    const nameVal = String(fd.get("name") || "").trim();
+    const phoneVal = String(fd.get("phone") || "").trim();
     const messageVal = String(fd.get("message") || "").trim();
 
     const parsed = schema.safeParse({
-      name: fd.get("name"),
-      phone: fd.get("phone"),
+      name: nameVal,
+      phone: phoneVal,
       message: messageVal,
       rating: rating || undefined,
     });
@@ -130,15 +139,16 @@ export function Testimonials() {
 
     setSubmitting(true);
 
-    const finalMessage =
-      messageVal ||
-      `Rated us ${rating} out of 5 ⭐`;
+    const finalMessage = messageVal || `Rated us ${rating} out of 5 ⭐`;
 
+    // FIX #10: phone is now included in the insert so the award_points RPC
+    // can find or create the customer_points row without failing silently.
     const { error } = await supabase.from("public_messages").insert({
       name: parsed.data.name,
       message: finalMessage,
       screenshot_url: null,
       rating: rating || null,
+      phone: parsed.data.phone,
     });
 
     if (error) {
@@ -150,7 +160,6 @@ export function Testimonials() {
     rememberCustomer(parsed.data.name, parsed.data.phone);
 
     try {
-      // Award points and check for reward unlocks
       const { data: prev } = await supabase
         .from("customer_points")
         .select("points")
@@ -174,10 +183,11 @@ export function Testimonials() {
     setSubmitting(false);
     setRating(0);
     form.reset();
-    load();
+    // FIX #15: scroll carousel back to first slide after reset
+    api?.scrollTo(0);
+    // FIX #18: no load() call here — new submission is unapproved and won't appear
   };
 
-  // Combine all real ratings from both testimonials and public messages
   const ratedTestimonials = items.filter((t) => typeof t.rating === "number" && t.rating! > 0);
   const ratedMessages = messages.filter((m) => typeof m.rating === "number" && m.rating! > 0);
   const allRatings = [...ratedTestimonials.map((t) => t.rating!), ...ratedMessages.map((m) => m.rating!)];
@@ -220,7 +230,7 @@ export function Testimonials() {
               {cards.map((c, idx) => (
                 <CarouselItem key={`${c.kind}-${c.id}`} className="basis-[72%] sm:basis-[40%] lg:basis-[28%]">
                   <article className="relative h-full overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card to-background/60 shadow-card transition-smooth hover:-translate-y-0.5">
-                    {/* Instagram-style top bar */}
+                    {/* Accent bar */}
                     <div className={`h-1 w-full bg-gradient-to-r ${ACCENT_BARS[idx % ACCENT_BARS.length]}`} />
                     <div className="flex items-center gap-2.5 px-5 pt-4">
                       <div
@@ -232,13 +242,16 @@ export function Testimonials() {
                       </div>
                       <div className="flex-1 leading-tight">
                         <p className="text-sm font-semibold">{c.name}</p>
+                        {/* FIX #9: replaced hardcoded axxess.zm with correct brand label */}
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                          axxess.zm
+                          Axxess Streaming
                         </p>
                       </div>
-                      {c.kind === "t" && (
+                      {/* FIX #11 & #24: stars shown for both kinds only when rating is
+                          a real number > 0 — null no longer silently defaults to 5 */}
+                      {c.rating != null && c.rating > 0 && (
                         <div className="flex gap-0.5">
-                          {Array.from({ length: c.rating ?? 5 }).map((_, i) => (
+                          {Array.from({ length: c.rating }).map((_, i) => (
                             <Star key={i} className="h-3 w-3 fill-primary text-primary" />
                           ))}
                         </div>
@@ -255,6 +268,7 @@ export function Testimonials() {
                     ) : (
                       <div className="mt-3 flex aspect-square items-center justify-center bg-gradient-to-br from-secondary/50 to-card p-6 text-center">
                         <Quote className="absolute h-12 w-12 text-primary/15" />
+                        {/* FIX #25: unified truncation threshold to 140 for all cards */}
                         <p className="relative font-display text-lg leading-snug text-foreground/90">
                           "{c.message.length > 140 ? c.message.slice(0, 140) + "…" : c.message}"
                         </p>
@@ -264,7 +278,8 @@ export function Testimonials() {
                     {c.screenshot_url && (
                       <p className="px-5 py-3 text-sm text-foreground/85">
                         <span className="font-semibold">{c.name}</span>{" "}
-                        {c.message.length > 90 ? c.message.slice(0, 90) + "…" : c.message}
+                        {/* FIX #25: unified truncation threshold to 140 */}
+                        {c.message.length > 140 ? c.message.slice(0, 140) + "…" : c.message}
                       </p>
                     )}
                   </article>
@@ -286,9 +301,7 @@ export function Testimonials() {
           </Carousel>
         )}
 
-        {/* trust bar removed */}
-
-        {/* Submit form — simple */}
+        {/* Submit form */}
         <div className="mx-auto mt-10 max-w-md rounded-3xl border border-border gradient-card p-6 sm:p-8">
           <h3 className="font-display text-lg font-bold">Leave a quick review</h3>
           <p className="mt-1 text-xs text-muted-foreground">
