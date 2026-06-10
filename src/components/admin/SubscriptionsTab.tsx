@@ -28,7 +28,7 @@ export function SubscriptionsTab() {
   };
   useEffect(() => { load(); }, []);
 
-  const today = new Date(); today.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
 
   const daysLeft = (end: string) => Math.ceil((new Date(end).getTime() - today.getTime()) / 86400000);
 
@@ -40,7 +40,7 @@ export function SubscriptionsTab() {
 
   const copyReminder = (s: Sub) => {
     const dl = daysLeft(s.end_date);
-    const msg = `Hi ${s.customer_name}! 👋 Friendly reminder from Axxess Streaming — your *${s.service_name}* subscription expires in ${dl} day${dl === 1 ? "" : "s"} (${s.end_date}). Renew today to keep streaming uninterrupted. Reply when ready 🎬🎶`;
+    const msg = `Hi ${s.customer_name}! 👋 Friendly reminder from Axxess Streaming — your *${s.service_name}* subscription expires in ${dl} day${dl === 1 ? "" : "s"} (${s.end_date}). Renew today to keep streaming uninterrupted. Reply when ready 🎬`;
     navigator.clipboard.writeText(msg);
     toast.success("Reminder copied");
   };
@@ -90,7 +90,7 @@ export function SubscriptionsTab() {
                     <td className="p-3">
                       <div className="flex justify-end gap-1">
                         <a href={`https://wa.me/${s.customer_phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="rounded-md p-1.5 hover:bg-muted">
-                          <MessageSquare className="h-4 w-4" style={{ color: "var(--color-spotify)" }} />
+                          <MessageSquare className="h-4 w-4" style={{ color: "#25D366" }} />
                         </a>
                         <button onClick={() => copyReminder(s)} className="rounded-md p-1.5 hover:bg-muted" title="Copy reminder"><Copy className="h-4 w-4" /></button>
                         <button onClick={() => setEditing(s)} className="rounded-md p-1.5 hover:bg-muted"><Pencil className="h-4 w-4" /></button>
@@ -126,7 +126,7 @@ export function SubscriptionsTab() {
             <div><Label>Phone</Label><Input name="customer_phone" required /></div>
             <div><Label>Service</Label><Input name="service_name" required /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Start</Label><Input name="start_date" type="date" required defaultValue={new Date().toISOString().slice(0,10)} /></div>
+              <div><Label>Start</Label><Input name="start_date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></div>
               <div><Label>End</Label><Input name="end_date" type="date" required /></div>
             </div>
             <DialogFooter><Button type="submit">Save</Button></DialogFooter>
@@ -160,4 +160,4 @@ export function SubscriptionsTab() {
       </Dialog>
     </div>
   );
-}
+    }
