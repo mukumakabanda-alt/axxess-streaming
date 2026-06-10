@@ -1,23 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "@tanstack/react-router";
 
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
-  const [shown, setShown] = useState(true);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setShown(false);
-    const id = requestAnimationFrame(() => setShown(true));
-    return () => cancelAnimationFrame(id);
+    const el = ref.current;
+    if (!el) return;
+    // Kick a CSS animation directly on the DOM node — no state, no flicker,
+    // no rAF race. The element goes from opacity 0 to 1 in 180ms then stays.
+    el.style.opacity = "0";
+    el.style.transform = "translateY(6px)";
+    const id = setTimeout(() => {
+      el.style.transition = "opacity 180ms ease-out, transform 180ms ease-out";
+      el.style.opacity = "1";
+      el.style.transform = "translateY(0)";
+    }, 16); // one frame — enough for the browser to register the starting state
+    return () => clearTimeout(id);
   }, [pathname]);
 
   return (
-    <div
-      key={pathname}
-      className={`transition-opacity duration-200 ease-out ${
-        shown ? "opacity-100" : "opacity-0"
-      }`}
-    >
+    <div ref={ref} style={{ opacity: 0 }}>
       {children}
     </div>
   );
