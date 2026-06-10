@@ -31,8 +31,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-spotify: var(--spotify);
-  --color-spotify-foreground: var(--spotify-foreground);
   --color-success: var(--success);
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-sans: "Inter", system-ui, sans-serif;
@@ -72,12 +70,9 @@
   --input: oklch(0.24 0.01 280);
   --ring: oklch(0.62 0.24 25);
 
-  --spotify: oklch(0.7 0.18 145);
-  --spotify-foreground: oklch(0 0 0);
   --success: oklch(0.7 0.18 145);
 
   --gradient-primary: linear-gradient(135deg, oklch(0.62 0.24 25), oklch(0.55 0.27 18));
-  --gradient-spotify: linear-gradient(135deg, oklch(0.7 0.18 145), oklch(0.6 0.2 150));
   --gradient-radial-red: radial-gradient(ellipse at top, oklch(0.62 0.24 25 / 0.22), transparent 60%);
   --gradient-card: linear-gradient(180deg, oklch(0.18 0.01 280), oklch(0.13 0.008 280));
 
@@ -136,14 +131,12 @@
 
 @layer utilities {
   .gradient-primary { background: var(--gradient-primary); }
-  .gradient-spotify { background: var(--gradient-spotify); }
   .gradient-radial-red { background: var(--gradient-radial-red); }
   .gradient-card { background: var(--gradient-card); }
   .shadow-glow-red { box-shadow: var(--shadow-glow-red); }
   .shadow-glow-green { box-shadow: var(--shadow-glow-green); }
   .shadow-elegant { box-shadow: var(--shadow-elegant); }
   .shadow-card { box-shadow: var(--shadow-card); }
-  
 
   .text-gradient-red {
     background: linear-gradient(135deg, oklch(1 0 0), oklch(0.7 0.27 25.5));
@@ -261,4 +254,4 @@
 @keyframes news-slide-up {
   from { transform: translateY(120%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
-}
+  }
