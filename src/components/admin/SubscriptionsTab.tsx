@@ -160,4 +160,4 @@ export function SubscriptionsTab() {
       </Dialog>
     </div>
   );
-    }
+}
