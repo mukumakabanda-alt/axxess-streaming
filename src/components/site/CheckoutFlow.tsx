@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, Unlock, Copy, Check, ArrowRight, MessageCircle } from "lucide-react";
+import { Loader2, Lock, Unlock, Copy, Check, ArrowRight, MessageCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
 import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
@@ -30,12 +30,38 @@ function detectNetwork(raw: string): Network {
 }
 
 const PAY_DETAILS = {
-  mtn: { name: "Stanley Kabanda", number: "0765101494", label: "MTN", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/40", dot: "bg-yellow-400" },
-  airtel: { name: "Ngoma Audrian", number: "0574161927", label: "Airtel", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/40", dot: "bg-red-400" },
-  zamtel: { name: "Stanley Kabanda", number: "0765101494", label: "Zamtel", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/40", dot: "bg-emerald-400" },
+  mtn:    { name: "Stanley Kabanda", number: "0765101494", label: "MTN",    color: "text-yellow-400",  bg: "bg-yellow-500/10",  border: "border-yellow-500/40",  dot: "bg-yellow-400"  },
+  airtel: { name: "Ngoma Audrian",   number: "0574161927", label: "Airtel", color: "text-red-400",     bg: "bg-red-500/10",     border: "border-red-500/40",     dot: "bg-red-400"     },
+  // Zamtel routes to Airtel agent — no Zamtel agent number available
+  zamtel: { name: "Ngoma Audrian",   number: "0574161927", label: "Airtel", color: "text-red-400",     bg: "bg-red-500/10",     border: "border-red-500/40",     dot: "bg-red-400"     },
 };
 
 const WA_NUMBER = WHATSAPP_PRIMARY;
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // fall through
+    }
+  }
+  try {
+    const el = document.createElement("input");
+    el.value = text;
+    el.style.position = "fixed";
+    el.style.opacity = "0";
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    const success = document.execCommand("copy");
+    document.body.removeChild(el);
+    return success;
+  } catch {
+    return false;
+  }
+}
 
 export function CheckoutFlow({ service, onClose }: { service: Service | null; onClose: () => void }) {
   const [step, setStep] = useState<Step>("details");
@@ -44,8 +70,10 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   const [months, setMonths] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
-  const [statusText, setStatusText] = useState("Checking payment…");
+  const [verifyStatus, setVerifyStatus] = useState<"pending" | "confirmed" | "not_found">("pending");
+  const [orderId, setOrderId] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [launchMsg, setLaunchMsg] = useState<string | null>(null);
 
@@ -56,13 +84,16 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       setPhone(getRememberedPhone());
       setMonths(1);
       setCopied(false);
+      setCopyFailed(false);
       setUnlocked(false);
+      setVerifyStatus("pending");
+      setOrderId(null);
     }
   }, [service]);
 
   const network = useMemo(() => detectNetwork(phone), [phone]);
   const payInfo =
-    network === "mtn" ? PAY_DETAILS.mtn :
+    network === "mtn"    ? PAY_DETAILS.mtn :
     network === "airtel" ? PAY_DETAILS.airtel :
     network === "zamtel" ? PAY_DETAILS.zamtel : null;
 
@@ -79,16 +110,29 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
     const durationDays = 30 * months;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + durationDays);
-    await supabase.from("orders").insert({
-      customer_name: name.trim(),
-      customer_phone: phone.trim(),
-      service_id: service.id,
-      service_name_snapshot: months > 1 ? `${service.name} (${months} months)` : service.name,
-      price_snapshot: totalPrice,
-      duration_days: durationDays,
-      expires_at: expiresAt.toISOString(),
-    });
+
+    const { data: newOrder, error } = await supabase
+      .from("orders")
+      .insert({
+        customer_name: name.trim(),
+        customer_phone: phone.trim(),
+        service_id: service.id,
+        service_name_snapshot: months > 1 ? `${service.name} (${months} months)` : service.name,
+        price_snapshot: totalPrice,
+        duration_days: durationDays,
+        expires_at: expiresAt.toISOString(),
+      })
+      .select("id")
+      .single();
+
     setSubmitting(false);
+
+    if (error || !newOrder) {
+      toast.error("Could not place order. Try again.");
+      return;
+    }
+
+    setOrderId(newOrder.id);
     setStep("pay");
   };
 
@@ -98,27 +142,67 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       setLaunching(false);
       setLaunchMsg(null);
       setStep("checking");
-      runCheckSequence();
+      startPaymentPolling(orderId);
     }, 800);
   };
 
   const payNow = async () => {
     if (!payInfo) return;
-    try {
-      await navigator.clipboard.writeText(payInfo.number);
+    const didCopy = await copyToClipboard(payInfo.number);
+    if (didCopy) {
       setCopied(true);
-    } catch {}
+      setCopyFailed(false);
+    } else {
+      setCopied(false);
+      setCopyFailed(true);
+    }
     setLaunching(true);
     setLaunchMsg("Opening dialer…");
     goToDialer();
   };
 
-  const runCheckSequence = () => {
-    setStatusText("Checking payment…");
+  const startPaymentPolling = (oid: string | null) => {
+    if (!oid) {
+      setVerifyStatus("not_found");
+      setUnlocked(false);
+      return;
+    }
+
+    setVerifyStatus("pending");
     setUnlocked(false);
-    setTimeout(() => setStatusText("Payment processed"), 2000);
-    setTimeout(() => setUnlocked(true), 2400);
-    setTimeout(() => setStep("verify"), 5200);
+
+    const POLL_INTERVAL_MS = 6000;
+    const MAX_ATTEMPTS = 30;
+    let attempts = 0;
+    let cancelled = false;
+
+    const poll = async () => {
+      if (cancelled) return;
+      attempts += 1;
+
+      const { data } = await supabase
+        .from("orders")
+        .select("status")
+        .eq("id", oid)
+        .single();
+
+      if (data?.status === "completed") {
+        setVerifyStatus("confirmed");
+        setUnlocked(true);
+        setTimeout(() => setStep("verify"), 2000);
+        return;
+      }
+
+      if (attempts >= MAX_ATTEMPTS) {
+        setVerifyStatus("not_found");
+        return;
+      }
+
+      setTimeout(poll, POLL_INTERVAL_MS);
+    };
+
+    setTimeout(poll, POLL_INTERVAL_MS);
+    return () => { cancelled = true; };
   };
 
   const completeVerification = () => {
@@ -127,6 +211,11 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   };
 
   const close = () => { setStep("details"); onClose(); };
+
+  const statusText =
+    verifyStatus === "confirmed" ? "Payment confirmed!" :
+    verifyStatus === "not_found" ? "Taking longer than expected…" :
+    "Waiting for payment confirmation…";
 
   return (
     <Dialog open={!!service} onOpenChange={(o) => !o && close()}>
@@ -163,11 +252,25 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                   <Label htmlFor="ck-phone">WhatsApp Number</Label>
                   <Input id="ck-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. 0765 101 494" inputMode="tel" />
                   {phone.length >= 3 && (
-                    <div className="mt-2 flex items-center gap-2 text-xs">
-                      {network === "mtn" && <span className="rounded-full bg-yellow-500/15 px-2.5 py-1 font-semibold text-yellow-400">● MTN Number</span>}
-                      {network === "airtel" && <span className="rounded-full bg-red-500/15 px-2.5 py-1 font-semibold text-red-400">● Airtel Number</span>}
-                      {network === "zamtel" && <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-400">● Zamtel Number</span>}
-                      {network === "unknown" && phone.length >= 6 && <span className="text-muted-foreground">Network not detected — check number</span>}
+                    <div className="mt-2 flex flex-col gap-1.5 text-xs">
+                      {network === "mtn" && (
+                        <span className="rounded-full bg-yellow-500/15 px-2.5 py-1 font-semibold text-yellow-400 w-fit">● MTN Number</span>
+                      )}
+                      {network === "airtel" && (
+                        <span className="rounded-full bg-red-500/15 px-2.5 py-1 font-semibold text-red-400 w-fit">● Airtel Number</span>
+                      )}
+                      {network === "zamtel" && (
+                        <>
+                          <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-400 w-fit">● Zamtel Number detected</span>
+                          <span className="flex items-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-300">
+                            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                            We don't have a Zamtel agent yet. You'll send payment via Airtel Money instead.
+                          </span>
+                        </>
+                      )}
+                      {network === "unknown" && phone.length >= 6 && (
+                        <span className="text-muted-foreground">Network not detected — check number</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -209,13 +312,26 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <h2 className="font-display text-2xl font-bold">Send Payment</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Pay <span className="font-bold text-foreground">K{totalPrice}</span> for {service.name}</p>
               </div>
+
+              {/* Zamtel redirect notice on the pay step */}
+              {network === "zamtel" && (
+                <div className="flex items-start gap-2 rounded-xl bg-amber-500/10 border border-amber-500/30 px-4 py-3 text-xs text-amber-300">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>Your number is Zamtel. We don't have a Zamtel agent yet — please send payment using <strong className="text-amber-200">Airtel Money</strong> to the number below.</span>
+                </div>
+              )}
+
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5"><span className={`h-1.5 w-1.5 rounded-full ${payInfo.dot}`} /> {payInfo.label} detected</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${payInfo.dot}`} />
+                  {network === "zamtel" ? "Zamtel → Pay via Airtel" : `${payInfo.label} detected`}
+                </span>
                 <span className="text-border">›</span>
                 <span>Pay K{totalPrice}</span>
                 <span className="text-border">›</span>
                 <span>Confirm</span>
               </div>
+
               <div className={`rounded-2xl border ${payInfo.border} ${payInfo.bg} p-5`}>
                 <p className={`text-xs font-bold uppercase tracking-wider ${payInfo.color}`}>{payInfo.label} Mobile Money</p>
                 <p className="mt-3 text-sm text-muted-foreground">Send payment to:</p>
@@ -223,28 +339,52 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <p className="mt-2 text-sm">Name: <span className="font-semibold">{payInfo.name}</span></p>
                 <p className="mt-3 text-xs text-muted-foreground">Amount: <span className="font-bold text-foreground">K{totalPrice}</span></p>
               </div>
+
+              {copyFailed && (
+                <div className="flex items-start gap-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 px-4 py-3 text-xs text-yellow-300">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>Couldn't copy automatically. Please write down or screenshot the number above before continuing.</span>
+                </div>
+              )}
             </div>
           )}
 
           {step === "checking" && (
             <div className="flex flex-col items-center justify-center py-10 animate-in fade-in duration-300">
               <div className="relative flex h-32 w-32 items-center justify-center">
-                {!unlocked ? (
-                  <>
-                    <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
-                    <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-primary" />
-                    <Lock className="h-12 w-12 text-primary" />
-                  </>
-                ) : (
+                {verifyStatus === "confirmed" ? (
                   <div className="relative flex h-32 w-32 items-center justify-center">
                     <div className="absolute inset-0 animate-ping rounded-full bg-primary/30" />
                     <div className="absolute inset-2 rounded-full bg-primary/15" />
                     <Unlock className="h-14 w-14 text-primary animate-in zoom-in spin-in-12 duration-500" />
                   </div>
+                ) : verifyStatus === "not_found" ? (
+                  <div className="relative flex h-32 w-32 items-center justify-center">
+                    <div className="absolute inset-2 rounded-full bg-yellow-500/10" />
+                    <AlertCircle className="h-14 w-14 text-yellow-400" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+                    <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-primary" />
+                    <Lock className="h-12 w-12 text-primary" />
+                  </>
                 )}
               </div>
-              <p className="mt-8 font-display text-xl font-bold">{statusText}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{unlocked ? "Access granted" : "Please wait a moment"}</p>
+              <p className="mt-8 font-display text-xl font-bold text-center">{statusText}</p>
+              {verifyStatus === "pending" && (
+                <p className="mt-1 text-xs text-muted-foreground text-center">
+                  Waiting for your payment to be confirmed.<br />This usually takes a few minutes.
+                </p>
+              )}
+              {verifyStatus === "confirmed" && (
+                <p className="mt-1 text-xs text-emerald-400 text-center">Access granted — redirecting…</p>
+              )}
+              {verifyStatus === "not_found" && (
+                <p className="mt-1 text-xs text-muted-foreground text-center max-w-xs">
+                  Your payment is taking longer than usual to confirm. Tap below to contact us on WhatsApp and we'll sort it out immediately.
+                </p>
+              )}
             </div>
           )}
 
@@ -261,7 +401,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
           )}
         </div>
 
-        {/* Sticky bottom CTA — always visible */}
+        {/* Sticky bottom CTA */}
         <div className="flex-shrink-0 px-6 pb-6 pt-3 border-t border-border bg-background">
           {step === "details" && (
             <Button onClick={submitDetails} disabled={submitting} className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-glow-red hover:bg-primary/90">
@@ -274,12 +414,19 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 {launching ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {launchMsg ?? "Opening…"}</> : <>Pay now <ArrowRight className="ml-1 h-4 w-4" /></>}
               </Button>
               <p className="-mt-1 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-                {copied ? <><Check className="h-3 w-3 text-emerald-400" /> Number copied to clipboard</> : <><Copy className="h-3 w-3" /> Number will be copied automatically</>}
+                {copied     && <><Check className="h-3 w-3 text-emerald-400" /> Number copied to clipboard</>}
+                {copyFailed && <><AlertCircle className="h-3 w-3 text-yellow-400" /> Copy failed — note the number above</>}
+                {!copied && !copyFailed && <><Copy className="h-3 w-3" /> Number will be copied automatically</>}
               </p>
-              <button onClick={() => { setStep("checking"); runCheckSequence(); }} className="block w-full text-center text-xs text-muted-foreground hover:text-foreground">
+              <button onClick={() => { setStep("checking"); startPaymentPolling(orderId); }} className="block w-full text-center text-xs text-muted-foreground hover:text-foreground">
                 I've already paid — continue
               </button>
             </div>
+          )}
+          {step === "checking" && verifyStatus === "not_found" && (
+            <Button onClick={completeVerification} className="h-14 w-full rounded-full text-base font-semibold text-black hover:opacity-90" style={{ backgroundColor: "#25D366" }}>
+              <MessageCircle className="mr-2 h-5 w-5" /> Contact us on WhatsApp
+            </Button>
           )}
           {step === "verify" && (
             <div className="space-y-3">
@@ -293,4 +440,4 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       </DialogContent>
     </Dialog>
   );
-        }
+  }
