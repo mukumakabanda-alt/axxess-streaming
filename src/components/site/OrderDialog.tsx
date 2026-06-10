@@ -66,9 +66,7 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
       return;
     }
 
-    // Remember the customer + referral code for later (points are awarded on completion, not now)
     rememberCustomer(parsed.data.customer_name, parsed.data.customer_phone);
-
     setDone(true);
   };
 
@@ -133,7 +131,7 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
               target="_blank"
               rel="noopener noreferrer"
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-black"
-              style={{ backgroundColor: "var(--color-spotify)" }}
+              style={{ backgroundColor: "#25D366" }}
             >
               <MessageCircle className="h-4 w-4" />
               Continue on WhatsApp
@@ -149,4 +147,4 @@ export function OrderDialog({ service, onClose }: { service: Service | null; onC
       </DialogContent>
     </Dialog>
   );
-}
+    }
