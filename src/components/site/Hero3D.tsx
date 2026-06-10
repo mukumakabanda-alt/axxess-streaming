@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import { motion, type Variants } from "framer-motion";
-import * as THREE from "three";
 import { supabase } from "@/integrations/supabase/client";
 
 /* ------------------------------------------------------------------ */
@@ -23,8 +22,8 @@ const STATIC_TITLES = [
 
 const PLATFORM_STYLES: Record<string, { color: string; label: string }> = {
   netflix: { color: "#E5192A", label: "Netflix" },
-  prime: { color: "#00A8E1", label: "Prime Video" },
-  dstv: { color: "#C9A84C", label: "DStv" },
+  prime:   { color: "#00A8E1", label: "Prime Video" },
+  dstv:    { color: "#C9A84C", label: "DStv" },
 };
 
 function AITitleScroller() {
@@ -65,10 +64,7 @@ function AITitleScroller() {
       }}
       aria-label={`View ${current.title} on ${style.label}`}
     >
-      {/* Platform dot */}
-      <span
-        className="relative flex h-2 w-2 flex-shrink-0"
-      >
+      <span className="relative flex h-2 w-2 flex-shrink-0">
         <span
           className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
           style={{ background: style.color }}
@@ -78,21 +74,15 @@ function AITitleScroller() {
           style={{ background: style.color }}
         />
       </span>
-
-      {/* Label */}
       <span
         className="text-[10px] font-bold uppercase tracking-widest"
         style={{ color: style.color }}
       >
         {style.label}
       </span>
-
-      {/* Divider */}
       <span style={{ width: 1, height: 12, background: "rgba(255,255,255,0.12)" }} />
-
-      {/* Title */}
       <span
-        className="text-sm font-semibold text-white transition-all duration-400"
+        className="text-sm font-semibold text-white"
         style={{
           opacity: visible ? 1 : 0,
           transform: visible ? "translateY(0)" : "translateY(6px)",
@@ -101,8 +91,6 @@ function AITitleScroller() {
       >
         {current.title}
       </span>
-
-      {/* Arrow */}
       <span
         className="ml-1 text-xs transition-transform duration-200 group-hover:translate-x-1"
         style={{ color: style.color }}
@@ -114,8 +102,22 @@ function AITitleScroller() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  WebGL Canvas — cinematic particle field                            */
+/*  WebGL Canvas — lazy loaded so Three.js (~580KB) doesn't block      */
+/*  the initial page render.                                           */
 /* ------------------------------------------------------------------ */
+function HeroCanvasFallback() {
+  // Simple animated gradient shown while Three.js loads
+  return (
+    <div
+      className="absolute inset-0"
+      style={{
+        background: "radial-gradient(ellipse 70% 60% at 50% 40%, rgba(229,25,42,0.12), transparent 70%)",
+      }}
+      aria-hidden
+    />
+  );
+}
+
 function HeroCanvas() {
   const mountRef = useRef<HTMLDivElement>(null);
   const mouse = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
@@ -125,231 +127,252 @@ function HeroCanvas() {
     const mount = mountRef.current;
     if (!mount) return;
 
-    const prefersReduced =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // FIX #22: Three.js is now dynamically imported so the ~580KB bundle
+    // is only fetched after the component mounts, not on initial page load.
+    let cancelled = false;
 
-    const w = () => mount.clientWidth;
-    const h = () => mount.clientHeight;
+    import("three").then((THREE) => {
+      if (cancelled) return;
 
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x080808, 0.045);
+      const prefersReduced =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const camera = new THREE.PerspectiveCamera(55, w() / h(), 0.1, 100);
-    camera.position.set(0, 0, 7);
+      const w = () => mount.clientWidth;
+      const h = () => mount.clientHeight;
 
-    const renderer = new THREE.WebGLRenderer({
-      alpha: true,
-      antialias: true,
-      powerPreference: "high-performance",
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(w(), h());
-    renderer.setClearColor(0x000000, 0);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    mount.appendChild(renderer.domElement);
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x080808, 0.045);
 
-    /* ---- Layer 1: Main particle field ---- */
-    const PCOUNT = prefersReduced ? 600 : 2000;
-    const positions = new Float32Array(PCOUNT * 3);
-    const colors = new Float32Array(PCOUNT * 3);
-    const sizes = new Float32Array(PCOUNT);
+      const camera = new THREE.PerspectiveCamera(55, w() / h(), 0.1, 100);
+      camera.position.set(0, 0, 7);
 
-    const cRed = new THREE.Color(0xe5192a);
-    const cGold = new THREE.Color(0xc9a84c);
-    const cWhite = new THREE.Color(0xffffff);
-    const cDeepRed = new THREE.Color(0x8b0000);
-
-    for (let i = 0; i < PCOUNT; i++) {
-      const layer = Math.random();
-      const radius = 1.5 + layer * 10;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.5;
-      positions[i * 3 + 2] = radius * Math.cos(phi) - 1;
-
-      const r = Math.random();
-      const col = r < 0.5 ? cRed : r < 0.72 ? cGold : r < 0.88 ? cWhite : cDeepRed;
-      colors[i * 3] = col.r;
-      colors[i * 3 + 1] = col.g;
-      colors[i * 3 + 2] = col.b;
-      sizes[i] = 0.5 + Math.random() * 2.8;
-    }
-
-    const pGeom = new THREE.BufferGeometry();
-    pGeom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    pGeom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    pGeom.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
-
-    const spriteCanvas = document.createElement("canvas");
-    spriteCanvas.width = spriteCanvas.height = 64;
-    const sctx = spriteCanvas.getContext("2d")!;
-    const grad = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-    grad.addColorStop(0, "rgba(255,255,255,1)");
-    grad.addColorStop(0.3, "rgba(255,255,255,0.5)");
-    grad.addColorStop(1, "rgba(255,255,255,0)");
-    sctx.fillStyle = grad;
-    sctx.fillRect(0, 0, 64, 64);
-    const sprite = new THREE.CanvasTexture(spriteCanvas);
-    sprite.colorSpace = THREE.SRGBColorSpace;
-
-    const pMat = new THREE.PointsMaterial({
-      size: 0.07,
-      map: sprite,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.85,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      sizeAttenuation: true,
-    });
-    const points = new THREE.Points(pGeom, pMat);
-    scene.add(points);
-
-    /* ---- Layer 2: Inner dense core cluster ---- */
-    const CORE = prefersReduced ? 80 : 300;
-    const cPos = new Float32Array(CORE * 3);
-    const cCol = new Float32Array(CORE * 3);
-    for (let i = 0; i < CORE; i++) {
-      const r2 = 0.3 + Math.random() * 1.8;
-      const t2 = Math.random() * Math.PI * 2;
-      const p2 = Math.acos(2 * Math.random() - 1);
-      cPos[i * 3] = r2 * Math.sin(p2) * Math.cos(t2);
-      cPos[i * 3 + 1] = r2 * Math.sin(p2) * Math.sin(t2) * 0.4;
-      cPos[i * 3 + 2] = r2 * Math.cos(p2);
-      const mix = Math.random();
-      cCol[i * 3] = mix < 0.6 ? cRed.r : cGold.r;
-      cCol[i * 3 + 1] = mix < 0.6 ? cRed.g : cGold.g;
-      cCol[i * 3 + 2] = mix < 0.6 ? cRed.b : cGold.b;
-    }
-    const coreGeom = new THREE.BufferGeometry();
-    coreGeom.setAttribute("position", new THREE.BufferAttribute(cPos, 3));
-    coreGeom.setAttribute("color", new THREE.BufferAttribute(cCol, 3));
-    const coreMat = new THREE.PointsMaterial({
-      size: 0.12,
-      map: sprite,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.95,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      sizeAttenuation: true,
-    });
-    const core = new THREE.Points(coreGeom, coreMat);
-    scene.add(core);
-
-    /* ---- Layer 3: Nebula rings ---- */
-    const RING_COUNT = 2;
-    const rings: THREE.Line[] = [];
-    for (let r = 0; r < RING_COUNT; r++) {
-      const ringGeom = new THREE.BufferGeometry();
-      const ringPts = 180;
-      const rPos = new Float32Array(ringPts * 3);
-      const radius2 = 2.5 + r * 1.8;
-      for (let i = 0; i < ringPts; i++) {
-        const angle = (i / ringPts) * Math.PI * 2;
-        rPos[i * 3] = radius2 * Math.cos(angle);
-        rPos[i * 3 + 1] = (Math.random() - 0.5) * 0.3;
-        rPos[i * 3 + 2] = radius2 * Math.sin(angle) * 0.35;
-      }
-      ringGeom.setAttribute("position", new THREE.BufferAttribute(rPos, 3));
-      const ringMat = new THREE.LineBasicMaterial({
-        color: r === 0 ? 0xe5192a : 0xc9a84c,
-        transparent: true,
-        opacity: r === 0 ? 0.18 : 0.1,
-        blending: THREE.AdditiveBlending,
+      const renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true,
+        powerPreference: "high-performance",
       });
-      const ring = new THREE.Line(ringGeom, ringMat);
-      ring.rotation.x = Math.PI / 2 + (r * 0.3);
-      scene.add(ring);
-      rings.push(ring);
-    }
-
-    /* ---- Listeners ---- */
-    const onMouse = (e: MouseEvent) => {
-      const r = mount.getBoundingClientRect();
-      mouse.current.tx = ((e.clientX - r.left) / r.width) * 2 - 1;
-      mouse.current.ty = -(((e.clientY - r.top) / r.height) * 2 - 1);
-    };
-    const onTouch = (e: TouchEvent) => {
-      if (!e.touches[0]) return;
-      const r = mount.getBoundingClientRect();
-      mouse.current.tx = ((e.touches[0].clientX - r.left) / r.width) * 2 - 1;
-      mouse.current.ty = -(((e.touches[0].clientY - r.top) / r.height) * 2 - 1);
-    };
-    const onScroll = () => (scrollY.current = window.scrollY);
-    const onResize = () => {
-      camera.aspect = w() / h();
-      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(w(), h());
-    };
-    window.addEventListener("mousemove", onMouse);
-    window.addEventListener("touchmove", onTouch, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
+      renderer.setClearColor(0x000000, 0);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      mount.appendChild(renderer.domElement);
 
-    /* ---- Animate ---- */
-    const clock = new THREE.Clock();
-    let raf = 0;
-    let visible = true;
-    const onVis = () => (visible = document.visibilityState === "visible");
-    document.addEventListener("visibilitychange", onVis);
+      /* ---- Layer 1: Main particle field ---- */
+      const PCOUNT = prefersReduced ? 600 : 2000;
+      const positions = new Float32Array(PCOUNT * 3);
+      const colors = new Float32Array(PCOUNT * 3);
+      const sizes = new Float32Array(PCOUNT);
 
-    const tick = () => {
-      raf = requestAnimationFrame(tick);
-      if (!visible) return;
+      const cRed = new THREE.Color(0xe5192a);
+      const cGold = new THREE.Color(0xc9a84c);
+      const cWhite = new THREE.Color(0xffffff);
+      const cDeepRed = new THREE.Color(0x8b0000);
 
-      const dt = Math.min(clock.getDelta(), 0.05);
-      const t = clock.elapsedTime;
+      for (let i = 0; i < PCOUNT; i++) {
+        const layer = Math.random();
+        const radius = 1.5 + layer * 10;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        positions[i * 3]     = radius * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.5;
+        positions[i * 3 + 2] = radius * Math.cos(phi) - 1;
 
-      mouse.current.x += (mouse.current.tx - mouse.current.x) * 0.035;
-      mouse.current.y += (mouse.current.ty - mouse.current.y) * 0.035;
+        const r = Math.random();
+        const col = r < 0.5 ? cRed : r < 0.72 ? cGold : r < 0.88 ? cWhite : cDeepRed;
+        colors[i * 3]     = col.r;
+        colors[i * 3 + 1] = col.g;
+        colors[i * 3 + 2] = col.b;
+        sizes[i] = 0.5 + Math.random() * 2.8;
+      }
 
-      camera.position.x += (mouse.current.x * 0.7 - camera.position.x) * 0.04;
-      camera.position.y += (mouse.current.y * 0.4 - camera.position.y) * 0.04;
-      camera.lookAt(0, 0, 0);
+      const pGeom = new THREE.BufferGeometry();
+      pGeom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      pGeom.setAttribute("color",    new THREE.BufferAttribute(colors, 3));
+      pGeom.setAttribute("size",     new THREE.BufferAttribute(sizes, 1));
 
-      points.rotation.y += dt * 0.035;
-      points.rotation.x = Math.sin(t * 0.1) * 0.06;
+      const spriteCanvas = document.createElement("canvas");
+      spriteCanvas.width = spriteCanvas.height = 64;
+      const sctx = spriteCanvas.getContext("2d")!;
+      const grad = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, "rgba(255,255,255,1)");
+      grad.addColorStop(0.3, "rgba(255,255,255,0.5)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      sctx.fillStyle = grad;
+      sctx.fillRect(0, 0, 64, 64);
+      const sprite = new THREE.CanvasTexture(spriteCanvas);
+      sprite.colorSpace = THREE.SRGBColorSpace;
 
-      core.rotation.y -= dt * 0.07;
-      core.rotation.z = Math.sin(t * 0.15) * 0.05;
-
-      rings.forEach((ring, i) => {
-        ring.rotation.z += dt * (i === 0 ? 0.025 : -0.018);
-        (ring.material as THREE.LineBasicMaterial).opacity =
-          (i === 0 ? 0.18 : 0.1) + Math.sin(t * 0.5 + i) * 0.05;
+      const pMat = new THREE.PointsMaterial({
+        size: 0.07,
+        map: sprite,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true,
       });
+      const points = new THREE.Points(pGeom, pMat);
+      scene.add(points);
 
-      pMat.opacity = 0.7 + Math.sin(t * 0.6) * 0.15;
-      coreMat.opacity = 0.85 + Math.sin(t * 0.9 + 1) * 0.12;
+      /* ---- Layer 2: Inner dense core cluster ---- */
+      const CORE = prefersReduced ? 80 : 300;
+      const cPos = new Float32Array(CORE * 3);
+      const cCol = new Float32Array(CORE * 3);
+      for (let i = 0; i < CORE; i++) {
+        const r2 = 0.3 + Math.random() * 1.8;
+        const t2 = Math.random() * Math.PI * 2;
+        const p2 = Math.acos(2 * Math.random() - 1);
+        cPos[i * 3]     = r2 * Math.sin(p2) * Math.cos(t2);
+        cPos[i * 3 + 1] = r2 * Math.sin(p2) * Math.sin(t2) * 0.4;
+        cPos[i * 3 + 2] = r2 * Math.cos(p2);
+        const mix = Math.random();
+        cCol[i * 3]     = mix < 0.6 ? cRed.r : cGold.r;
+        cCol[i * 3 + 1] = mix < 0.6 ? cRed.g : cGold.g;
+        cCol[i * 3 + 2] = mix < 0.6 ? cRed.b : cGold.b;
+      }
+      const coreGeom = new THREE.BufferGeometry();
+      coreGeom.setAttribute("position", new THREE.BufferAttribute(cPos, 3));
+      coreGeom.setAttribute("color",    new THREE.BufferAttribute(cCol, 3));
+      const coreMat = new THREE.PointsMaterial({
+        size: 0.12,
+        map: sprite,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true,
+      });
+      const core = new THREE.Points(coreGeom, coreMat);
+      scene.add(core);
 
-      const scrolled = Math.min(scrollY.current / (window.innerHeight * 0.9), 1);
-      renderer.domElement.style.opacity = String(1 - scrolled * 0.95);
-      camera.position.z = 7 + scrolled * 5;
+      /* ---- Layer 3: Nebula rings ---- */
+      const RING_COUNT = 2;
+      const rings: InstanceType<typeof THREE.Line>[] = [];
+      for (let r = 0; r < RING_COUNT; r++) {
+        const ringGeom = new THREE.BufferGeometry();
+        const ringPts = 180;
+        const rPos = new Float32Array(ringPts * 3);
+        const radius2 = 2.5 + r * 1.8;
+        for (let i = 0; i < ringPts; i++) {
+          const angle = (i / ringPts) * Math.PI * 2;
+          rPos[i * 3]     = radius2 * Math.cos(angle);
+          rPos[i * 3 + 1] = (Math.random() - 0.5) * 0.3;
+          rPos[i * 3 + 2] = radius2 * Math.sin(angle) * 0.35;
+        }
+        ringGeom.setAttribute("position", new THREE.BufferAttribute(rPos, 3));
+        const ringMat = new THREE.LineBasicMaterial({
+          color: r === 0 ? 0xe5192a : 0xc9a84c,
+          transparent: true,
+          opacity: r === 0 ? 0.18 : 0.1,
+          blending: THREE.AdditiveBlending,
+        });
+        const ring = new THREE.Line(ringGeom, ringMat);
+        ring.rotation.x = Math.PI / 2 + r * 0.3;
+        scene.add(ring);
+        rings.push(ring);
+      }
 
-      renderer.render(scene, camera);
-    };
-    tick();
+      /* ---- Listeners ---- */
+      const onMouse = (e: MouseEvent) => {
+        const r = mount.getBoundingClientRect();
+        mouse.current.tx = ((e.clientX - r.left) / r.width) * 2 - 1;
+        mouse.current.ty = -(((e.clientY - r.top) / r.height) * 2 - 1);
+      };
+      const onTouch = (e: TouchEvent) => {
+        if (!e.touches[0]) return;
+        const r = mount.getBoundingClientRect();
+        mouse.current.tx = ((e.touches[0].clientX - r.left) / r.width) * 2 - 1;
+        mouse.current.ty = -(((e.touches[0].clientY - r.top) / r.height) * 2 - 1);
+      };
+      const onScroll = () => (scrollY.current = window.scrollY);
+      const onResize = () => {
+        camera.aspect = w() / h();
+        camera.updateProjectionMatrix();
+        renderer.setSize(w(), h());
+      };
+      window.addEventListener("mousemove", onMouse);
+      window.addEventListener("touchmove", onTouch, { passive: true });
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onResize);
+
+      /* ---- Animate ---- */
+      const clock = new THREE.Clock();
+      let raf = 0;
+      let vis = true;
+      const onVis = () => (vis = document.visibilityState === "visible");
+      document.addEventListener("visibilitychange", onVis);
+
+      const tick = () => {
+        raf = requestAnimationFrame(tick);
+        if (!vis) return;
+
+        const dt = Math.min(clock.getDelta(), 0.05);
+        const t = clock.elapsedTime;
+
+        mouse.current.x += (mouse.current.tx - mouse.current.x) * 0.035;
+        mouse.current.y += (mouse.current.ty - mouse.current.y) * 0.035;
+
+        camera.position.x += (mouse.current.x * 0.7 - camera.position.x) * 0.04;
+        camera.position.y += (mouse.current.y * 0.4 - camera.position.y) * 0.04;
+        camera.lookAt(0, 0, 0);
+
+        points.rotation.y += dt * 0.035;
+        points.rotation.x = Math.sin(t * 0.1) * 0.06;
+
+        core.rotation.y -= dt * 0.07;
+        core.rotation.z = Math.sin(t * 0.15) * 0.05;
+
+        rings.forEach((ring, i) => {
+          ring.rotation.z += dt * (i === 0 ? 0.025 : -0.018);
+          (ring.material as InstanceType<typeof THREE.LineBasicMaterial>).opacity =
+            (i === 0 ? 0.18 : 0.1) + Math.sin(t * 0.5 + i) * 0.05;
+        });
+
+        pMat.opacity    = 0.7  + Math.sin(t * 0.6) * 0.15;
+        coreMat.opacity = 0.85 + Math.sin(t * 0.9 + 1) * 0.12;
+
+        const scrolled = Math.min(scrollY.current / (window.innerHeight * 0.9), 1);
+        renderer.domElement.style.opacity = String(1 - scrolled * 0.95);
+        camera.position.z = 7 + scrolled * 5;
+
+        renderer.render(scene, camera);
+      };
+      tick();
+
+      // Cleanup
+      const cleanup = () => {
+        cancelAnimationFrame(raf);
+        document.removeEventListener("visibilitychange", onVis);
+        window.removeEventListener("mousemove", onMouse);
+        window.removeEventListener("touchmove", onTouch);
+        window.removeEventListener("scroll", onScroll);
+        window.removeEventListener("resize", onResize);
+        renderer.dispose();
+        pGeom.dispose();
+        pMat.dispose();
+        coreGeom.dispose();
+        coreMat.dispose();
+        sprite.dispose();
+        rings.forEach((r) => {
+          r.geometry.dispose();
+          (r.material as InstanceType<typeof THREE.Material>).dispose();
+        });
+        if (renderer.domElement.parentNode === mount) {
+          mount.removeChild(renderer.domElement);
+        }
+      };
+
+      // Store cleanup on the ref so the outer effect can call it
+      (mount as any).__threeCleanup = cleanup;
+    });
 
     return () => {
-      cancelAnimationFrame(raf);
-      document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("mousemove", onMouse);
-      window.removeEventListener("touchmove", onTouch);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-      renderer.dispose();
-      pGeom.dispose();
-      pMat.dispose();
-      coreGeom.dispose();
-      coreMat.dispose();
-      sprite.dispose();
-      rings.forEach((r) => { r.geometry.dispose(); (r.material as THREE.Material).dispose(); });
-      if (renderer.domElement.parentNode === mount) {
-        mount.removeChild(renderer.domElement);
-      }
+      cancelled = true;
+      const cleanup = (mountRef.current as any)?.__threeCleanup;
+      if (cleanup) cleanup();
     };
   }, []);
 
@@ -404,18 +427,16 @@ const AVATARS = [
 export function Hero3D() {
   const [activeCount, setActiveCount] = useState<number | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  // FIX #22: track whether canvas has mounted so we swap fallback → canvas
+  const [canvasReady, setCanvasReady] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       const [{ count: o }, { count: s }] = await Promise.all([
-        supabase
-          .from("orders")
-          .select("id", { count: "exact", head: true })
+        supabase.from("orders").select("id", { count: "exact", head: true })
           .eq("status", "completed")
           .gt("expires_at", new Date().toISOString()),
-        supabase
-          .from("subscriptions")
-          .select("id", { count: "exact", head: true })
+        supabase.from("subscriptions").select("id", { count: "exact", head: true })
           .eq("is_active", true)
           .gt("end_date", new Date().toISOString()),
       ]);
@@ -425,7 +446,12 @@ export function Hero3D() {
     const i = setInterval(load, 30000);
     const onScroll = () => setScrolled(window.scrollY > 100);
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => { clearInterval(i); window.removeEventListener("scroll", onScroll); };
+
+    // FIX #22: delay canvas mount by one frame so text/CTA renders first,
+    // then Three.js loads in the background without blocking paint.
+    const t = setTimeout(() => setCanvasReady(true), 0);
+
+    return () => { clearInterval(i); window.removeEventListener("scroll", onScroll); clearTimeout(t); };
   }, []);
 
   const fadeUp: Variants = {
@@ -442,9 +468,10 @@ export function Hero3D() {
       className="relative w-full overflow-hidden"
       style={{ height: "100vh", minHeight: 640, background: "#080808" }}
     >
-      {/* Canvas */}
+      {/* FIX #22: Canvas only mounts after first paint. Fallback gradient
+          shows instantly while Three.js downloads and initialises. */}
       <div className="absolute inset-0" style={{ zIndex: 0 }}>
-        <HeroCanvas />
+        {canvasReady ? <HeroCanvas /> : <HeroCanvasFallback />}
       </div>
 
       {/* Cursor spotlight */}
@@ -748,4 +775,4 @@ export function Hero3D() {
       `}</style>
     </section>
   );
-    }
+  }
