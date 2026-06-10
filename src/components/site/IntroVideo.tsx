@@ -5,6 +5,7 @@ import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 
 export function IntroVideo() {
   const [videoUrl, setVideoUrl] = useState<string>("");
+  const [loaded, setLoaded] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -23,8 +24,15 @@ export function IntroVideo() {
       .select("value")
       .eq("key", "intro_video_url")
       .maybeSingle()
-      .then(({ data }) => setVideoUrl(data?.value ?? ""));
+      .then(({ data }) => {
+        setVideoUrl(data?.value ?? "");
+        setLoaded(true);
+      });
   }, []);
+
+  // Don't render anything until we know whether a video URL exists.
+  // If loaded and still empty, skip the section entirely — no blank space.
+  if (loaded && !videoUrl) return null;
 
   const toggle = () => {
     const v = videoRef.current;
@@ -125,10 +133,7 @@ export function IntroVideo() {
         </motion.div>
 
         {/* Video frame */}
-        <motion.div
-          style={{ y, scale }}
-          className="relative mx-auto mt-14"
-        >
+        <motion.div style={{ y, scale }} className="relative mx-auto mt-14">
           {/* Outer gradient border */}
           <div
             className="intro-video-shell relative rounded-[28px] p-[1.5px]"
@@ -160,86 +165,61 @@ export function IntroVideo() {
                   className="ml-3 truncate text-[11px]"
                   style={{ color: "rgba(255,255,255,0.35)", letterSpacing: 0.5 }}
                 >
-                  axxess.zm / how-it-works
+                  axxstream.netlify.app / how-it-works
                 </span>
               </div>
 
               {/* Video area */}
               <div className="relative aspect-video w-full bg-black">
-                {videoUrl ? (
-                  <>
-                    <video
-                      ref={videoRef}
-                      src={videoUrl}
-                      playsInline
-                      muted={muted}
-                      loop
-                      onClick={toggle}
-                      className="h-full w-full cursor-pointer object-cover"
-                    />
-                    {/* Play overlay */}
-                    <button
-                      type="button"
-                      onClick={toggle}
-                      aria-label={playing ? "Pause video" : "Play video"}
-                      className="group absolute inset-0 flex items-center justify-center"
-                      style={{
-                        background: playing
-                          ? "transparent"
-                          : "linear-gradient(180deg, rgba(8,8,8,0.2), rgba(8,8,8,0.6))",
-                        transition: "background 300ms ease",
-                      }}
-                    >
-                      <span
-                        className="intro-play-btn"
-                        style={{
-                          opacity: playing ? 0 : 1,
-                          transform: playing ? "scale(0.85)" : "scale(1)",
-                          transition: "all 250ms cubic-bezier(0.16,1,0.3,1)",
-                        }}
-                      >
-                        <span className="intro-play-ripple" />
-                        <span className="intro-play-ripple intro-play-ripple-2" />
-                        <Play className="relative h-7 w-7" fill="currentColor" />
-                      </span>
-                    </button>
-                    {/* Mute control */}
-                    <button
-                      type="button"
-                      onClick={toggleMute}
-                      aria-label={muted ? "Unmute" : "Mute"}
-                      className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-md transition hover:scale-105"
-                      style={{
-                        background: "rgba(0,0,0,0.55)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        color: "#fff",
-                      }}
-                    >
-                      {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                    </button>
-                  </>
-                ) : (
-                  <div className="relative flex h-full w-full items-center justify-center">
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background:
-                          "radial-gradient(circle at 50% 50%, rgba(229,25,42,0.18), transparent 60%)",
-                      }}
-                    />
-                    <div className="intro-play-btn relative">
-                      <span className="intro-play-ripple" />
-                      <span className="intro-play-ripple intro-play-ripple-2" />
-                      <Play className="relative h-7 w-7" fill="currentColor" />
-                    </div>
-                    <p
-                      className="absolute bottom-6 text-xs"
-                      style={{ color: "rgba(255,255,255,0.4)", letterSpacing: 1 }}
-                    >
-                      Intro video coming soon
-                    </p>
-                  </div>
-                )}
+                <video
+                  ref={videoRef}
+                  src={videoUrl}
+                  playsInline
+                  muted={muted}
+                  loop
+                  onClick={toggle}
+                  className="h-full w-full cursor-pointer object-cover"
+                />
+                {/* Play overlay */}
+                <button
+                  type="button"
+                  onClick={toggle}
+                  aria-label={playing ? "Pause video" : "Play video"}
+                  className="group absolute inset-0 flex items-center justify-center"
+                  style={{
+                    background: playing
+                      ? "transparent"
+                      : "linear-gradient(180deg, rgba(8,8,8,0.2), rgba(8,8,8,0.6))",
+                    transition: "background 300ms ease",
+                  }}
+                >
+                  <span
+                    className="intro-play-btn"
+                    style={{
+                      opacity: playing ? 0 : 1,
+                      transform: playing ? "scale(0.85)" : "scale(1)",
+                      transition: "all 250ms cubic-bezier(0.16,1,0.3,1)",
+                    }}
+                  >
+                    <span className="intro-play-ripple" />
+                    <span className="intro-play-ripple intro-play-ripple-2" />
+                    <Play className="relative h-7 w-7" fill="currentColor" />
+                  </span>
+                </button>
+                {/* Mute control */}
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  aria-label={muted ? "Unmute" : "Mute"}
+                  className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-md transition hover:scale-105"
+                  style={{
+                    background: "rgba(0,0,0,0.55)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    color: "#fff",
+                  }}
+                >
+                  {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                </button>
               </div>
             </div>
           </div>
@@ -296,4 +276,4 @@ export function IntroVideo() {
       `}</style>
     </section>
   );
-}
+                     }
