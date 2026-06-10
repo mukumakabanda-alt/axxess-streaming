@@ -63,7 +63,7 @@ function ContactPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-black"
-              style={{ backgroundColor: "var(--color-spotify)" }}
+              style={{ backgroundColor: "#25D366" }}
             >
               <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
             </a>
@@ -74,13 +74,13 @@ function ContactPage() {
             <div className="flex items-center gap-3">
               <span
                 className="flex h-12 w-12 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: "color-mix(in oklab, var(--color-spotify) 18%, transparent)", color: "var(--color-spotify)" }}
+                style={{ backgroundColor: "color-mix(in oklab, #25D366 18%, transparent)", color: "#25D366" }}
               >
                 <Users className="h-5 w-5" />
               </span>
               <div>
                 <p className="font-display text-lg font-bold">Join the community</p>
-                <p className="text-xs text-muted-foreground">Updates, deals & quick support</p>
+                <p className="text-xs text-muted-foreground">Updates, deals &amp; quick support</p>
               </div>
             </div>
             <a
