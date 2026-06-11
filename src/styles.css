@@ -39,7 +39,6 @@
 :root {
   --radius: 1rem;
 
-  /* Lifted charcoal — never pure black, lets pattern breathe */
   --background: oklch(0.13 0.008 280);
   --foreground: oklch(0.98 0 0);
 
@@ -49,7 +48,6 @@
   --popover: oklch(0.15 0.01 280);
   --popover-foreground: oklch(0.98 0 0);
 
-  /* Refined neon red — saturated but not childish */
   --primary: oklch(0.62 0.24 25);
   --primary-foreground: oklch(1 0 0);
   --primary-glow: oklch(0.7 0.26 25);
@@ -100,7 +98,6 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "cv11", "ss01";
-    /* Layered: soft red ambient + diagonal mesh + subtle dot grid */
     background-image:
       radial-gradient(ellipse 70% 45% at 50% -8%, oklch(0.62 0.24 25 / 0.16), transparent 70%),
       radial-gradient(circle at 12% 88%, oklch(0.62 0.24 25 / 0.07), transparent 55%),
@@ -116,7 +113,6 @@
     letter-spacing: -0.02em;
   }
 
-  /* High-contrast inputs */
   input, textarea, select {
     background-color: oklch(0.21 0.01 280) !important;
     border-color: oklch(0.32 0.01 280) !important;
@@ -127,6 +123,9 @@
     box-shadow: 0 0 0 3px oklch(0.62 0.24 25 / 0.18) !important;
   }
   input::placeholder, textarea::placeholder { color: oklch(0.6 0 0) !important; }
+
+  /* Offset anchored sections so fixed header doesn't overlap them */
+  section[id] { scroll-margin-top: 72px; }
 }
 
 @layer utilities {
@@ -167,9 +166,11 @@
   transition: var(--transition-smooth);
 }
 
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 0 0 oklch(0.628 0.258 25.5 / 0.5); }
-  50% { box-shadow: 0 0 0 12px oklch(0.628 0.258 25.5 / 0); }
+  50%       { box-shadow: 0 0 0 12px oklch(0.628 0.258 25.5 / 0); }
 }
 .animate-pulse-glow { animation: pulse-glow 2s infinite; }
 
@@ -192,7 +193,7 @@
 .neon-red-glow { animation: neon-pulse 2.6s ease-in-out infinite; }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
+  0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
 .shimmer-overlay::after {
@@ -204,32 +205,29 @@
 }
 
 @keyframes confetti {
-  0% { transform: translateY(-30px) rotate(0deg) scale(0.6); opacity: 0; }
-  8% { opacity: 1; transform: translateY(20px) rotate(120deg) scale(1); }
+  0%   { transform: translateY(-30px) rotate(0deg) scale(0.6); opacity: 0; }
+  8%   { opacity: 1; transform: translateY(20px) rotate(120deg) scale(1); }
   100% { transform: translateY(280px) rotate(720deg) scale(0.8); opacity: 0; }
 }
 .animate-confetti { animation: confetti 2.2s cubic-bezier(.2,.6,.4,1) forwards; }
 
-/* Premium celebration burst on points number */
 @keyframes points-pop {
-  0% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
-  20% { transform: scale(1.45) rotate(-3deg); filter: drop-shadow(0 0 22px oklch(0.7 0.27 25.5 / 0.7)); }
-  45% { transform: scale(0.92) rotate(2deg); }
-  70% { transform: scale(1.12) rotate(-1deg); filter: drop-shadow(0 0 14px oklch(0.7 0.27 25.5 / 0.5)); }
+  0%   { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+  20%  { transform: scale(1.45) rotate(-3deg); filter: drop-shadow(0 0 22px oklch(0.7 0.27 25.5 / 0.7)); }
+  45%  { transform: scale(0.92) rotate(2deg); }
+  70%  { transform: scale(1.12) rotate(-1deg); filter: drop-shadow(0 0 14px oklch(0.7 0.27 25.5 / 0.5)); }
   100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0 transparent); }
 }
 .animate-points-pop { animation: points-pop 1.4s cubic-bezier(.34,1.56,.64,1) forwards; }
 
-/* Radial burst behind points */
 @keyframes burst-ring {
-  0% { transform: scale(0.4); opacity: 0.9; }
+  0%   { transform: scale(0.4); opacity: 0.9; }
   100% { transform: scale(2.8); opacity: 0; }
 }
 .animate-burst-ring { animation: burst-ring 1.2s cubic-bezier(.2,.7,.3,1) forwards; }
 
-/* Progress bar shimmer that runs while filling */
 @keyframes bar-shimmer {
-  0% { background-position: -200% 0; }
+  0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 .bar-shimmer {
@@ -238,20 +236,72 @@
   animation: bar-shimmer 1.6s linear infinite;
 }
 
-/* Reward unlock toast slide-in from right, slide-out */
 @keyframes reward-slide {
-  0% { transform: translateX(120%); opacity: 0; }
-  10% { transform: translateX(0); opacity: 1; }
-  85% { transform: translateX(0); opacity: 1; }
+  0%   { transform: translateX(120%); opacity: 0; }
+  10%  { transform: translateX(0); opacity: 1; }
+  85%  { transform: translateX(0); opacity: 1; }
   100% { transform: translateX(120%); opacity: 0; }
 }
 .animate-reward-slide { animation: reward-slide 4.5s cubic-bezier(.4,0,.2,1) forwards; }
 
 @keyframes reveal-line {
   from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+  to   { transform: scaleX(1); }
 }
+
 @keyframes news-slide-up {
   from { transform: translateY(120%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* ── Hero section animations (Hero3D.tsx) ────────────────────────────────── */
+
+@keyframes lineReveal {
+  from { transform: translateY(105%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes heroFadeUp {
+  from { transform: translateY(22px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes goldPulse {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(201,168,76,0.7); }
+  50%       { box-shadow: 0 0 14px 4px rgba(201,168,76,0.3); }
+}
+
+@keyframes scrollLinePulse {
+  0%, 100% { opacity: 0.4; transform: scaleY(1); }
+  50%       { opacity: 0.9; transform: scaleY(1.08); }
+}
+
+@keyframes scrollIndicatorIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes btnShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Header slide-down entrance ─────────────────────────────────────────── */
+
+@keyframes headerSlideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+.animate-header-enter {
+  animation: headerSlideDown 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
   }
