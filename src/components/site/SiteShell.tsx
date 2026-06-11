@@ -68,7 +68,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <div ref={top} className="min-h-screen bg-background text-foreground">
       <SiteHeader />
-      <main className="pb-28">
+      <main className="pb-28 pt-[60px]">
         <PageTransition>{children}</PageTransition>
       </main>
       <SiteFooter />
