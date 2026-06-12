@@ -171,6 +171,12 @@ Respond ONLY with a valid JSON array of 8 objects. No markdown, no preamble, no 
   });
 
   const data = await response.json();
+
+  if (!response.ok) {
+    console.error("Anthropic API error:", response.status, JSON.stringify(data));
+    throw new Error(`API error ${response.status}: ${data?.error?.message ?? "Unknown error"}`);
+  }
+
   const raw = (data.content ?? [])
     .filter((b: any) => b.type === "text")
     .map((b: any) => b.text)
@@ -477,8 +483,9 @@ function NewsPage() {
       const currentPrefs = loadPrefs();
       const data = await generateNews(currentPrefs, count);
       setArticles(data);
-    } catch {
-      setError("Couldn't load news right now. Network issue or Claude is taking a nap 😴 Try refreshing.");
+    } catch (err: any) {
+      console.error("News load error:", err);
+      setError(`Couldn't load news: ${err?.message ?? "Unknown error"} — Try refreshing.`);
     } finally {
       setLoading(false);
       setRefreshing(false);
