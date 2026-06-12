@@ -47,8 +47,8 @@ type UserPrefs = {
 };
 
 /* ─── Constants ────────────────────────────────────────────────────────── */
-const TMDB_KEY = (import.meta as any).env?.VITE_TMDB_KEY ?? "a88d5ae60c54ee1720dd60feda898521";
-const CLAUDE_API_KEY = "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";
+const TMDB_KEY = (import.meta as any).env?.VITE_TMDB_KEY ?? "";
+const CLAUDE_API_KEY = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY ?? "";
 const PREFS_KEY = "axx_news_prefs_v2";
 const CACHE_KEY = "axx_news_cache_v2";
 const CACHE_TTL = 1000 * 60 * 30;
@@ -189,7 +189,7 @@ Respond ONLY with a valid JSON array of 8 objects. No markdown, no preamble, no 
           const d = await r.json();
           a.posterUrl = d.poster_path
             ? `https://image.tmdb.org/t/p/w500${d.poster_path}`
-            : null;
+            : undefined;
         } catch {}
         const key = await fetchTrailer(a.tmdbId, a.tmdbType);
         a.trailerKey = key ?? undefined;
@@ -477,7 +477,7 @@ function NewsPage() {
       const currentPrefs = loadPrefs();
       const data = await generateNews(currentPrefs, count);
       setArticles(data);
-    } catch (e) {
+    } catch {
       setError("Couldn't load news right now. Network issue or Claude is taking a nap 😴 Try refreshing.");
     } finally {
       setLoading(false);
