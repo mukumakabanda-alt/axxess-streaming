@@ -3,7 +3,7 @@ import { X, Flame, ChevronRight } from "lucide-react";
 import { useLocation, Link } from "@tanstack/react-router";
 
 const POPUP_KEY = "axx_news_popup_v3";
-const CLAUDE_API_KEY = "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";
+const CLAUDE_API_KEY = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY ?? "";
 
 type PopupArticle = {
   headline: string;
@@ -185,4 +185,4 @@ export function NewsPopup() {
       </div>
     </div>
   );
-      }
+}
