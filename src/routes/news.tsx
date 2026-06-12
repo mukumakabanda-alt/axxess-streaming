@@ -48,7 +48,7 @@ type UserPrefs = {
 
 /* ─── Constants ────────────────────────────────────────────────────────── */
 const TMDB_KEY = (import.meta as any).env?.VITE_TMDB_KEY ?? "a88d5ae60c54ee1720dd60feda898521";
-const CLAUDE_API_KEY = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY ?? "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";
+const GEMINI_API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY ?? "";
 const PREFS_KEY = "axx_news_prefs_v2";
 const CACHE_KEY = "axx_news_cache_v2";
 const CACHE_TTL = 1000 * 60 * 30;
@@ -94,7 +94,7 @@ async function fetchTrailer(tmdbId: number, type: "movie" | "tv"): Promise<strin
   } catch { return null; }
 }
 
-/* ─── Claude AI news generator ──────────────────────────────────────────── */
+/* ─── Gemini AI news generator ──────────────────────────────────────────── */
 async function generateNews(
   prefs: UserPrefs,
   refreshCount: number
@@ -155,32 +155,45 @@ Respond ONLY with a valid JSON array of 8 objects. No markdown, no preamble, no 
   "timestamp": "ISO date string for today"
 }]`;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": CLAUDE_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 8000,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 8000,
+          temperature: 1.0,
+        },
+      }),
+    }
+  );
 
   const data = await response.json();
 
   if (!response.ok) {
-    console.error("Anthropic API error:", response.status, JSON.stringify(data));
-    throw new Error(`API error ${response.status}: ${data?.error?.message ?? "Unknown error"}`);
+    console.error("Gemini API error:", response.status, JSON.stringify(data));
+    throw new Error(
+      `API error ${response.status}: ${data?.error?.message ?? "Unknown error"}`
+    );
   }
 
-  const raw = (data.content ?? [])
-    .filter((b: any) => b.type === "text")
-    .map((b: any) => b.text)
-    .join("");
+  const raw: string =
+    data?.candidates?.[0]?.content?.parts
+      ?.filter((p: any) => p.text)
+      ?.map((p: any) => p.text)
+      ?.join("") ?? "";
+
+  if (!raw) {
+    throw new Error("Gemini returned an empty response");
+  }
 
   const clean = raw.replace(/```json|```/g, "").trim();
   const articles: Article[] = JSON.parse(clean);
@@ -738,7 +751,7 @@ function NewsPage() {
               {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
               <p className="text-center text-xs py-4" style={{ color: "rgba(255,255,255,0.25)" }}>
                 <Sparkles className="inline h-3 w-3 mr-1" />
-                Claude is writing your personalised news feed...
+                Gemini is writing your personalised news feed...
               </p>
             </>
           )}
@@ -808,4 +821,4 @@ function NewsPage() {
       `}</style>
     </SiteShell>
   );
-  }
+}
