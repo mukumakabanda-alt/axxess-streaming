@@ -47,8 +47,8 @@ type UserPrefs = {
 };
 
 /* ─── Constants ────────────────────────────────────────────────────────── */
-const TMDB_KEY = (import.meta as any).env?.VITE_TMDB_KEY ?? "";
-const CLAUDE_API_KEY = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY ?? "";
+const TMDB_KEY = (import.meta as any).env?.VITE_TMDB_KEY ?? "a88d5ae60c54ee1720dd60feda898521";
+const CLAUDE_API_KEY = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY ?? "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";
 const PREFS_KEY = "axx_news_prefs_v2";
 const CACHE_KEY = "axx_news_cache_v2";
 const CACHE_TTL = 1000 * 60 * 30;
