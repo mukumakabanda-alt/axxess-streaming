@@ -3,7 +3,7 @@ import { X, Flame, ChevronRight } from "lucide-react";
 import { useLocation, Link } from "@tanstack/react-router";
 
 const POPUP_KEY = "axx_news_popup_v3";
-const CLAUDE_API_KEY = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY ?? "";
+const GEMINI_API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY ?? "";
 
 type PopupArticle = {
   headline: string;
@@ -28,25 +28,21 @@ Rules:
 Respond ONLY with JSON — no markdown, no explanation:
 {"headline": "string", "hook": "string", "emoji": "string", "category": "string", "controversial": boolean}`;
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": CLAUDE_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 300,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 300, temperature: 0.9 },
+        }),
+      }
+    );
 
     const data = await response.json();
-    const raw = (data.content ?? [])
-      .filter((b: any) => b.type === "text")
-      .map((b: any) => b.text)
+    const raw = (data.candidates?.[0]?.content?.parts ?? [])
+      .map((p: any) => p.text)
       .join("")
       .replace(/```json|```/g, "")
       .trim();
@@ -185,4 +181,4 @@ export function NewsPopup() {
       </div>
     </div>
   );
-}
+  }
