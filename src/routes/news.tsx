@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site/SiteShell";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  Flame, RefreshCw, Tv2, Zap, TrendingUp, MessageCircle,
-  Play, Share2, BookmarkPlus, ChevronRight, Star, Eye,
+  Flame, RefreshCw,
+  Play, Share2, BookmarkPlus, ChevronRight, Eye,
   ThumbsUp, Clock, Sparkles
 } from "lucide-react";
 
@@ -48,19 +48,19 @@ type UserPrefs = {
 
 /* ─── Constants ────────────────────────────────────────────────────────── */
 const TMDB_KEY = (import.meta as any).env?.VITE_TMDB_KEY ?? "a88d5ae60c54ee1720dd60feda898521";
-const GEMINI_API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY ?? "";
+const GEMINI_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY ?? "";
 const PREFS_KEY = "axx_news_prefs_v2";
-const CACHE_KEY = "axx_news_cache_v2";
+const CACHE_KEY = "axx_news_cache_v4";
 const CACHE_TTL = 1000 * 60 * 30;
 
 const CATEGORIES = [
-  { id: "all",     label: "🔥 All",       color: "#E5192A" },
-  { id: "hot",     label: "⚡ Hot",       color: "#FF6B35" },
-  { id: "zambia",  label: "🇿🇲 Zambia",   color: "#198754" },
-  { id: "axxess",  label: "🎯 Axxess",    color: "#C9A84C" },
-  { id: "series",  label: "📺 Series",    color: "#7C3AED" },
-  { id: "movies",  label: "🎬 Movies",    color: "#0EA5E9" },
-  { id: "tea",     label: "☕ Tea",       color: "#EC4899" },
+  { id: "all",    label: "🔥 All",     color: "#E5192A" },
+  { id: "hot",    label: "⚡ Hot",     color: "#FF6B35" },
+  { id: "zambia", label: "🇿🇲 Zambia", color: "#198754" },
+  { id: "axxess", label: "🎯 Axxess",  color: "#C9A84C" },
+  { id: "series", label: "📺 Series",  color: "#7C3AED" },
+  { id: "movies", label: "🎬 Movies",  color: "#0EA5E9" },
+  { id: "tea",    label: "☕ Tea",     color: "#EC4899" },
 ] as const;
 
 /* ─── Preference helpers ────────────────────────────────────────────────── */
@@ -69,7 +69,9 @@ function loadPrefs(): UserPrefs {
     return JSON.parse(localStorage.getItem(PREFS_KEY) ?? "null") ?? {
       liked: [], bookmarked: [], viewed: [], categoryScores: {},
     };
-  } catch { return { liked: [], bookmarked: [], viewed: [], categoryScores: {} }; }
+  } catch {
+    return { liked: [], bookmarked: [], viewed: [], categoryScores: {} };
+  }
 }
 function savePrefs(p: UserPrefs) {
   try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch {}
@@ -80,7 +82,7 @@ function scoreCategory(prefs: UserPrefs, cat: string, delta: number): UserPrefs 
   return { ...prefs, categoryScores: scores };
 }
 
-/* ─── TMDB trailer fetch ─────────────────────────────────────────────────── */
+/* ─── TMDB helpers ───────────────────────────────────────────────────────── */
 async function fetchTrailer(tmdbId: number, type: "movie" | "tv"): Promise<string | null> {
   try {
     const r = await fetch(
@@ -94,11 +96,8 @@ async function fetchTrailer(tmdbId: number, type: "movie" | "tv"): Promise<strin
   } catch { return null; }
 }
 
-/* ─── Gemini AI news generator ──────────────────────────────────────────── */
-async function generateNews(
-  prefs: UserPrefs,
-  refreshCount: number
-): Promise<Article[]> {
+/* ─── Gemini news generator ─────────────────────────────────────────────── */
+async function generateNews(prefs: UserPrefs, refreshCount: number): Promise<Article[]> {
   if (refreshCount === 0) {
     try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) ?? "null");
@@ -125,7 +124,7 @@ STRICT RULES:
 - Every headline must be a scroll-stopper. Use controversy, curiosity gaps, or humour.
 - The "hook" is ONE sentence that makes you NEED to read more. Make it slightly outrageous or intriguing.
 - The "body" is 3-5 paragraphs with real info, facts, stats, Zambian cultural references where relevant. Write like a journalist who has opinions.
-- The "opinion" is 1-2 sentences at the end — your personal take as a bold Zambian editor. Don't be neutral. Be memorable.
+- The "opinion" is 1-2 sentences — your personal take as a bold Zambian editor. Don't be neutral. Be memorable.
 - The "shareText" is what someone would copy-paste to their WhatsApp group. Make it spicy enough to forward.
 - Categories: hot (breaking/trending), zambia (Zambian entertainment/culture), axxess (Axxess Streaming tips/deals/news), series (TV series), movies, tea (celebrity gossip/drama).
 - Mark truly controversial articles as controversial: true.
@@ -133,9 +132,9 @@ STRICT RULES:
 - For articles about specific shows/movies, include tmdbId (TMDB numeric ID) and tmdbType ("movie" or "tv").
 - Mix categories. At least 1 "zambia", 1 "axxess", 2 "hot", and 2 "tea".
 - readTime is 1-3 minutes.
-- Make articles feel DIFFERENT from each other. Vary the tone — some funny, some informative, some outraged, some excited.
+- Make articles feel DIFFERENT from each other. Vary tone — some funny, some informative, some outraged, some excited.
 
-Respond ONLY with a valid JSON array of 8 objects. No markdown, no preamble, no explanation. The JSON must match this exact shape:
+Respond ONLY with a valid JSON array of 8 objects. No markdown, no backticks, no preamble, no explanation. Just raw JSON starting with [ and ending with ].
 [{
   "id": "unique-slug-string",
   "headline": "string",
@@ -156,22 +155,13 @@ Respond ONLY with a valid JSON array of 8 objects. No markdown, no preamble, no 
 }]`;
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          maxOutputTokens: 8000,
-          temperature: 1.0,
-        },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 8192, temperature: 1.0 },
       }),
     }
   );
@@ -179,24 +169,18 @@ Respond ONLY with a valid JSON array of 8 objects. No markdown, no preamble, no 
   const data = await response.json();
 
   if (!response.ok) {
-    console.error("Gemini API error:", response.status, JSON.stringify(data));
-    throw new Error(
-      `API error ${response.status}: ${data?.error?.message ?? "Unknown error"}`
-    );
+    throw new Error(`API error ${response.status}: ${data?.error?.message ?? "Unknown error"}`);
   }
 
-  const raw: string =
-    data?.candidates?.[0]?.content?.parts
-      ?.filter((p: any) => p.text)
-      ?.map((p: any) => p.text)
-      ?.join("") ?? "";
+  const raw: string = (data.candidates?.[0]?.content?.parts ?? [])
+    .map((p: any) => p.text)
+    .join("")
+    .replace(/```json|```/g, "")
+    .trim();
 
-  if (!raw) {
-    throw new Error("Gemini returned an empty response");
-  }
+  if (!raw) throw new Error("Gemini returned an empty response");
 
-  const clean = raw.replace(/```json|```/g, "").trim();
-  const articles: Article[] = JSON.parse(clean);
+  const articles: Article[] = JSON.parse(raw);
 
   const enriched = await Promise.all(
     articles.map(async (a) => {
@@ -226,12 +210,7 @@ Respond ONLY with a valid JSON array of 8 objects. No markdown, no preamble, no 
 
 /* ─── Article card ───────────────────────────────────────────────────────── */
 function ArticleCard({
-  article,
-  prefs,
-  onLike,
-  onBookmark,
-  onView,
-  onShare,
+  article, prefs, onLike, onBookmark, onView, onShare,
 }: {
   article: Article;
   prefs: UserPrefs;
@@ -245,13 +224,9 @@ function ArticleCard({
   const liked = prefs.liked.includes(article.id);
   const bookmarked = prefs.bookmarked.includes(article.id);
   const viewed = prefs.viewed.includes(article.id);
-
   const cat = CATEGORIES.find((c) => c.id === article.category) ?? CATEGORIES[1];
 
-  const handleExpand = () => {
-    setExpanded(true);
-    onView(article.id);
-  };
+  const handleExpand = () => { setExpanded(true); onView(article.id); };
 
   return (
     <article
@@ -290,10 +265,7 @@ function ArticleCard({
               >
                 <span
                   className="flex h-10 w-10 items-center justify-center rounded-full"
-                  style={{
-                    background: "rgba(229,25,42,0.9)",
-                    boxShadow: "0 0 20px rgba(229,25,42,0.6)",
-                  }}
+                  style={{ background: "rgba(229,25,42,0.9)", boxShadow: "0 0 20px rgba(229,25,42,0.6)" }}
                 >
                   <Play className="h-4 w-4 text-white ml-0.5" fill="white" />
                 </span>
@@ -358,7 +330,6 @@ function ArticleCard({
               {article.body.split("\n\n").filter(Boolean).map((para, i) => (
                 <p key={i}>{para}</p>
               ))}
-
               <div
                 className="rounded-xl p-3 mt-3"
                 style={{
@@ -493,11 +464,9 @@ function NewsPage() {
     try {
       if (count > 0) setRefreshing(true); else setLoading(true);
       setError(null);
-      const currentPrefs = loadPrefs();
-      const data = await generateNews(currentPrefs, count);
+      const data = await generateNews(loadPrefs(), count);
       setArticles(data);
     } catch (err: any) {
-      console.error("News load error:", err);
       setError(`Couldn't load news: ${err?.message ?? "Unknown error"} — Try refreshing.`);
     } finally {
       setLoading(false);
@@ -517,44 +486,34 @@ function NewsPage() {
   const handleLike = (id: string) => {
     const article = articles.find((a) => a.id === id);
     if (!article) return;
-    const newPrefs = loadPrefs();
-    const already = newPrefs.liked.includes(id);
+    const p = loadPrefs();
+    const already = p.liked.includes(id);
     const updated = {
-      ...scoreCategory(newPrefs, article.category, already ? -1 : 2),
-      liked: already
-        ? newPrefs.liked.filter((x) => x !== id)
-        : [...newPrefs.liked, id],
+      ...scoreCategory(p, article.category, already ? -1 : 2),
+      liked: already ? p.liked.filter((x) => x !== id) : [...p.liked, id],
     };
-    savePrefs(updated);
-    setPrefs(updated);
+    savePrefs(updated); setPrefs(updated);
   };
 
   const handleBookmark = (id: string) => {
     const article = articles.find((a) => a.id === id);
     if (!article) return;
-    const newPrefs = loadPrefs();
-    const already = newPrefs.bookmarked.includes(id);
+    const p = loadPrefs();
+    const already = p.bookmarked.includes(id);
     const updated = {
-      ...scoreCategory(newPrefs, article.category, already ? -1 : 1),
-      bookmarked: already
-        ? newPrefs.bookmarked.filter((x) => x !== id)
-        : [...newPrefs.bookmarked, id],
+      ...scoreCategory(p, article.category, already ? -1 : 1),
+      bookmarked: already ? p.bookmarked.filter((x) => x !== id) : [...p.bookmarked, id],
     };
-    savePrefs(updated);
-    setPrefs(updated);
+    savePrefs(updated); setPrefs(updated);
   };
 
   const handleView = (id: string) => {
     const article = articles.find((a) => a.id === id);
     if (!article) return;
-    const newPrefs = loadPrefs();
-    if (newPrefs.viewed.includes(id)) return;
-    const updated = {
-      ...scoreCategory(newPrefs, article.category, 1),
-      viewed: [...newPrefs.viewed, id],
-    };
-    savePrefs(updated);
-    setPrefs(updated);
+    const p = loadPrefs();
+    if (p.viewed.includes(id)) return;
+    const updated = { ...scoreCategory(p, article.category, 1), viewed: [...p.viewed, id] };
+    savePrefs(updated); setPrefs(updated);
   };
 
   const handleShare = (article: Article) => {
@@ -573,9 +532,9 @@ function NewsPage() {
     : articles.filter((a) => a.category === activeCategory);
 
   const sorted = [...filtered].sort((a, b) => {
-    const scoreA = (prefs.categoryScores[a.category] ?? 0) + (a.controversial ? 2 : 0);
-    const scoreB = (prefs.categoryScores[b.category] ?? 0) + (b.controversial ? 2 : 0);
-    return scoreB - scoreA;
+    const sA = (prefs.categoryScores[a.category] ?? 0) + (a.controversial ? 2 : 0);
+    const sB = (prefs.categoryScores[b.category] ?? 0) + (b.controversial ? 2 : 0);
+    return sB - sA;
   });
 
   const bookmarkedArticles = articles.filter((a) => prefs.bookmarked.includes(a.id));
@@ -583,7 +542,8 @@ function NewsPage() {
   return (
     <SiteShell>
       <div className="min-h-screen" style={{ background: "#080808" }}>
-        {/* ── Hero header ── */}
+
+        {/* Hero */}
         <div
           className="relative overflow-hidden px-4 pt-8 pb-6 sm:px-6"
           style={{
@@ -599,36 +559,16 @@ function NewsPage() {
                     className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em]"
                     style={{ background: "rgba(229,25,42,0.12)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.25)" }}
                   >
-                    <span
-                      style={{
-                        width: 5, height: 5, borderRadius: "50%",
-                        background: "#E5192A",
-                        animation: "newsDot 2s ease infinite",
-                        display: "inline-block",
-                      }}
-                    />
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#E5192A", animation: "newsDot 2s ease infinite", display: "inline-block" }} />
                     Live · AI-Powered
                   </span>
                   <span className="text-[10px] text-white/25 uppercase tracking-wider">
                     {new Date().toLocaleDateString("en-ZM", { weekday: "short", day: "numeric", month: "short" })}
                   </span>
                 </div>
-                <h1
-                  className="font-black leading-none"
-                  style={{
-                    fontSize: "clamp(32px, 8vw, 52px)",
-                    letterSpacing: "-2px",
-                    color: "#fff",
-                  }}
-                >
+                <h1 className="font-black leading-none" style={{ fontSize: "clamp(32px, 8vw, 52px)", letterSpacing: "-2px", color: "#fff" }}>
                   Axxess{" "}
-                  <span
-                    style={{
-                      background: "linear-gradient(135deg, #E5192A, #FF6B35)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                    }}
-                  >
+                  <span style={{ background: "linear-gradient(135deg, #E5192A, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                     News
                   </span>
                 </h1>
@@ -636,16 +576,11 @@ function NewsPage() {
                   Hot takes. Real tea. Zero boring. ☕
                 </p>
               </div>
-
               <button
                 onClick={handleRefresh}
                 disabled={refreshing || loading}
                 className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all shrink-0"
-                style={{
-                  background: "rgba(229,25,42,0.08)",
-                  color: "#E5192A",
-                  border: "1px solid rgba(229,25,42,0.25)",
-                }}
+                style={{ background: "rgba(229,25,42,0.08)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.25)" }}
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
                 {refreshing ? "Loading..." : "Fresh"}
@@ -664,20 +599,14 @@ function NewsPage() {
           </div>
         </div>
 
-        {/* ── Category tabs ── */}
+        {/* Category tabs */}
         <div
           className="sticky top-[60px] z-30 overflow-x-auto"
-          style={{
-            background: "rgba(8,8,8,0.95)",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
-            backdropFilter: "blur(12px)",
-          }}
+          style={{ background: "rgba(8,8,8,0.95)", borderBottom: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(12px)" }}
         >
           <div className="flex gap-1 px-4 py-2 min-w-max sm:px-6">
             {CATEGORIES.map((cat) => {
-              const count = cat.id === "all"
-                ? articles.length
-                : articles.filter((a) => a.category === cat.id).length;
+              const count = cat.id === "all" ? articles.length : articles.filter((a) => a.category === cat.id).length;
               const active = activeCategory === cat.id;
               return (
                 <button
@@ -695,10 +624,7 @@ function NewsPage() {
                   {count > 0 && (
                     <span
                       className="rounded-full px-1.5 py-0.5 text-[9px] font-black"
-                      style={{
-                        background: active ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.07)",
-                        color: active ? "#fff" : "rgba(255,255,255,0.3)",
-                      }}
+                      style={{ background: active ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.07)", color: active ? "#fff" : "rgba(255,255,255,0.3)" }}
                     >
                       {count}
                     </span>
@@ -709,23 +635,16 @@ function NewsPage() {
           </div>
         </div>
 
-        {/* ── Bookmarks bar ── */}
+        {/* Bookmarks bar */}
         {bookmarkedArticles.length > 0 && (
-          <div
-            className="px-4 py-3 sm:px-6 border-b"
-            style={{ borderColor: "rgba(201,168,76,0.1)", background: "rgba(201,168,76,0.02)" }}
-          >
+          <div className="px-4 py-3 sm:px-6 border-b" style={{ borderColor: "rgba(201,168,76,0.1)", background: "rgba(201,168,76,0.02)" }}>
             <div className="mx-auto max-w-3xl">
               <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#C9A84C" }}>
                 <BookmarkPlus className="inline h-3 w-3 mr-1" />Saved
               </p>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {bookmarkedArticles.map((a) => (
-                  <span
-                    key={a.id}
-                    className="rounded-lg px-2.5 py-1.5 text-xs whitespace-nowrap"
-                    style={{ background: "rgba(201,168,76,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(201,168,76,0.15)" }}
-                  >
+                  <span key={a.id} className="rounded-lg px-2.5 py-1.5 text-xs whitespace-nowrap" style={{ background: "rgba(201,168,76,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(201,168,76,0.15)" }}>
                     {a.emoji} {a.headline.length > 35 ? a.headline.slice(0, 35) + "…" : a.headline}
                   </span>
                 ))}
@@ -734,39 +653,29 @@ function NewsPage() {
           </div>
         )}
 
-        {/* ── Share toast ── */}
+        {/* Share toast */}
         {shared && (
-          <div
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 rounded-full px-5 py-2.5 text-sm font-semibold"
-            style={{ background: "#E5192A", color: "#fff", boxShadow: "0 8px 24px rgba(229,25,42,0.4)" }}
-          >
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 rounded-full px-5 py-2.5 text-sm font-semibold" style={{ background: "#E5192A", color: "#fff", boxShadow: "0 8px 24px rgba(229,25,42,0.4)" }}>
             Copied to clipboard ✓
           </div>
         )}
 
-        {/* ── Articles ── */}
+        {/* Articles */}
         <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 space-y-4">
           {loading && (
             <>
               {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
               <p className="text-center text-xs py-4" style={{ color: "rgba(255,255,255,0.25)" }}>
                 <Sparkles className="inline h-3 w-3 mr-1" />
-                Gemini is writing your personalised news feed...
+                Generating your personalised news feed...
               </p>
             </>
           )}
 
           {error && !loading && (
-            <div
-              className="rounded-2xl p-6 text-center"
-              style={{ background: "rgba(229,25,42,0.05)", border: "1px solid rgba(229,25,42,0.2)" }}
-            >
+            <div className="rounded-2xl p-6 text-center" style={{ background: "rgba(229,25,42,0.05)", border: "1px solid rgba(229,25,42,0.2)" }}>
               <p className="text-white/60 text-sm mb-3">{error}</p>
-              <button
-                onClick={handleRefresh}
-                className="rounded-full px-5 py-2 text-sm font-semibold"
-                style={{ background: "#E5192A", color: "#fff" }}
-              >
+              <button onClick={handleRefresh} className="rounded-full px-5 py-2 text-sm font-semibold" style={{ background: "#E5192A", color: "#fff" }}>
                 Try Again
               </button>
             </div>
@@ -796,11 +705,7 @@ function NewsPage() {
                 onClick={handleRefresh}
                 disabled={refreshing}
                 className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all"
-                style={{
-                  background: "rgba(229,25,42,0.08)",
-                  color: "#E5192A",
-                  border: "1px solid rgba(229,25,42,0.2)",
-                }}
+                style={{ background: "rgba(229,25,42,0.08)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.2)" }}
               >
                 <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
                 {refreshing ? "Getting fresh tea..." : "Load new stories ☕"}
@@ -821,4 +726,4 @@ function NewsPage() {
       `}</style>
     </SiteShell>
   );
-}
+  }
