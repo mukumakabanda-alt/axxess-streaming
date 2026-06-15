@@ -1,6 +1,5 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Zap, LogOut, Loader2 } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { OverviewTab } from "@/components/admin/OverviewTab";
 import { OrdersTab } from "@/components/admin/OrdersTab";
 import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
@@ -12,10 +11,13 @@ import { SettingsTab } from "@/components/admin/SettingsTab";
 import { ReservationsTab } from "@/components/admin/ReservationsTab";
 import { AccountInventoryTab } from "@/components/admin/AccountInventoryTab";
 import { NetflixAccountsTab } from "@/components/admin/NetflixAccountsTab";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  LayoutDashboard, ShoppingCart, Users, Package,
+  BookOpen, Megaphone, Share2, Settings, Calendar,
+  Archive, Tv, ChevronRight, Menu, X, ExternalLink,
+} from "lucide-react";
 
-export const Route = createFileRoute("/admin/")(({
+export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
       { title: "Axxess Admin" },
@@ -23,120 +25,162 @@ export const Route = createFileRoute("/admin/")(({
     ],
   }),
   component: AdminPage,
-}));
+});
+
+type TabId =
+  | "overview" | "orders" | "reservations" | "subs"
+  | "services" | "inventory" | "netflix"
+  | "testimonials" | "updates" | "referrals" | "settings";
+
+const NAV: { id: TabId; label: string; icon: any; badge?: string }[] = [
+  { id: "overview",     label: "Overview",      icon: LayoutDashboard },
+  { id: "orders",       label: "Orders",        icon: ShoppingCart },
+  { id: "reservations", label: "Reservations",  icon: Calendar },
+  { id: "subs",         label: "Subscriptions", icon: Users },
+  { id: "services",     label: "Services",      icon: Package },
+  { id: "inventory",    label: "Inventory",     icon: Archive },
+  { id: "netflix",      label: "Netflix",       icon: Tv },
+  { id: "testimonials", label: "Testimonials",  icon: BookOpen },
+  { id: "updates",      label: "News/Updates",  icon: Megaphone },
+  { id: "referrals",    label: "Referrals",     icon: Share2 },
+  { id: "settings",     label: "Settings",      icon: Settings },
+];
 
 function AdminPage() {
-  const { loading, isAuthed, isAdmin, email } = useAdminAuth();
+  const [active, setActive] = useState<TabId>("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const current = NAV.find((n) => n.id === active)!;
 
-  if (!isAuthed || !isAdmin) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary shadow-glow-red">
-              <Zap className="h-7 w-7 text-primary-foreground" fill="currentColor" />
-            </div>
-          </div>
-          <h1 className="font-display text-2xl font-bold">Admin Access</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in with your admin account to continue.
-          </p>
-          <button
-            onClick={async () => {
-              const email = prompt("Email");
-              const password = prompt("Password");
-              if (!email || !password) return;
-              const { error } = await supabase.auth.signInWithPassword({ email, password });
-              if (error) alert(error.message);
-            }}
-            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Sign in
-          </button>
-          <Link to="/" className="mt-4 block text-xs text-muted-foreground hover:text-foreground">
-            ← Back to site
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const handleNav = (id: TabId) => {
+    setActive(id);
+    setSidebarOpen(false);
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary shadow-glow-red">
-              <Zap className="h-4 w-4 text-primary-foreground" fill="currentColor" />
+    <div className="flex min-h-screen bg-[#080808] text-foreground">
+
+      {/* ── Sidebar overlay (mobile) ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── Sidebar ── */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-[#0c0c0c] transition-transform duration-300 lg:static lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Logo */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg"
+              style={{ background: "#E5192A" }}
+            >
+              <span className="text-xs font-black text-white">AX</span>
             </div>
             <div>
-              <p className="font-display text-sm font-bold leading-none">Axxess Admin</p>
-              <p className="text-[10px] text-muted-foreground">{email}</p>
+              <p className="text-sm font-bold leading-none">Axxess</p>
+              <p className="text-[10px] text-muted-foreground">Admin Panel</p>
             </div>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-md p-1 text-muted-foreground hover:text-foreground lg:hidden"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Nav links */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+          {NAV.map((item) => {
+            const isActive = active === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNav(item.id)}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
+                style={{
+                  background: isActive ? "rgba(229,25,42,0.12)" : "transparent",
+                  color: isActive ? "#E5192A" : "rgba(255,255,255,0.5)",
+                  borderLeft: isActive ? "2px solid #E5192A" : "2px solid transparent",
+                }}
+              >
+                <item.icon className="h-4 w-4 flex-shrink-0" />
+                <span>{item.label}</span>
+                {isActive && <ChevronRight className="ml-auto h-3 w-3" />}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div className="border-t border-border px-4 py-4 space-y-2">
+          <Link
+            to="/"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            View live site
           </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
-            >
-              View site
-            </Link>
-            <button
-              onClick={() => supabase.auth.signOut()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
-            >
-              <LogOut className="h-3 w-3" /> Sign out
-            </button>
+          <div className="rounded-xl px-3 py-2" style={{ background: "rgba(229,25,42,0.06)", border: "1px solid rgba(229,25,42,0.15)" }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#E5192A" }}>Axxess Entertainment</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">WhatsApp: +260 770 514 809</p>
           </div>
         </div>
-      </header>
+      </aside>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <h1 className="font-display text-3xl font-bold">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage your business in one place.</p>
+      {/* ── Main content ── */}
+      <div className="flex flex-1 flex-col min-w-0">
 
-        <Tabs defaultValue="overview" className="mt-6">
-          <div className="relative -mx-4 sm:-mx-6">
-            <div className="overflow-x-auto scrollbar-none px-4 sm:px-6">
-              <TabsList className="inline-flex h-auto w-max min-w-full items-center gap-1 rounded-full bg-card p-1">
-                <TabsTrigger value="overview" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Overview</TabsTrigger>
-                <TabsTrigger value="orders" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Orders</TabsTrigger>
-                <TabsTrigger value="reservations" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Reservations</TabsTrigger>
-                <TabsTrigger value="subs" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Subscriptions</TabsTrigger>
-                <TabsTrigger value="services" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Services</TabsTrigger>
-                <TabsTrigger value="inventory" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Inventory</TabsTrigger>
-                <TabsTrigger value="netflix" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Netflix</TabsTrigger>
-                <TabsTrigger value="testimonials" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Testimonials</TabsTrigger>
-                <TabsTrigger value="updates" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">News</TabsTrigger>
-                <TabsTrigger value="referrals" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Referrals</TabsTrigger>
-                <TabsTrigger value="settings" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">Settings</TabsTrigger>
-              </TabsList>
-            </div>
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background to-transparent sm:w-8" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background to-transparent sm:w-8" />
+        {/* Top bar */}
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-[#0c0c0c]/90 px-4 py-3 backdrop-blur sm:px-6">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <current.icon className="h-4 w-4 text-primary" />
+            <h1 className="font-display text-base font-bold">{current.label}</h1>
           </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Link
+              to="/"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              <ExternalLink className="h-3 w-3" /> Live site
+            </Link>
+            <div
+              className="rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider"
+              style={{ background: "rgba(229,25,42,0.1)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.2)" }}
+            >
+              Admin
+            </div>
+          </div>
+        </header>
 
-          <TabsContent value="overview" className="mt-6"><OverviewTab /></TabsContent>
-          <TabsContent value="orders" className="mt-6"><OrdersTab /></TabsContent>
-          <TabsContent value="reservations" className="mt-6"><ReservationsTab /></TabsContent>
-          <TabsContent value="subs" className="mt-6"><SubscriptionsTab /></TabsContent>
-          <TabsContent value="services" className="mt-6"><ServicesTab /></TabsContent>
-          <TabsContent value="inventory" className="mt-6"><AccountInventoryTab /></TabsContent>
-          <TabsContent value="netflix" className="mt-6"><NetflixAccountsTab /></TabsContent>
-          <TabsContent value="testimonials" className="mt-6"><TestimonialsTab /></TabsContent>
-          <TabsContent value="updates" className="mt-6"><UpdatesTab /></TabsContent>
-          <TabsContent value="referrals" className="mt-6"><ReferralsTab /></TabsContent>
-          <TabsContent value="settings" className="mt-6"><SettingsTab /></TabsContent>
-        </Tabs>
-      </main>
+        {/* Tab content */}
+        <main className="flex-1 overflow-auto px-4 py-6 sm:px-6">
+          {active === "overview"     && <OverviewTab />}
+          {active === "orders"       && <OrdersTab />}
+          {active === "reservations" && <ReservationsTab />}
+          {active === "subs"         && <SubscriptionsTab />}
+          {active === "services"     && <ServicesTab />}
+          {active === "inventory"    && <AccountInventoryTab />}
+          {active === "netflix"      && <NetflixAccountsTab />}
+          {active === "testimonials" && <TestimonialsTab />}
+          {active === "updates"      && <UpdatesTab />}
+          {active === "referrals"    && <ReferralsTab />}
+          {active === "settings"     && <SettingsTab />}
+        </main>
+      </div>
     </div>
   );
-  }
+   }
