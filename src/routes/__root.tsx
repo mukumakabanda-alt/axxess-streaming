@@ -1,5 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { useEffect } from "react";
+import { initOneSignal } from "@/lib/onesignal";
 
 import appCss from "../styles.css?url";
 
@@ -61,6 +63,10 @@ export const Route = createRootRoute({
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    initOneSignal();
+  }, []);
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -70,6 +76,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
         {children}
         <Toaster />
         <Scripts />
+        <script
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          defer
+        />
       </body>
     </html>
   );
@@ -77,4 +87,4 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return <Outlet />;
-      }
+       }
