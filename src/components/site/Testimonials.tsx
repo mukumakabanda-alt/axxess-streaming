@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Star, Loader2, Quote, Send } from "lucide-react";
+import { Star, Loader2, Quote, Send, ArrowRight, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -14,7 +14,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
+import { rememberCustomer } from "@/lib/customer";
 import { recordRewardUnlocks } from "@/lib/rewards";
 import { showRewardUnlock } from "./RewardUnlockToast";
 
@@ -54,28 +54,21 @@ const ACCENT_BARS = [
 ];
 
 export function Testimonials() {
-  const [items, setItems] = useState<Testimonial[]>([]);
-  const [messages, setMessages] = useState<PublicMessage[]>([]);
+  const [items,      setItems]      = useState<Testimonial[]>([]);
+  const [messages,   setMessages]   = useState<PublicMessage[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
-  const [rating, setRating] = useState<number>(0);
+  const [api,        setApi]        = useState<CarouselApi>();
+  const [current,    setCurrent]    = useState(0);
+  const [rating,     setRating]     = useState<number>(0);
   const autoplay = useRef(
     Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }),
   );
 
-  // FIX #21: removed dead imports getRememberedName, getRememberedPhone —
-  // they were imported but never used in this component.
-  // rememberCustomer is still used in handleSubmit.
-
-  // FIX #18: load is stable via useCallback and is NOT called after submit —
-  // newly submitted messages are is_approved: false so they never appear anyway.
   const load = useCallback(async () => {
     const [{ data: t }, { data: m }] = await Promise.all([
       supabase.from("testimonials").select("*").eq("is_approved", true).order("sort_order"),
       supabase
         .from("public_messages")
-        // FIX #19: removed created_at from select — it was fetched but never rendered
         .select("id,name,message,screenshot_url,rating")
         .eq("is_approved", true)
         .order("id", { ascending: false })
@@ -104,7 +97,6 @@ export function Testimonials() {
     })),
   ];
 
-  // Show 5 deterministically-rotated reviews per day
   const cards: Card[] = (() => {
     if (allCards.length <= 5) return allCards;
     const dayIndex = Math.floor(Date.now() / 86_400_000);
@@ -118,31 +110,20 @@ export function Testimonials() {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
-    const nameVal = String(fd.get("name") || "").trim();
-    const phoneVal = String(fd.get("phone") || "").trim();
+    const nameVal    = String(fd.get("name")    || "").trim();
+    const phoneVal   = String(fd.get("phone")   || "").trim();
     const messageVal = String(fd.get("message") || "").trim();
 
     const parsed = schema.safeParse({
-      name: nameVal,
-      phone: phoneVal,
-      message: messageVal,
-      rating: rating || undefined,
+      name: nameVal, phone: phoneVal,
+      message: messageVal, rating: rating || undefined,
     });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
-      return;
-    }
-    if (!messageVal && !rating) {
-      toast.error("Add a short message or rate us with stars");
-      return;
-    }
+    if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
+    if (!messageVal && !rating) { toast.error("Add a short message or rate us with stars"); return; }
 
     setSubmitting(true);
-
     const finalMessage = messageVal || `Rated us ${rating} out of 5 ⭐`;
 
-    // FIX #10: phone is now included in the insert so the award_points RPC
-    // can find or create the customer_points row without failing silently.
     const { error } = await supabase.from("public_messages").insert({
       name: parsed.data.name,
       message: finalMessage,
@@ -151,26 +132,18 @@ export function Testimonials() {
       phone: parsed.data.phone,
     });
 
-    if (error) {
-      setSubmitting(false);
-      toast.error("Could not send: " + error.message);
-      return;
-    }
+    if (error) { setSubmitting(false); toast.error("Could not send: " + error.message); return; }
 
     rememberCustomer(parsed.data.name, parsed.data.phone);
 
     try {
       const { data: prev } = await supabase
-        .from("customer_points")
-        .select("points")
-        .eq("customer_phone", parsed.data.phone)
-        .maybeSingle();
+        .from("customer_points").select("points")
+        .eq("customer_phone", parsed.data.phone).maybeSingle();
       const prevPoints = prev?.points ?? 0;
       const { data: newTotal } = await supabase.rpc("award_points", {
-        _phone: parsed.data.phone,
-        _name: parsed.data.name,
-        _delta: 5,
-        _reason: "Left a review",
+        _phone: parsed.data.phone, _name: parsed.data.name,
+        _delta: 5, _reason: "Left a review",
       });
       const newPoints = (newTotal as number) ?? prevPoints + 5;
       const unlocks = await recordRewardUnlocks(parsed.data.phone, parsed.data.name, prevPoints, newPoints);
@@ -183,20 +156,21 @@ export function Testimonials() {
     setSubmitting(false);
     setRating(0);
     form.reset();
-    // FIX #15: scroll carousel back to first slide after reset
     api?.scrollTo(0);
-    // FIX #18: no load() call here — new submission is unapproved and won't appear
   };
 
-  const ratedTestimonials = items.filter((t) => typeof t.rating === "number" && t.rating! > 0);
-  const ratedMessages = messages.filter((m) => typeof m.rating === "number" && m.rating! > 0);
-  const allRatings = [...ratedTestimonials.map((t) => t.rating!), ...ratedMessages.map((m) => m.rating!)];
-  const avgRating = allRatings.length ? allRatings.reduce((a, b) => a + b, 0) / allRatings.length : 0;
-  const ratedCount = allRatings.length;
+  const ratedAll = [
+    ...items.filter((t) => t.rating! > 0).map((t) => t.rating!),
+    ...messages.filter((m) => m.rating! > 0).map((m) => m.rating!),
+  ];
+  const avgRating  = ratedAll.length ? ratedAll.reduce((a, b) => a + b, 0) / ratedAll.length : 0;
+  const ratedCount = ratedAll.length;
 
   return (
     <section id="reviews" className="px-4 py-16 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-6xl">
+
+        {/* ── Header ── */}
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Real People</p>
           <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl">Loved by customers</h2>
@@ -204,10 +178,7 @@ export function Testimonials() {
             <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2">
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <Star
-                    key={n}
-                    className={`h-4 w-4 ${n <= Math.round(avgRating) ? "fill-primary text-primary" : "text-muted-foreground/40"}`}
-                  />
+                  <Star key={n} className={`h-4 w-4 ${n <= Math.round(avgRating) ? "fill-primary text-primary" : "text-muted-foreground/40"}`} />
                 ))}
               </div>
               <span className="font-display text-sm font-bold">{avgRating.toFixed(1)}</span>
@@ -219,6 +190,7 @@ export function Testimonials() {
           </p>
         </div>
 
+        {/* ── Carousel ── */}
         {cards.length > 0 && (
           <Carousel
             setApi={setApi}
@@ -230,25 +202,19 @@ export function Testimonials() {
               {cards.map((c, idx) => (
                 <CarouselItem key={`${c.kind}-${c.id}`} className="basis-[72%] sm:basis-[40%] lg:basis-[28%]">
                   <article className="relative h-full overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card to-background/60 shadow-card transition-smooth hover:-translate-y-0.5">
-                    {/* Accent bar */}
                     <div className={`h-1 w-full bg-gradient-to-r ${ACCENT_BARS[idx % ACCENT_BARS.length]}`} />
                     <div className="flex items-center gap-2.5 px-5 pt-4">
-                      <div
-                        className={`relative flex h-9 w-9 items-center justify-center rounded-full p-[2px] bg-gradient-to-tr ${ACCENT_BARS[idx % ACCENT_BARS.length]}`}
-                      >
+                      <div className={`relative flex h-9 w-9 items-center justify-center rounded-full p-[2px] bg-gradient-to-tr ${ACCENT_BARS[idx % ACCENT_BARS.length]}`}>
                         <span className="flex h-full w-full items-center justify-center rounded-full bg-card text-[13px] font-bold uppercase">
                           {c.name.charAt(0)}
                         </span>
                       </div>
                       <div className="flex-1 leading-tight">
                         <p className="text-sm font-semibold">{c.name}</p>
-                        {/* FIX #9: replaced hardcoded axxess.zm with correct brand label */}
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                          Axxess Streaming
+                          Axxess Entertainment
                         </p>
                       </div>
-                      {/* FIX #11 & #24: stars shown for both kinds only when rating is
-                          a real number > 0 — null no longer silently defaults to 5 */}
                       {c.rating != null && c.rating > 0 && (
                         <div className="flex gap-0.5">
                           {Array.from({ length: c.rating }).map((_, i) => (
@@ -268,7 +234,6 @@ export function Testimonials() {
                     ) : (
                       <div className="mt-3 flex aspect-square items-center justify-center bg-gradient-to-br from-secondary/50 to-card p-6 text-center">
                         <Quote className="absolute h-12 w-12 text-primary/15" />
-                        {/* FIX #25: unified truncation threshold to 140 for all cards */}
                         <p className="relative font-display text-lg leading-snug text-foreground/90">
                           "{c.message.length > 140 ? c.message.slice(0, 140) + "…" : c.message}"
                         </p>
@@ -278,7 +243,6 @@ export function Testimonials() {
                     {c.screenshot_url && (
                       <p className="px-5 py-3 text-sm text-foreground/85">
                         <span className="font-semibold">{c.name}</span>{" "}
-                        {/* FIX #25: unified truncation threshold to 140 */}
                         {c.message.length > 140 ? c.message.slice(0, 140) + "…" : c.message}
                       </p>
                     )}
@@ -292,17 +256,54 @@ export function Testimonials() {
                   key={i}
                   aria-label={`Go to slide ${i + 1}`}
                   onClick={() => api?.scrollTo(i)}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
-                  }`}
+                  className={`h-1.5 rounded-full transition-all ${i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"}`}
                 />
               ))}
             </div>
           </Carousel>
         )}
 
-        {/* Submit form */}
-        <div className="mx-auto mt-10 max-w-md rounded-3xl border border-border gradient-card p-6 sm:p-8">
+        {/* ── POST-REVIEW CTA — peak buying intent moment ── */}
+        <div className="mt-12 mb-10 rounded-3xl overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(229,25,42,0.08) 0%, rgba(201,168,76,0.05) 100%)", border: "1px solid rgba(229,25,42,0.18)" }}>
+          <div className="px-6 py-8 sm:px-10 flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex-1 text-center sm:text-left">
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-2" style={{ color: "#E5192A" }}>
+                Join them
+              </p>
+              <h3 className="font-display text-2xl font-black text-white leading-tight mb-2" style={{ letterSpacing: "-0.5px" }}>
+                They're already watching.<br />
+                <span style={{ background: "linear-gradient(90deg, #E5192A, #C9A84C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  What are you waiting for?
+                </span>
+              </h3>
+              <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
+                Netflix K70 · Prime K60 · Both for K140 · Activated in 15 mins
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 w-full sm:w-auto">
+              <a
+                href="#plans"
+                onClick={(e) => { e.preventDefault(); document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" }); }}
+                className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-sm font-black text-white transition-all hover:opacity-90 hover:scale-105 active:scale-95"
+                style={{ background: "#E5192A", boxShadow: "0 0 32px -8px rgba(229,25,42,0.7)", minWidth: 180 }}
+              >
+                <Zap className="h-4 w-4" fill="currentColor" />
+                Get Access Now
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href="/trial"
+                className="inline-flex items-center justify-center gap-2 rounded-full border px-8 py-3.5 text-sm font-semibold transition-all hover:border-white/30 hover:text-white"
+                style={{ borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}
+              >
+                Try 2 days free first
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Review form ── */}
+        <div className="mx-auto max-w-md rounded-3xl border border-border gradient-card p-6 sm:p-8">
           <h3 className="font-display text-lg font-bold">Leave a quick review</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Add a message <span className="text-foreground/60">or</span> rate us — earn +5 points.
@@ -335,11 +336,7 @@ export function Testimonials() {
                     className="rounded-md p-1 transition-smooth hover:scale-110"
                     aria-label={`Rate ${n} stars`}
                   >
-                    <Star
-                      className={`h-5 w-5 transition-smooth ${
-                        n <= rating ? "fill-primary text-primary" : "text-muted-foreground"
-                      }`}
-                    />
+                    <Star className={`h-5 w-5 transition-smooth ${n <= rating ? "fill-primary text-primary" : "text-muted-foreground"}`} />
                   </button>
                 ))}
               </div>
@@ -358,7 +355,8 @@ export function Testimonials() {
             </Button>
           </form>
         </div>
+
       </div>
     </section>
   );
-}
+                                                    }
