@@ -3,10 +3,11 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowRight, MessageCircle, Copy, Check } from "lucide-react";
+import { Loader2, ArrowRight, MessageCircle, Copy, Check, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
 import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
+import { loginOneSignalUser, setOneSignalTags } from "@/lib/onesignal";
 import { toast } from "sonner";
 
 type Service = { id: string; name: string; price_kwacha: number };
@@ -54,17 +55,33 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   }, [service]);
 
   const network = useMemo(() => detectNetwork(phone), [phone]);
-  const payInfo = network === "mtn" ? PAY_DETAILS.mtn : network === "airtel" ? PAY_DETAILS.airtel : network === "zamtel" ? PAY_DETAILS.zamtel : null;
+  const payInfo =
+    network === "mtn" ? PAY_DETAILS.mtn :
+    network === "airtel" ? PAY_DETAILS.airtel :
+    network === "zamtel" ? PAY_DETAILS.zamtel : null;
 
   if (!service) return null;
   const totalPrice = Number(service.price_kwacha) * months;
+  const isAllAccess = /all.?access|bundle/i.test(service.name);
+  const isNetflix = /netflix/i.test(service.name);
 
   const submitDetails = async () => {
     if (name.trim().length < 2) return toast.error("Enter your full name");
     if (phone.trim().length < 9) return toast.error("Enter a valid WhatsApp number");
     if (!payInfo) return toast.error("Network not detected — check your number");
+
     setSubmitting(true);
     rememberCustomer(name, phone);
+
+    // Tag user in OneSignal for targeted push notifications
+    loginOneSignalUser(phone.trim().replace(/\D/g, ""));
+    setOneSignalTags({
+      plan: service.name,
+      months: String(months),
+      phone: phone.trim(),
+      last_order: new Date().toISOString().split("T")[0],
+    });
+
     const durationDays = 30 * months;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + durationDays);
@@ -92,13 +109,21 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   };
 
   const openWhatsApp = () => {
+    const upsellLine = isAllAccess
+      ? ""
+      : isNetflix
+      ? "\n\nP.S. — I'd also like to know about upgrading to All Access (Netflix + Prime Video for K140). Please let me know when you confirm my order."
+      : "\n\nP.S. — I'd also like to know about upgrading to All Access (both Netflix + Prime for K140). Please mention it when you confirm.";
+
     const msg =
       `Hi Axxess! 👋 I've just sent payment.\n\n` +
       `*Name:* ${name.trim()}\n` +
       `*Plan:* ${service.name}${months > 1 ? ` (${months} months)` : ""}\n` +
       `*Amount Paid:* K${totalPrice}\n` +
       `*My Number:* ${phone.trim()}\n\n` +
-      `Please confirm my payment and send me my profile/login details. Thank you! 🙏`;
+      `Please confirm my payment and send me my profile/login details. Thank you! 🙏` +
+      upsellLine;
+
     window.open(`https://wa.me/${WHATSAPP_PRIMARY}?text=${encodeURIComponent(msg)}`, "_blank");
     setStep("done");
   };
@@ -141,6 +166,15 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                     K{Number(service.price_kwacha)} × {months} months
                   </p>
                 )}
+              </div>
+
+              {/* Trust strip */}
+              <div className="flex items-center justify-center gap-4 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.3)" }}>
+                <span>⚡ 15-min activation</span>
+                <span style={{ color: "rgba(255,255,255,0.12)" }}>|</span>
+                <span>🔒 No card needed</span>
+                <span style={{ color: "rgba(255,255,255,0.12)" }}>|</span>
+                <span>✓ No contract</span>
               </div>
 
               <div className="space-y-3">
@@ -199,6 +233,24 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                   </div>
                   <p className="mt-1.5 text-[11px] text-muted-foreground">Pay once, enjoy longer. No need to renew every month.</p>
                 </div>
+
+                {/* Upsell nudge — only show if not already on All Access */}
+                {!isAllAccess && (
+                  <div className="rounded-xl p-3 flex items-start gap-3" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
+                    <Zap className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: "#C9A84C" }} />
+                    <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      <span className="font-bold" style={{ color: "#C9A84C" }}>Upgrade tip:</span> Get Netflix + Prime Video together for just K140/mo.{" "}
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="underline"
+                        style={{ color: "#C9A84C" }}
+                      >
+                        See All Access
+                      </button>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -247,7 +299,11 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
 
               {/* Steps */}
               <div className="space-y-2">
-                {["Open your mobile money app or dial *115#", `Send K${totalPrice} to ${payInfo.number} (${payInfo.name})`, "Come back here and tap the button below"].map((s, i) => (
+                {[
+                  "Open your mobile money app or dial *115#",
+                  `Send K${totalPrice} to ${payInfo.number} (${payInfo.name})`,
+                  "Come back here and tap the button below",
+                ].map((s, i) => (
                   <div key={i} className="flex items-start gap-3 text-sm">
                     <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">{i + 1}</span>
                     <span className="text-muted-foreground leading-snug">{s}</span>
@@ -259,7 +315,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
 
           {/* ── Step 3: Done ── */}
           {step === "done" && (
-            <div className="flex flex-col items-center justify-center py-10 text-center animate-in fade-in duration-300 space-y-4">
+            <div className="flex flex-col items-center justify-center py-8 text-center animate-in fade-in duration-300 space-y-4">
               <div className="flex h-20 w-20 items-center justify-center rounded-full" style={{ background: "rgba(37,211,102,0.12)", border: "2px solid rgba(37,211,102,0.3)" }}>
                 <MessageCircle className="h-10 w-10" style={{ color: "#25D366" }} />
               </div>
@@ -275,7 +331,19 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <p>✓ Amount paid (K{totalPrice})</p>
                 <p>✓ Your WhatsApp number</p>
                 <p>✓ Request for login details</p>
+                {!isAllAccess && <p style={{ color: "#C9A84C" }}>✓ All Access upgrade enquiry</p>}
               </div>
+
+              {/* Upsell on done screen */}
+              {!isAllAccess && (
+                <div className="w-full rounded-2xl p-4 text-left" style={{ background: "linear-gradient(135deg, rgba(229,25,42,0.08), rgba(201,168,76,0.05))", border: "1px solid rgba(229,25,42,0.15)" }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#E5192A" }}>💡 While you wait</p>
+                  <p className="text-sm font-semibold text-white mb-0.5">Love what you ordered?</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    Next time consider All Access — Netflix + Prime Video for K140/mo. Your Axxess agent will tell you more.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -288,6 +356,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
               onClick={submitDetails}
               disabled={submitting}
               className="h-14 w-full rounded-full bg-primary text-base font-semibold hover:bg-primary/90"
+              style={{ boxShadow: "0 0 32px -8px rgba(229,25,42,0.5)" }}
             >
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Continue <ArrowRight className="ml-1 h-4 w-4" /></>}
             </Button>
@@ -298,7 +367,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
               <Button
                 onClick={openWhatsApp}
                 className="h-14 w-full rounded-full text-base font-bold text-black hover:opacity-90"
-                style={{ background: "#25D366" }}
+                style={{ background: "#25D366", boxShadow: "0 0 24px -8px rgba(37,211,102,0.6)" }}
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
                 I've paid — confirm on WhatsApp
@@ -323,4 +392,4 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       </DialogContent>
     </Dialog>
   );
-        }
+  }
