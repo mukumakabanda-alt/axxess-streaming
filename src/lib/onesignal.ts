@@ -1,4 +1,5 @@
 const ONESIGNAL_APP_ID = "03fb7168-1d9c-4fb9-8064-01a8c6333053";
+const SUPABASE_URL = "https://wtdsudcxjthmolfypexc.supabase.co";
 
 declare global {
   interface Window {
@@ -40,21 +41,45 @@ export function initOneSignal(): void {
       },
     });
 
-    /* Push subscription observer — fires when device gets a subscription ID */
+    /* Push subscription observer — fires the moment a device goes from
+       unsubscribed to subscribed (i.e. the instant permission is granted),
+       not just at checkout. Triggers an in-app message AND sends a
+       one-time welcome push via the edge function. */
     OneSignal.User.PushSubscription.addEventListener(
       "change",
       (event: any) => {
         const prev = event.previous?.id;
         const curr = event.current?.id;
-        if ((!prev || prev === "") && curr && curr !== "") {
+        const justSubscribed = (!prev || prev === "") && curr && curr !== "";
+
+        if (justSubscribed) {
           OneSignal.InAppMessages.addTrigger(
             "ai_implementation_campaign_email_journey",
             "true",
           );
+          sendWelcomePush(curr);
         }
       },
     );
   });
+}
+
+/* ─── Welcome push ────────────────────────────────────────────────────────
+   Fires once per device the moment push permission is granted. Calls the
+   send-welcome-push edge function (server-side, holds the OneSignal REST
+   API key) rather than calling OneSignal's REST API directly from the
+   client, since that key must never be exposed in browser code.
+   Fails silently — a missed welcome push should never block the UI. ──── */
+async function sendWelcomePush(subscriptionId: string): Promise<void> {
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-push`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscriptionId }),
+    });
+  } catch (err) {
+    console.error("Welcome push failed:", err);
+  }
 }
 
 /* ─── Tag a user (e.g. after purchase) ───────────────────────────────────── */
@@ -82,4 +107,4 @@ export function logoutOneSignalUser(): void {
   window.OneSignalDeferred.push((OneSignal: any) => {
     OneSignal.logout();
   });
-          }
+        }
