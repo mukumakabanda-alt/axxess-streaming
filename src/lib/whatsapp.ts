@@ -14,6 +14,33 @@ export function orderMessage(serviceName: string, price: number) {
   return `Hi Axxess Streaming! 👋\n\nI'd like to order: *${serviceName}* (K${price}/month).\n\nPlease share payment details. Thank you!`;
 }
 
+/**
+ * Shared phone normalizer — the single source of truth for phone format
+ * across the whole app (checkout, OneSignal login, DB storage, edge
+ * functions). Always returns digits only, in international format with the
+ * Zambia country code (260) and no leading "+", "0", or spaces/dashes.
+ *
+ * Examples:
+ *   normalizePhone("0770 514 809")   -> "260770514809"
+ *   normalizePhone("+260770514809")  -> "260770514809"
+ *   normalizePhone("770-514-809")    -> "260770514809"
+ *   normalizePhone("260770514809")   -> "260770514809"
+ */
+export function normalizePhone(raw: string): string {
+  let digits = (raw || "").replace(/\D/g, "");
+
+  if (digits.startsWith("260")) {
+    // already has country code
+  } else if (digits.startsWith("0")) {
+    digits = "260" + digits.slice(1);
+  } else if (digits.length === 9) {
+    // local number without leading 0, e.g. "770514809"
+    digits = "260" + digits;
+  }
+
+  return digits;
+}
+
 export type Network = "mtn" | "airtel" | "zamtel" | "unknown";
 
 const MTN_PREFIXES = ["96", "76", "78"];
@@ -21,10 +48,8 @@ const AIRTEL_PREFIXES = ["97", "77", "95", "75", "57", "99"];
 const ZAMTEL_PREFIXES = ["50", "51", "52"];
 
 export function detectNetwork(raw: string): Network {
-  const digits = (raw || "").replace(/\D/g, "");
-  let local = digits;
-  if (local.startsWith("260")) local = local.slice(3);
-  if (local.startsWith("0")) local = local.slice(1);
+  const digits = normalizePhone(raw);
+  const local = digits.startsWith("260") ? digits.slice(3) : digits;
   const prefix = local.slice(0, 2);
   if (MTN_PREFIXES.includes(prefix)) return "mtn";
   if (AIRTEL_PREFIXES.includes(prefix)) return "airtel";
@@ -51,4 +76,4 @@ export function paymentInstruction(network: Network) {
     };
   }
   return null;
-}
+             }
