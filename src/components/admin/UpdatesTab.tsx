@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Send } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { NewsAnalytics } from "./NewsAnalytics";
 
@@ -16,6 +16,7 @@ export function UpdatesTab() {
   const [items, setItems] = useState<U[]>([]);
   const [editing, setEditing] = useState<U | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [sendingId, setSendingId] = useState<string | null>(null);
 
   const load = async () => {
     const { data } = await supabase.from("updates").select("*").order("created_at", { ascending: false });
@@ -41,6 +42,40 @@ export function UpdatesTab() {
     load();
   };
 
+  // Manual "send push" button — lets admin trigger the broadcast on demand
+  // (e.g. resend, or if the automatic DB webhook isn't set up). Calls the
+  // same notify-news edge function used by the webhook, so sends are still
+  // deduplicated via notification_log — clicking twice won't double-send.
+  const sendPush = async (u: U) => {
+    if (!u.is_published) {
+      toast.error("Publish the post before sending a push");
+      return;
+    }
+    setSendingId(u.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("notify-news", {
+        body: {
+          type: "INSERT",
+          record: u,
+          old_record: null,
+        },
+      });
+      if (error) throw error;
+      if (data?.skipped === "already sent") {
+        toast.info("Push already sent for this post");
+      } else if (data?.ok === false) {
+        toast.error("Push failed to send");
+      } else {
+        toast.success("Push notification sent");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to send push");
+    } finally {
+      setSendingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <NewsAnalytics />
@@ -62,6 +97,14 @@ export function UpdatesTab() {
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={u.is_published} onCheckedChange={() => toggle(u)} />
+                <button
+                  onClick={() => sendPush(u)}
+                  disabled={sendingId === u.id}
+                  title="Send push notification"
+                  className="rounded-md p-1.5 hover:bg-muted disabled:opacity-50"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
                 <button onClick={() => setEditing(u)} className="rounded-md p-1.5 hover:bg-muted"><Pencil className="h-4 w-4" /></button>
                 <button onClick={() => remove(u.id)} className="rounded-md p-1.5 text-destructive"><Trash2 className="h-4 w-4" /></button>
               </div>
@@ -94,4 +137,4 @@ export function UpdatesTab() {
       </Dialog>
     </div>
   );
-}
+          }
