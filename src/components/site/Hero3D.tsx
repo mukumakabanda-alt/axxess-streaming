@@ -175,133 +175,6 @@ function ShowScroller() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
-/*  LIGHTNING CRACK SVG                                                        */
-/*  Procedurally generated branching tendrils — redraws on interval           */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-function LightningLayer() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef   = useRef<number>(0);
-  const timeRef   = useRef(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-
-    function resize() {
-      canvas!.width  = canvas!.offsetWidth;
-      canvas!.height = canvas!.offsetHeight;
-    }
-    resize();
-
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-
-    /* Build one lightning bolt as a jagged path */
-    function boltPath(
-      x1: number, y1: number, x2: number, y2: number,
-      roughness: number, depth: number
-    ): [number, number][] {
-      if (depth === 0) return [[x1, y1], [x2, y2]];
-      const mx = (x1 + x2) / 2 + (Math.random() - 0.5) * roughness;
-      const my = (y1 + y2) / 2 + (Math.random() - 0.5) * roughness * 0.5;
-      return [
-        ...boltPath(x1, y1, mx, my, roughness * 0.55, depth - 1),
-        ...boltPath(mx, my, x2, y2, roughness * 0.55, depth - 1),
-      ];
-    }
-
-    function drawBolt(
-      x1: number, y1: number, x2: number, y2: number,
-      alpha: number, width: number, color: string
-    ) {
-      const pts = boltPath(x1, y1, x2, y2, 80, 5);
-      ctx.beginPath();
-      ctx.moveTo(pts[0][0], pts[0][1]);
-      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-
-      /* Glow pass */
-      ctx.strokeStyle = color.replace("1)", "0.15)");
-      ctx.lineWidth   = width * 4;
-      ctx.shadowColor = color;
-      ctx.shadowBlur  = 18;
-      ctx.stroke();
-
-      /* Core pass */
-      ctx.strokeStyle = color.replace("1)", `${alpha})`);
-      ctx.lineWidth   = width;
-      ctx.shadowBlur  = 6;
-      ctx.stroke();
-      ctx.shadowBlur  = 0;
-    }
-
-    let phase = 0;
-
-    function draw() {
-      const W = canvas!.width;
-      const H = canvas!.height;
-      const cx = W / 2;
-      const cy = H * 0.42; /* portal centre */
-
-      ctx.clearRect(0, 0, W, H);
-
-      phase += 0.012;
-
-      /* 6 main cracks radiating from portal centre */
-      const cracks = [
-        { angle: -0.85, length: 0.52, branch: true  },
-        { angle:  0.85, length: 0.52, branch: true  },
-        { angle: -0.35, length: 0.38, branch: false },
-        { angle:  0.35, length: 0.38, branch: false },
-        { angle: -1.35, length: 0.30, branch: false },
-        { angle:  1.35, length: 0.30, branch: false },
-      ];
-
-      cracks.forEach(({ angle, length, branch }, i) => {
-        const flicker = 0.55 + 0.45 * Math.abs(Math.sin(phase * (1.3 + i * 0.4)));
-        const len     = Math.min(W, H) * length;
-        const ex      = cx + Math.cos(angle - Math.PI / 2) * len;
-        const ey      = cy + Math.sin(angle - Math.PI / 2) * len;
-
-        drawBolt(cx, cy, ex, ey, flicker * 0.85, 1.2, "rgba(229,25,42,1)");
-
-        /* Sub-branch */
-        if (branch) {
-          const mx   = cx + (ex - cx) * (0.45 + Math.random() * 0.2);
-          const my   = cy + (ey - cy) * (0.45 + Math.random() * 0.2);
-          const bx   = mx + (Math.random() - 0.5) * len * 0.55;
-          const by   = my + Math.random() * len * 0.35;
-          drawBolt(mx, my, bx, by, flicker * 0.5, 0.7, "rgba(255,100,80,1)");
-        }
-      });
-
-      /* Ambient horizontal crack near top */
-      const hFlicker = 0.3 + 0.3 * Math.sin(phase * 2.1);
-      drawBolt(cx - W * 0.18, cy - H * 0.08, cx + W * 0.18, cy - H * 0.08,
-        hFlicker * 0.6, 0.6, "rgba(255,80,50,1)");
-
-      animRef.current = requestAnimationFrame(draw);
-    }
-
-    draw();
-
-    return () => {
-      ro.disconnect();
-      cancelAnimationFrame(animRef.current);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none absolute inset-0 w-full h-full"
-      style={{ zIndex: 2, opacity: 0.75 }}
-      aria-hidden
-    />
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════ */
 /*  PORTAL GLOW — the glowing door/gateway at scene centre                    */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 function PortalGlow() {
@@ -355,7 +228,7 @@ function PortalGlow() {
           background: "linear-gradient(180deg, rgba(229,25,42,0.8), rgba(229,25,42,0.3), rgba(229,25,42,0.8))",
           boxShadow: "0 0 8px rgba(229,25,42,0.5)",
         }} />
-        {/* ACCESS text on door */}
+        {/* AXXESS text on door — XX neon red */}
         <div style={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%, -50%)",
@@ -369,7 +242,10 @@ function PortalGlow() {
           animation: "portal-flicker 3s ease-in-out infinite",
           userSelect: "none",
         }}>
-          ACCESS
+          A<span style={{
+            color: "#FF0000",
+            textShadow: "0 0 8px #FF0000, 0 0 20px rgba(255,0,0,0.9), 0 0 40px rgba(255,0,0,0.6)",
+          }}>XX</span>ESS
         </div>
       </div>
 
@@ -700,17 +576,6 @@ function CursorSpotlight() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
-/*  AVATARS                                                                    */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-const AVATARS = [
-  { bg: "#1a2744", letters: "JM" },
-  { bg: "#2d1810", letters: "TC" },
-  { bg: "#1a2d1a", letters: "NB" },
-  { bg: "#2d1a2d", letters: "MP" },
-  { bg: "#1a1a2d", letters: "SK" },
-];
-
-/* ═══════════════════════════════════════════════════════════════════════════ */
 /*  HERO3D — MAIN EXPORT                                                       */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 export function Hero3D() {
@@ -736,18 +601,18 @@ export function Hero3D() {
     return () => { clearInterval(iv); window.removeEventListener("scroll", onScroll); clearTimeout(t); };
   }, []);
 
-  /* Framer variants */
+  /* Framer variants — cinematic, smooth pacing */
   const container: Variants = {
     hidden: {},
-    show: { transition: { staggerChildren: 0.20, delayChildren: 0.55 } },
+    show: { transition: { staggerChildren: 0.30, delayChildren: 0.80 } },
   };
   const fadeUp: Variants = {
-    hidden: { opacity: 0, y: 28 },
-    show: { opacity: 1, y: 0, transition: { duration: 1.0, ease: [0.16, 1, 0.3, 1] as any } },
+    hidden: { opacity: 0, y: 32 },
+    show: { opacity: 1, y: 0, transition: { duration: 1.4, ease: [0.16, 1, 0.3, 1] as any } },
   };
   const headlineVariant: Variants = {
-    hidden: { opacity: 0, y: 52, filter: "blur(8px)" },
-    show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1.5, ease: [0.12, 1, 0.2, 1] as any } },
+    hidden: { opacity: 0, y: 64, filter: "blur(12px)" },
+    show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1.8, ease: [0.12, 1, 0.2, 1] as any } },
   };
 
   return (
@@ -762,9 +627,6 @@ export function Hero3D() {
 
       {/* ── Portal door glow ── */}
       <PortalGlow />
-
-      {/* ── Lightning cracks ── */}
-      <LightningLayer />
 
       {/* ── Silhouette figure ── */}
       <SilhouetteFigure />
@@ -796,7 +658,7 @@ export function Hero3D() {
         aria-hidden
       />
 
-      {/* ── Bottom fade (heavier — ground the content) ── */}
+      {/* ── Bottom fade ── */}
       <div
         className="pointer-events-none absolute bottom-0 left-0 w-full"
         style={{ zIndex: 7, height: 360, background: "linear-gradient(transparent 0%, rgba(6,6,6,0.96) 70%, #060606 100%)" }}
@@ -834,7 +696,7 @@ export function Hero3D() {
                 fontSize: 12, fontWeight: 600,
                 color: "rgba(255,255,255,0.60)", letterSpacing: "0.3px",
               }}>
-                🇿🇲 Zambia's #1 streaming platform
+                {activeCount ? `${activeCount.toLocaleString()} subscribers streaming now` : "Subscribers streaming now"}
               </span>
               <span style={{
                 background: "rgba(229,25,42,0.12)",
@@ -870,7 +732,12 @@ export function Hero3D() {
               <span style={{
                 color: "#E5192A",
                 textShadow: "0 0 40px rgba(229,25,42,0.6), 0 0 80px rgba(229,25,42,0.3)",
-              }}>Access.</span>
+              }}>
+                A<span style={{
+                  color: "#FF0000",
+                  textShadow: "0 0 16px #FF0000, 0 0 40px rgba(255,0,0,0.9), 0 0 80px rgba(255,0,0,0.5)",
+                }}>XX</span>ESS.
+              </span>
             </span>
           </motion.h1>
 
@@ -917,24 +784,6 @@ export function Hero3D() {
               <span style={{ position: "relative", zIndex: 1 }}>Start Free Trial</span>
               <span className="hero-btn-arrow" style={{ position: "relative", zIndex: 1 }}>→</span>
             </a>
-          </motion.div>
-
-          {/* ── 7. Social proof ── */}
-          <motion.div variants={fadeUp} className="mt-8 flex items-center justify-center gap-3">
-            <div className="flex -space-x-2">
-              {AVATARS.map((a) => (
-                <div
-                  key={a.letters}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#060606] text-[10px] font-bold text-white"
-                  style={{ background: a.bg }}
-                >
-                  {a.letters}
-                </div>
-              ))}
-            </div>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontWeight: 500 }}>
-              {activeCount ? `${activeCount.toLocaleString()} streaming right now` : "Trusted across Zambia"}
-            </span>
           </motion.div>
 
         </div>
@@ -1040,4 +889,4 @@ export function Hero3D() {
       `}</style>
     </section>
   );
-      }
+    }
