@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, MessageCircle, Copy, Check, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
-import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
+import { WHATSAPP_PRIMARY, normalizePhone } from "@/lib/whatsapp";
 import { loginOneSignalUser, setOneSignalTags } from "@/lib/onesignal";
 import { toast } from "sonner";
 
@@ -73,12 +73,17 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
     setSubmitting(true);
     rememberCustomer(name, phone);
 
+    // Normalize once so the OneSignal external_id and the customer_phone
+    // stored in Supabase are identical — the backend reminder job matches
+    // on this exact string, so any drift here breaks targeting silently.
+    const normalizedPhone = normalizePhone(phone);
+
     // Tag user in OneSignal for targeted push notifications
-    loginOneSignalUser(phone.trim().replace(/\D/g, ""));
+    loginOneSignalUser(normalizedPhone);
     setOneSignalTags({
       plan: service.name,
       months: String(months),
-      phone: phone.trim(),
+      phone: normalizedPhone,
       last_order: new Date().toISOString().split("T")[0],
     });
 
@@ -87,7 +92,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
     expiresAt.setDate(expiresAt.getDate() + durationDays);
     await supabase.from("orders").insert({
       customer_name: name.trim(),
-      customer_phone: phone.trim(),
+      customer_phone: normalizedPhone,
       service_id: service.id,
       service_name_snapshot: months > 1 ? `${service.name} (${months} months)` : service.name,
       price_snapshot: totalPrice,
@@ -392,4 +397,4 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       </DialogContent>
     </Dialog>
   );
-  }
+    }
