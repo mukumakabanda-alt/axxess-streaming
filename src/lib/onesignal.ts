@@ -1,5 +1,6 @@
+import { supabase } from "@/integrations/supabase/client";
+
 const ONESIGNAL_APP_ID = "03fb7168-1d9c-4fb9-8064-01a8c6333053";
-const SUPABASE_URL = "https://wtdsudcxjthmolfypexc.supabase.co";
 
 declare global {
   interface Window {
@@ -69,13 +70,18 @@ export function initOneSignal(): void {
    send-welcome-push edge function (server-side, holds the OneSignal REST
    API key) rather than calling OneSignal's REST API directly from the
    client, since that key must never be exposed in browser code.
+
+   Uses supabase.functions.invoke() rather than a raw fetch() — invoke()
+   automatically attaches the project's anon key as the Authorization
+   header, which Supabase edge functions require by default. A bare fetch()
+   to the function URL with no auth header gets rejected with a 401 before
+   the function ever runs, so the welcome push would silently never fire.
+
    Fails silently — a missed welcome push should never block the UI. ──── */
 async function sendWelcomePush(subscriptionId: string): Promise<void> {
   try {
-    await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-push`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subscriptionId }),
+    await supabase.functions.invoke("send-welcome-push", {
+      body: { subscriptionId },
     });
   } catch (err) {
     console.error("Welcome push failed:", err);
@@ -107,4 +113,4 @@ export function logoutOneSignalUser(): void {
   window.OneSignalDeferred.push((OneSignal: any) => {
     OneSignal.logout();
   });
-        }
+                                       }
