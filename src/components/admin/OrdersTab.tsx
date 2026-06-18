@@ -96,42 +96,71 @@ export function OrdersTab() {
       }
     }
 
-    if (status === "completed" && o && Number(o.price_snapshot) > 0) {
-      const { data: prev } = await supabase
-        .from("customer_points")
-        .select("points")
-        .eq("customer_phone", o.customer_phone)
-        .maybeSingle();
-      const prevPoints = prev?.points ?? 0;
-      const { data: newTotal } = await supabase.rpc("award_points", {
-        _phone: o.customer_phone,
-        _name: o.customer_name,
-        _delta: 5,
-        _reason: `Subscribed to ${o.service_name_snapshot}`,
-      });
-      const newPoints = (newTotal as number) ?? prevPoints + 5;
-      await recordRewardUnlocks(o.customer_phone, o.customer_name, prevPoints, newPoints);
+    if (status === "completed" && o) {
+      // ── Auto-assign a trial account slot (Netflix or Prime) ──────────────
+      const svc = o.service_name_snapshot.toLowerCase();
+      const trialService = svc.includes("netflix")
+        ? "netflix"
+        : svc.includes("prime")
+        ? "prime"
+        : null;
 
-      if (o.referral_code) {
-        const { data: ref } = await supabase
-          .from("referrals")
-          .select("owner_phone, owner_name, uses_count")
-          .eq("code", o.referral_code)
+      if (trialService) {
+        const { error: fnErr } = await supabase.functions.invoke("assign-trial", {
+          body: {
+            order_id:       id,
+            customer_name:  o.customer_name,
+            customer_phone: o.customer_phone,
+            service:        trialService,
+          },
+        });
+        if (fnErr) {
+          // Non-blocking: log but don't fail the whole status change
+          console.warn("assign-trial edge function error:", fnErr.message);
+          toast.warning("Order marked complete, but auto-slot assignment failed. Assign manually in the Netflix/Prime tab.");
+        } else {
+          toast.success("Account slot auto-assigned ✓");
+        }
+      }
+
+      // ── Points ────────────────────────────────────────────────────────────
+      if (Number(o.price_snapshot) > 0) {
+        const { data: prev } = await supabase
+          .from("customer_points")
+          .select("points")
+          .eq("customer_phone", o.customer_phone)
           .maybeSingle();
-        if (ref) {
-          const { data: refPrev } = await supabase
-            .from("customer_points").select("points").eq("customer_phone", ref.owner_phone).maybeSingle();
-          const refPrevPts = refPrev?.points ?? 0;
-          const { data: refNew } = await supabase.rpc("award_points", {
-            _phone: ref.owner_phone,
-            _name: ref.owner_name,
-            _delta: 10,
-            _reason: `Friend used referral code ${o.referral_code}`,
-          });
-          await recordRewardUnlocks(ref.owner_phone, ref.owner_name, refPrevPts, (refNew as number) ?? refPrevPts + 10);
-          await supabase.from("referrals")
-            .update({ uses_count: (ref.uses_count ?? 0) + 1 })
-            .eq("code", o.referral_code);
+        const prevPoints = prev?.points ?? 0;
+        const { data: newTotal } = await supabase.rpc("award_points", {
+          _phone:  o.customer_phone,
+          _name:   o.customer_name,
+          _delta:  5,
+          _reason: `Subscribed to ${o.service_name_snapshot}`,
+        });
+        const newPoints = (newTotal as number) ?? prevPoints + 5;
+        await recordRewardUnlocks(o.customer_phone, o.customer_name, prevPoints, newPoints);
+
+        if (o.referral_code) {
+          const { data: ref } = await supabase
+            .from("referrals")
+            .select("owner_phone, owner_name, uses_count")
+            .eq("code", o.referral_code)
+            .maybeSingle();
+          if (ref) {
+            const { data: refPrev } = await supabase
+              .from("customer_points").select("points").eq("customer_phone", ref.owner_phone).maybeSingle();
+            const refPrevPts = refPrev?.points ?? 0;
+            const { data: refNew } = await supabase.rpc("award_points", {
+              _phone:  ref.owner_phone,
+              _name:   ref.owner_name,
+              _delta:  10,
+              _reason: `Friend used referral code ${o.referral_code}`,
+            });
+            await recordRewardUnlocks(ref.owner_phone, ref.owner_name, refPrevPts, (refNew as number) ?? refPrevPts + 10);
+            await supabase.from("referrals")
+              .update({ uses_count: (ref.uses_count ?? 0) + 1 })
+              .eq("code", o.referral_code);
+          }
         }
       }
     }
@@ -148,9 +177,9 @@ export function OrdersTab() {
       : (o.notes ?? "").replace("[FREE 2-DAY TRIAL]", "").trim() || null;
     const newPrice = makeTrial ? 0 : o.price_snapshot;
     await supabase.from("orders").update({
-      duration_days: days,
-      expires_at: expires.toISOString(),
-      notes: newNotes,
+      duration_days:  days,
+      expires_at:     expires.toISOString(),
+      notes:          newNotes,
       price_snapshot: newPrice,
     }).eq("id", o.id);
     toast.success(makeTrial ? "Converted to free trial" : "Converted to normal order");
@@ -322,10 +351,10 @@ export function OrdersTab() {
               e.preventDefault();
               const fd = new FormData(e.currentTarget);
               const { error } = await supabase.from("orders").insert({
-                customer_name: String(fd.get("customer_name")),
-                customer_phone: String(fd.get("customer_phone")),
+                customer_name:         String(fd.get("customer_name")),
+                customer_phone:        String(fd.get("customer_phone")),
                 service_name_snapshot: String(fd.get("service")),
-                price_snapshot: Number(fd.get("price")),
+                price_snapshot:        Number(fd.get("price")),
               });
               if (error) return toast.error(error.message);
               toast.success("Order added");
@@ -344,4 +373,4 @@ export function OrdersTab() {
       </Dialog>
     </div>
   );
-      }
+    }
