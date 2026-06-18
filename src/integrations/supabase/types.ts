@@ -121,7 +121,9 @@ export type Database = {
           account_id: string
           assigned_customer: string | null
           created_at: string
+          default_pin: string | null
           id: string
+          is_vulnerable: boolean
           pin: string | null
           profile_index: number
           profile_name: string
@@ -132,7 +134,9 @@ export type Database = {
           account_id: string
           assigned_customer?: string | null
           created_at?: string
+          default_pin?: string | null
           id?: string
+          is_vulnerable?: boolean
           pin?: string | null
           profile_index: number
           profile_name?: string
@@ -143,7 +147,9 @@ export type Database = {
           account_id?: string
           assigned_customer?: string | null
           created_at?: string
+          default_pin?: string | null
           id?: string
+          is_vulnerable?: boolean
           pin?: string | null
           profile_index?: number
           profile_name?: string
@@ -586,6 +592,60 @@ export type Database = {
           rating?: number | null
           screenshot_url?: string | null
           sort_order?: number
+        }
+        Relationships: []
+      }
+      trial_accounts: {
+        Row: {
+          account_email: string
+          account_password: string
+          assigned_at: string | null
+          assigned_to_name: string | null
+          assigned_to_phone: string | null
+          created_at: string
+          default_pin: string | null
+          expires_at: string | null
+          id: string
+          is_vulnerable: boolean
+          pin: string | null
+          profile_name: string | null
+          service: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_email: string
+          account_password: string
+          assigned_at?: string | null
+          assigned_to_name?: string | null
+          assigned_to_phone?: string | null
+          created_at?: string
+          default_pin?: string | null
+          expires_at?: string | null
+          id?: string
+          is_vulnerable?: boolean
+          pin?: string | null
+          profile_name?: string | null
+          service: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_email?: string
+          account_password?: string
+          assigned_at?: string | null
+          assigned_to_name?: string | null
+          assigned_to_phone?: string | null
+          created_at?: string
+          default_pin?: string | null
+          expires_at?: string | null
+          id?: string
+          is_vulnerable?: boolean
+          pin?: string | null
+          profile_name?: string | null
+          service?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
