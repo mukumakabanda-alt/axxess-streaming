@@ -11,13 +11,14 @@ import { SettingsTab } from "@/components/admin/SettingsTab";
 import { ReservationsTab } from "@/components/admin/ReservationsTab";
 import { AccountInventoryTab } from "@/components/admin/AccountInventoryTab";
 import { NetflixAccountsTab } from "@/components/admin/NetflixAccountsTab";
+import { PrimeVideoAccountsTab } from "@/components/admin/PrimeVideoAccountsTab";
 import {
   LayoutDashboard, ShoppingCart, Users, Package,
   BookOpen, Megaphone, Share2, Settings, Calendar,
-  Archive, Tv, ChevronRight, Menu, X, ExternalLink,
+  Archive, Tv, PlayCircle, ChevronRight, Menu, X, ExternalLink,
 } from "lucide-react";
 
-export const Route = createFileRoute("/admin/")({
+export const Route = createFileRoute("/admin/")(({
   head: () => ({
     meta: [
       { title: "Axxess Admin" },
@@ -25,11 +26,11 @@ export const Route = createFileRoute("/admin/")({
     ],
   }),
   component: AdminPage,
-});
+}));
 
 type TabId =
   | "overview" | "orders" | "reservations" | "subs"
-  | "services" | "inventory" | "netflix"
+  | "services" | "inventory" | "netflix" | "prime"
   | "testimonials" | "updates" | "referrals" | "settings";
 
 const NAV: { id: TabId; label: string; icon: any; badge?: string }[] = [
@@ -40,6 +41,7 @@ const NAV: { id: TabId; label: string; icon: any; badge?: string }[] = [
   { id: "services",     label: "Services",      icon: Package },
   { id: "inventory",    label: "Inventory",     icon: Archive },
   { id: "netflix",      label: "Netflix",       icon: Tv },
+  { id: "prime",        label: "Prime Video",   icon: PlayCircle },
   { id: "testimonials", label: "Testimonials",  icon: BookOpen },
   { id: "updates",      label: "News/Updates",  icon: Megaphone },
   { id: "referrals",    label: "Referrals",     icon: Share2 },
@@ -106,9 +108,9 @@ function AdminPage() {
                 onClick={() => handleNav(item.id)}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
                 style={{
-                  background: isActive ? "rgba(229,25,42,0.12)" : "transparent",
-                  color: isActive ? "#E5192A" : "rgba(255,255,255,0.5)",
-                  borderLeft: isActive ? "2px solid #E5192A" : "2px solid transparent",
+                  background:  isActive ? "rgba(229,25,42,0.12)" : "transparent",
+                  color:       isActive ? "#E5192A" : "rgba(255,255,255,0.5)",
+                  borderLeft:  isActive ? "2px solid #E5192A" : "2px solid transparent",
                 }}
               >
                 <item.icon className="h-4 w-4 flex-shrink-0" />
@@ -175,6 +177,7 @@ function AdminPage() {
           {active === "services"     && <ServicesTab />}
           {active === "inventory"    && <AccountInventoryTab />}
           {active === "netflix"      && <NetflixAccountsTab />}
+          {active === "prime"        && <PrimeVideoAccountsTab />}
           {active === "testimonials" && <TestimonialsTab />}
           {active === "updates"      && <UpdatesTab />}
           {active === "referrals"    && <ReferralsTab />}
@@ -183,4 +186,4 @@ function AdminPage() {
       </div>
     </div>
   );
-   }
+      }
