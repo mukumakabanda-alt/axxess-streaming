@@ -7,7 +7,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ONESIGNAL_APP_ID = "03fb7168-1d9c-4fb9-8064-01a8c6333053";
 const ONESIGNAL_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY");
-const ONESIGNAL_SEGMENT = "Subscribed Users"; // change if your dashboard uses a different segment name
+const ONESIGNAL_SEGMENT = "Active Subscriptions"; // matches the segment name in this OneSignal account's Audience > Segments page
 
 async function sendBroadcast(heading: string, message: string) {
   if (!ONESIGNAL_API_KEY) {
