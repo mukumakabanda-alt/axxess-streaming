@@ -5,15 +5,15 @@ import { CheckoutFlow } from "./CheckoutFlow";
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 
 /* ─── Real direct prices in ZMW ─────────────────────────────────────────────
-   Netflix:    $8.99 USD × K17.5 = K157/mo
-   Prime:      $8.99 USD × K17.5 = K157/mo
-   Both:       K157 + K157       = K314/mo
-   Source: netflix.com/zm (USD $8.99 standard), exchange rate ~K17.5/USD June 2026
+   Netflix:    $9.99 USD × K17.5 = K175/mo
+   Prime:      $5.99 USD × K17.5 = K105/mo
+   Both:       K175 + K105       = K280/mo
+   Source: netflix.com/zm, amazon.com/prime, exchange rate ~K17.5/USD Jun 2026
 ────────────────────────────────────────────────────────────────────────────── */
 const DIRECT_PRICES: Record<string, { zmw: number; label: string }> = {
-  netflix: { zmw: 157, label: "netflix.com direct" },
-  prime:   { zmw: 157, label: "amazon.com direct" },
-  bundle:  { zmw: 314, label: "both direct" },
+  netflix: { zmw: 175, label: "netflix.com direct" },
+  prime:   { zmw: 105, label: "amazon.com direct" },
+  bundle:  { zmw: 280, label: "both direct" },
 };
 
 function getDirectPrice(slug: string, name: string) {
@@ -36,21 +36,10 @@ type Service = {
   is_full: boolean | null;
 };
 
-/* ─── Comparison table data ──────────────────────────────────────────────── */
-const COMPARE_ROWS = [
-  { label: "Price per month",       netflix: "K157",   prime: "K157",   axxess: "K70 / K60" },
-  { label: "Activation",            netflix: "Card req.", prime: "Card req.", axxess: "WhatsApp" },
-  { label: "Setup time",            netflix: "10–30 min", prime: "10–30 min", axxess: "15 min" },
-  { label: "Contract",              netflix: "Monthly",  prime: "Monthly",  axxess: "None" },
-  { label: "Local support",         netflix: "❌",       prime: "❌",       axxess: "✅" },
-  { label: "Pays in Kwacha",        netflix: "❌",       prime: "❌",       axxess: "✅" },
-];
-
 export function Pricing() {
   const [services,    setServices]    = useState<Service[] | null>(null);
   const [selected,    setSelected]    = useState<Service | null>(null);
   const [ordersToday, setOrdersToday] = useState<Record<string, number>>({});
-  const [showCompare, setShowCompare] = useState(false);
 
   useEffect(() => {
     supabase
@@ -108,66 +97,13 @@ export function Pricing() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white leading-tight">
-              Netflix costs K157/mo if you pay directly. We charge K70.
+              Netflix costs K175/mo if you pay directly. We charge K70.
             </p>
             <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Based on $8.99 USD at current exchange rate (~K17.5/USD) — Jun 2026
+              Based on $9.99 USD at current exchange rate (~K17.5/USD) — Jun 2026
             </p>
           </div>
-          <button
-            onClick={() => setShowCompare(!showCompare)}
-            className="flex-shrink-0 text-xs font-bold underline transition-colors"
-            style={{ color: "#E5192A" }}
-          >
-            {showCompare ? "Hide" : "See comparison"}
-          </button>
         </div>
-
-        {/* ── Comparison table ── */}
-        {showCompare && (
-          <div className="mb-10 overflow-hidden rounded-2xl border" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                  <th className="p-4 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)", width: "35%" }}>
-                  </th>
-                  <th className="p-4 text-center text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)" }}>
-                    Netflix direct
-                  </th>
-                  <th className="p-4 text-center text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)" }}>
-                    Prime direct
-                  </th>
-                  <th className="p-4 text-center" style={{ background: "rgba(229,25,42,0.06)", borderLeft: "2px solid rgba(229,25,42,0.3)" }}>
-                    <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#E5192A" }}>
-                      Axxess ✓
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {COMPARE_ROWS.map((row, i) => (
-                  <tr
-                    key={row.label}
-                    style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
-                  >
-                    <td className="p-4 text-xs font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
-                      {row.label}
-                    </td>
-                    <td className="p-4 text-center text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-                      {row.netflix}
-                    </td>
-                    <td className="p-4 text-center text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-                      {row.prime}
-                    </td>
-                    <td className="p-4 text-center text-xs font-bold" style={{ color: "#E5192A", background: "rgba(229,25,42,0.04)", borderLeft: "2px solid rgba(229,25,42,0.3)" }}>
-                      {row.axxess}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
 
         {/* ── Plan cards ── */}
         {!services ? (
@@ -335,4 +271,4 @@ export function Pricing() {
       <CheckoutFlow service={selected} onClose={() => setSelected(null)} />
     </section>
   );
-                 }
+        }
