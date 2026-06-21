@@ -23,14 +23,6 @@ function getDirectPrice(slug: string, name: string) {
   return null;
 }
 
-// ── Map service name → trial_accounts service key ────────────────────────────
-function trialKey(slug: string, name: string): "netflix" | "prime" | null {
-  const s = (slug + " " + name).toLowerCase();
-  if (s.includes("netflix")) return "netflix";
-  if (s.includes("prime"))   return "prime";
-  return null;
-}
-
 type Service = {
   id:            string;
   name:          string;
@@ -44,11 +36,9 @@ type Service = {
 };
 
 export function Pricing() {
-  const [services,      setServices]      = useState<Service[] | null>(null);
-  const [selected,      setSelected]      = useState<Service | null>(null);
-  const [ordersToday,   setOrdersToday]   = useState<Record<string, number>>({});
-  // Live pool: how many clean+available slots per service
-  const [poolFull,      setPoolFull]      = useState<Record<string, boolean>>({});
+  const [services,    setServices]    = useState<Service[] | null>(null);
+  const [selected,    setSelected]    = useState<Service | null>(null);
+  const [ordersToday, setOrdersToday] = useState<Record<string, number>>({});
 
   useEffect(() => {
     supabase
@@ -63,7 +53,7 @@ export function Pricing() {
         })))
       );
 
-    // Orders today
+    // Orders today — used for social proof only
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     supabase
@@ -77,20 +67,6 @@ export function Pricing() {
           if (k) counts[k] = (counts[k] ?? 0) + 1;
         });
         setOrdersToday(counts);
-      });
-
-    // Live pool check — are there clean slots left for netflix/prime?
-    supabase
-      .from("trial_accounts")
-      .select("service, status, is_vulnerable")
-      .then(({ data }) => {
-        const rows = data ?? [];
-        const netflixClean = rows.filter(r => r.service === "netflix" && r.status === "available" && !r.is_vulnerable).length;
-        const primeClean   = rows.filter(r => r.service === "prime"   && r.status === "available" && !r.is_vulnerable).length;
-        setPoolFull({
-          netflix: netflixClean === 0,
-          prime:   primeClean   === 0,
-        });
       });
   }, []);
 
@@ -140,9 +116,7 @@ export function Pricing() {
               const accentHex  = resolveAccentHex(s.accent_color);
               const light      = isLightAccent(accentHex);
               const btnColor   = light ? "#000" : "#fff";
-              const tKey       = trialKey(s.slug, s.name);
-              // Auto-full: either manually marked full OR live pool is exhausted
-              const isFull     = !!(s.is_full || (tKey && poolFull[tKey]));
+              const isFull     = !!s.is_full;
               const isFeatured = s.badge === "Best Value" || s.badge === "Most Popular";
               const direct     = getDirectPrice(s.slug, s.name);
               const saving     = direct ? direct.zmw - Number(s.price_kwacha) : 0;
@@ -290,4 +264,4 @@ export function Pricing() {
       <CheckoutFlow service={selected} onClose={() => setSelected(null)} />
     </section>
   );
-         }
+            }
