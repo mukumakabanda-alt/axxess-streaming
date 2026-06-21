@@ -133,7 +133,6 @@ const CTAS = [
   { label: "Watch on Netflix — K70/mo",    url: "/#plans" },
   { label: "Watch on Prime Video — K60/mo", url: "/#plans" },
   { label: "Get All Access — K140/mo",      url: "/#plans" },
-  { label: "Start 2-Day Free Trial",        url: "/trial" },
   { label: "Reserve Your Slot →",           url: "/reserve" },
 ];
 
@@ -148,10 +147,9 @@ function getZambianAngle(text: string) {
 
 function getCTA(text: string) {
   const t = text.toLowerCase();
-  if (t.includes("prime"))                       return CTAS[1];
-  if (t.includes("all access") || t.includes("bundle")) return CTAS[2];
-  if (t.includes("trial"))                       return CTAS[3];
-  if (t.includes("dstv") || t.includes("reserve")) return CTAS[4];
+  if (t.includes("prime"))                                return CTAS[1];
+  if (t.includes("all access") || t.includes("bundle"))  return CTAS[2];
+  if (t.includes("dstv") || t.includes("reserve"))       return CTAS[3];
   return CTAS[0];
 }
 
