@@ -7,9 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, Copy, Trash2, Pencil, MessageSquare, Plus, Sparkles } from "lucide-react";
+import { Search, Copy, Trash2, Pencil, MessageSquare, Plus } from "lucide-react";
 import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
-import { Switch } from "@/components/ui/switch";
 import { recordRewardUnlocks } from "@/lib/rewards";
 
 type Order = {
@@ -97,32 +96,6 @@ export function OrdersTab() {
     }
 
     if (status === "completed" && o) {
-      // ── Auto-assign a trial account slot (Netflix or Prime) ──────────────
-      const svc = o.service_name_snapshot.toLowerCase();
-      const trialService = svc.includes("netflix")
-        ? "netflix"
-        : svc.includes("prime")
-        ? "prime"
-        : null;
-
-      if (trialService) {
-        const { error: fnErr } = await supabase.functions.invoke("assign-trial", {
-          body: {
-            order_id:       id,
-            customer_name:  o.customer_name,
-            customer_phone: o.customer_phone,
-            service:        trialService,
-          },
-        });
-        if (fnErr) {
-          // Non-blocking: log but don't fail the whole status change
-          console.warn("assign-trial edge function error:", fnErr.message);
-          toast.warning("Order marked complete, but auto-slot assignment failed. Assign manually in the Netflix/Prime tab.");
-        } else {
-          toast.success("Account slot auto-assigned ✓");
-        }
-      }
-
       // ── Points ────────────────────────────────────────────────────────────
       if (Number(o.price_snapshot) > 0) {
         const { data: prev } = await supabase
@@ -166,23 +139,6 @@ export function OrdersTab() {
     }
 
     toast.success(`Marked ${status}`);
-    load();
-  };
-
-  const toggleTrial = async (o: Order, makeTrial: boolean) => {
-    const days = makeTrial ? 2 : 30;
-    const expires = new Date(); expires.setDate(expires.getDate() + days);
-    const newNotes = makeTrial
-      ? (o.notes?.includes("[FREE 2-DAY TRIAL]") ? o.notes : `[FREE 2-DAY TRIAL] ${o.notes ?? ""}`.trim())
-      : (o.notes ?? "").replace("[FREE 2-DAY TRIAL]", "").trim() || null;
-    const newPrice = makeTrial ? 0 : o.price_snapshot;
-    await supabase.from("orders").update({
-      duration_days:  days,
-      expires_at:     expires.toISOString(),
-      notes:          newNotes,
-      price_snapshot: newPrice,
-    }).eq("id", o.id);
-    toast.success(makeTrial ? "Converted to free trial" : "Converted to normal order");
     load();
   };
 
@@ -281,7 +237,13 @@ export function OrdersTab() {
                   <td className="p-3 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</td>
                   <td className="p-3">
                     <div className="flex justify-end gap-1">
-                      <a href={`https://wa.me/${o.customer_phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="rounded-md p-1.5 hover:bg-muted" title="WhatsApp customer">
+                      <a
+                        href={`https://wa.me/${o.customer_phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi ${o.customer_name}! 👋 Your *${o.service_name_snapshot}* access is ready. Here are your login details:\n\nEmail: \nPassword: \n\nEnjoy streaming! 🎬 — Axxess Entertainment`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-md p-1.5 hover:bg-muted"
+                        title="Send login details"
+                      >
                         <MessageSquare className="h-4 w-4" style={{ color: "#25D366" }} />
                       </a>
                       <button onClick={() => copyReminder(o)} className="rounded-md p-1.5 hover:bg-muted" title="Copy renewal reminder">
@@ -309,21 +271,6 @@ export function OrdersTab() {
                 <p><span className="text-muted-foreground">Email:</span> {editing.customer_email ?? "—"}</p>
                 <p><span className="text-muted-foreground">Referral:</span> {editing.referral_code ?? "—"}</p>
                 <p><span className="text-muted-foreground">Customer notes:</span> {editing.notes ?? "—"}</p>
-                <div className="flex items-center justify-between rounded-xl border border-border bg-secondary/40 p-3">
-                  <div>
-                    <p className="font-semibold flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-primary" /> Free trial</p>
-                    <p className="text-xs text-muted-foreground">
-                      Toggle to convert between a paid order and a 2-day free trial.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={(editing.notes ?? "").includes("[FREE 2-DAY TRIAL]") || Number(editing.price_snapshot) === 0}
-                    onCheckedChange={async (v) => {
-                      await toggleTrial(editing, v);
-                      setEditing(null);
-                    }}
-                  />
-                </div>
                 <div>
                   <Label>Admin notes</Label>
                   <Textarea
@@ -373,4 +320,4 @@ export function OrdersTab() {
       </Dialog>
     </div>
   );
-    }
+                                                          }
