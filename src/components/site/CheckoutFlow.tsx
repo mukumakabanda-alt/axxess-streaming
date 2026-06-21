@@ -37,10 +37,12 @@ function detectNetwork(raw: string): Network {
   return "unknown";
 }
 
+// We only hold MTN and Airtel Money lines. Zamtel numbers are detected
+// correctly (for the badge/messaging) but always pay into the Airtel
+// account below — see `isRerouted` further down.
 const PAY_DETAILS = {
   mtn: { name: "Stanley Kabanda", number: "0765101494", label: "MTN Mobile Money", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/30", dot: "bg-yellow-400" },
   airtel: { name: "Ngoma Audrian", number: "0574161927", label: "Airtel Money", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/30", dot: "bg-red-400" },
-  zamtel: { name: "Stanley Kabanda", number: "0765101494", label: "Zamtel / MTN Money", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/30", dot: "bg-emerald-400" },
 };
 
 export function CheckoutFlow({ service, onClose }: { service: Service | null; onClose: () => void }) {
@@ -64,10 +66,17 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   }, [service]);
 
   const network = useMemo(() => detectNetwork(phone), [phone]);
+
+  // `network` reflects the customer's actual carrier (used for badges and
+  // messaging). `payInfo` is where the money actually has to go — Zamtel
+  // numbers are rerouted to the Airtel Money account since we don't have
+  // a Zamtel Money line. `isRerouted` flags that case so we can explain it
+  // clearly instead of silently showing an Airtel number to a Zamtel user.
   const payInfo =
     network === "mtn" ? PAY_DETAILS.mtn :
     network === "airtel" ? PAY_DETAILS.airtel :
-    network === "zamtel" ? PAY_DETAILS.zamtel : null;
+    network === "zamtel" ? PAY_DETAILS.airtel : null;
+  const isRerouted = network === "zamtel";
 
   if (!service) return null;
   const totalPrice = Number(service.price_kwacha) * months;
@@ -239,7 +248,15 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                     <div className="mt-2 text-xs">
                       {network === "mtn" && <span className="rounded-full bg-yellow-500/15 px-2.5 py-1 font-semibold text-yellow-400">● MTN detected</span>}
                       {network === "airtel" && <span className="rounded-full bg-red-500/15 px-2.5 py-1 font-semibold text-red-400">● Airtel detected</span>}
-                      {network === "zamtel" && <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-400">● Zamtel detected</span>}
+                      {network === "zamtel" && (
+                        <>
+                          <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-400">● Zamtel detected</span>
+                          <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                            We don't have a Zamtel Money line yet — you'll send payment to our{" "}
+                            <span className="font-semibold text-foreground">Airtel Money</span> number instead. Works exactly the same way.
+                          </p>
+                        </>
+                      )}
                       {network === "unknown" && phone.length >= 6 && <span className="text-muted-foreground">Network not detected — check number</span>}
                     </div>
                   )}
@@ -302,6 +319,18 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                   Send <span className="font-bold text-foreground">K{totalPrice}</span> via mobile money then confirm on WhatsApp
                 </p>
               </div>
+
+              {/* Zamtel → Airtel reroute notice — shown before they see the number,
+                  so it's never a surprise that the label says Airtel. */}
+              {isRerouted && (
+                <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3 flex items-start gap-3">
+                  <Zap className="h-4 w-4 flex-shrink-0 mt-0.5 text-emerald-400" />
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    <span className="font-bold text-emerald-400">Heads up:</span> Your number is Zamtel, but we don't have a Zamtel Money line yet. This payment goes to our{" "}
+                    <span className="font-semibold text-foreground">Airtel Money</span> number below — send it the same way you normally would.
+                  </p>
+                </div>
+              )}
 
               {/* Network breadcrumb */}
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -462,4 +491,4 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       </DialogContent>
     </Dialog>
   );
-  }
+        }
