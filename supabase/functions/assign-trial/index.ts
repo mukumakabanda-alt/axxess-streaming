@@ -9,7 +9,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL     = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const WHATSAPP_ALERT   = "+260770514809"; // your number — alert target
+const ONESIGNAL_APP_ID  = "03fb7168-1d9c-4fb9-8064-01a8c6333053";
+const ONESIGNAL_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY");
+const ADMIN_PHONE       = "260770514809"; // Stanley — matches the external_id used everywhere else
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":  "*",
@@ -24,19 +26,75 @@ function normalisePhone(raw: string): string {
   return digits;
 }
 
-// ── Send WhatsApp alert to Stanley via Supabase (just inserts a notification row)
+// ── Send a push alert to the admin when a trial account becomes vulnerable.
+//    Uses the REAL notification_log schema (entity_type/entity_id/reminder_key)
+//    and actually sends the OneSignal push — the old version only inserted a
+//    row with columns that don't exist on this table, so it always failed
+//    silently and no alert was ever sent.
 async function sendVulnerableAlert(
   supabase: ReturnType<typeof createClient>,
   account: { id: string; service: string; account_email: string }
 ) {
-  // Insert into notification_log so admin sees it; 
-  // if you wire Twilio/WhatsApp API later this is where it goes
-  await supabase.from("notification_log").insert({
-    type:    "vulnerable_alert",
-    title:   `⚠️ VULNERABLE: ${account.service.toUpperCase()} profile`,
-    body:    `${account.account_email} is now VULNERABLE. Change the PIN before reassigning.`,
-    meta:    { account_id: account.id, service: account.service },
-  }).throwOnError().catch(() => {}); // non-blocking — don't fail the function if this errors
+  const reminderKey = "vulnerable_alert";
+
+  // Atomic claim — if this exact alert was already logged for this account, skip it.
+  const { data: claimed, error: claimErr } = await supabase
+    .from("notification_log")
+    .insert({
+      entity_type:    "order", // closest existing enum value; this is an internal admin alert, not customer-facing
+      entity_id:      account.id,
+      reminder_key:   reminderKey,
+      customer_phone: ADMIN_PHONE,
+    })
+    .select()
+    .single();
+
+  if (claimErr) {
+    // 23505 = unique violation = already alerted for this account, which is fine
+    if ((claimErr as any).code !== "23505") {
+      console.error("vulnerable alert claim failed:", claimErr.message);
+    }
+    return;
+  }
+
+  if (!ONESIGNAL_API_KEY) {
+    console.error("Cannot send vulnerable alert: missing ONESIGNAL_REST_API_KEY secret");
+    await supabase
+      .from("notification_log")
+      .update({ status: "failed", onesignal_response: { error: "Missing ONESIGNAL_REST_API_KEY secret" } })
+      .eq("id", claimed.id);
+    return;
+  }
+
+  try {
+    const res = await fetch("https://api.onesignal.com/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Key ${ONESIGNAL_API_KEY}`,
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        target_channel: "push",
+        include_aliases: { external_id: [ADMIN_PHONE] },
+        headings: { en: "⚠️ Vulnerable trial account" },
+        contents: {
+          en: `${account.service.toUpperCase()} account ${account.account_email} is now VULNERABLE. Change the PIN before reassigning.`,
+        },
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    await supabase
+      .from("notification_log")
+      .update({ status: res.ok ? "sent" : "failed", onesignal_response: body })
+      .eq("id", claimed.id);
+  } catch (err) {
+    console.error("vulnerable alert push failed:", err);
+    await supabase
+      .from("notification_log")
+      .update({ status: "failed", onesignal_response: { error: String(err) } })
+      .eq("id", claimed.id);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -122,7 +180,24 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!slot) {
-        // Check why: are there slots but all vulnerable?
+        // No clean slot — check if there's a VULNERABLE one we should alert about
+        const { data: vulnerableSlot } = await supabase
+          .from("trial_accounts")
+          .select("id, service, account_email")
+          .eq("service", svc)
+          .eq("status", "available")
+          .eq("is_vulnerable", true)
+          .limit(1)
+          .maybeSingle();
+
+        if (vulnerableSlot) {
+          await sendVulnerableAlert(supabase, {
+            id: vulnerableSlot.id,
+            service: vulnerableSlot.service,
+            account_email: vulnerableSlot.account_email,
+          });
+        }
+
         fullServices.push(svc);
         continue;
       }
