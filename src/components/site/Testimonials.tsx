@@ -292,11 +292,13 @@ export function Testimonials() {
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
-                href="/trial"
+                href={`https://wa.me/260770514809?text=${encodeURIComponent("Hi Axxess! 👋 I'd like to know more about your plans.")}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full border px-8 py-3.5 text-sm font-semibold transition-all hover:border-white/30 hover:text-white"
                 style={{ borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}
               >
-                Try 2 days free first
+                Ask a question first
               </a>
             </div>
           </div>
