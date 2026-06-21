@@ -4,11 +4,11 @@ import { Home, BookmarkPlus, Award, Headphones, Newspaper } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const ITEMS = [
-  { to: "/", label: "Home", Icon: Home },
+  { to: "/",        label: "Home",    Icon: Home },
   { to: "/reserve", label: "Reserve", Icon: BookmarkPlus },
   { to: "/rewards", label: "Rewards", Icon: Award },
+  { to: "/news",    label: "News",    Icon: Newspaper },
   { to: "/contact", label: "Support", Icon: Headphones },
-  { to: "/news", label: "News", Icon: Newspaper },
 ] as const;
 
 const NEWS_READ_KEY = "axx_news_last_read";
@@ -32,6 +32,7 @@ export function BottomNav() {
       setHasUnread(!lastRead || new Date(data.created_at) > new Date(lastRead));
     };
     check();
+    return () => { mounted = false; };
   }, [pathname]);
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export function BottomNav() {
     >
       <ul className="mx-auto grid max-w-md grid-cols-5 px-2 pt-1.5 pb-2">
         {ITEMS.map(({ to, label, Icon }) => {
-          const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+          const active  = to === "/" ? pathname === "/" : pathname.startsWith(to);
           const showDot = to === "/news" && hasUnread && !active;
           return (
             <li key={to} className="flex">
@@ -88,4 +89,4 @@ export function BottomNav() {
       </ul>
     </nav>
   );
-}
+      }
