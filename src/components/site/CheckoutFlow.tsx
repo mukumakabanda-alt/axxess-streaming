@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowRight, MessageCircle, Copy, Check, Zap } from "lucide-react";
+import { Loader2, ArrowRight, MessageCircle, Copy, Check, Zap, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
 import { WHATSAPP_PRIMARY, normalizePhone } from "@/lib/whatsapp";
@@ -13,10 +13,17 @@ import { toast } from "sonner";
 type Service = { id: string; name: string; price_kwacha: number };
 type Step = "details" | "pay" | "done";
 type Network = "mtn" | "airtel" | "zamtel" | "unknown";
+type PayPhase = "ready" | "dialed";
 
 const MTN_PREFIXES = ["96", "76"];
 const AIRTEL_PREFIXES = ["97", "77", "57"];
 const ZAMTEL_PREFIXES = ["95", "75"];
+
+// The USSD code customers dial to send mobile money. Encoded for use in a
+// tel: link — encodeURIComponent turns "#" into "%23" while leaving "*"
+// alone, which is exactly what mobile dialers expect to show "*115#".
+const USSD_CODE = "*115#";
+const USSD_TEL_HREF = `tel:${encodeURIComponent(USSD_CODE)}`;
 
 function detectNetwork(raw: string): Network {
   const digits = raw.replace(/\D/g, "");
@@ -43,6 +50,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   const [months, setMonths] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState<"number" | null>(null);
+  const [payPhase, setPayPhase] = useState<PayPhase>("ready");
 
   useEffect(() => {
     if (service) {
@@ -51,6 +59,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       setPhone(getRememberedPhone());
       setMonths(1);
       setCopied(null);
+      setPayPhase("ready");
     }
   }, [service]);
 
@@ -103,14 +112,28 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
     setStep("pay");
   };
 
-  const copyNumber = async () => {
+  // The single, idiot-proof "do everything for me" action:
+  // 1. Copy our mobile money number to the clipboard.
+  // 2. Open the phone's dialer with *115# already typed in, so all the
+  //    customer has to do is tap the call button on their own phone.
+  // Clipboard write and dialer launch are fired from the same tap so
+  // mobile browsers don't block either as an unrelated, non-user-initiated
+  // action. If clipboard access fails for any reason, the number is still
+  // shown large on screen, so nothing blocks the customer from continuing.
+  const copyAndPay = () => {
     if (!payInfo) return;
-    try {
-      await navigator.clipboard.writeText(payInfo.number);
-      setCopied("number");
-      toast.success("Number copied!");
-      setTimeout(() => setCopied(null), 3000);
-    } catch {}
+
+    navigator.clipboard?.writeText(payInfo.number).then(
+      () => toast.success("Number copied! Opening your dialer…"),
+      () => toast("Couldn't auto-copy — just use the number shown above."),
+    );
+
+    setCopied("number");
+    setPayPhase("dialed");
+    window.setTimeout(() => setCopied(null), 4000);
+
+    // Hand off to the phone's native dialer, pre-filled with *115#.
+    window.location.href = USSD_TEL_HREF;
   };
 
   const openWhatsApp = () => {
@@ -136,6 +159,16 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   const close = () => { setStep("details"); onClose(); };
 
   const progressWidth = step === "details" ? "33%" : step === "pay" ? "66%" : "100%";
+
+  // Drives the checkmarks on the numbered instructions below — once the
+  // customer has tapped "Copy and Pay Now", steps 1 and 2 are done.
+  const paySteps = [
+    `Tap "Copy and Pay Now" below`,
+    `Your dialer opens with ${USSD_CODE} ready — tap the green call button on your phone`,
+    `Follow the prompts, paste the number when it asks, and send K${totalPrice}`,
+    `Come back here and tap "I've Paid — Confirm on WhatsApp"`,
+  ];
+  const paySepsCompleted = payPhase === "dialed" ? 2 : 0;
 
   return (
     <Dialog open={!!service} onOpenChange={(o) => !o && close()}>
@@ -284,17 +317,16 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
 
               {/* Payment box */}
               <div className={`rounded-2xl border ${payInfo.border} ${payInfo.bg} p-5`}>
-                <p className={`text-xs font-bold uppercase tracking-wider ${payInfo.color}`}>{payInfo.label}</p>
-                <p className="mt-3 text-sm text-muted-foreground">Send to this number:</p>
-                <div className="mt-1 flex items-center justify-between gap-3">
-                  <p className="font-display text-3xl font-bold tracking-tight">{payInfo.number}</p>
-                  <button
-                    onClick={copyNumber}
-                    className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold transition-all hover:border-primary/40"
-                  >
-                    {copied === "number" ? <><Check className="h-3 w-3 text-emerald-400" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
-                  </button>
+                <div className="flex items-center justify-between">
+                  <p className={`text-xs font-bold uppercase tracking-wider ${payInfo.color}`}>{payInfo.label}</p>
+                  {copied === "number" && (
+                    <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                      <Check className="h-3 w-3" /> Copied
+                    </span>
+                  )}
                 </div>
+                <p className="mt-3 text-sm text-muted-foreground">Send to this number:</p>
+                <p className="mt-1 font-display text-3xl font-bold tracking-tight">{payInfo.number}</p>
                 <p className="mt-2 text-sm">Name: <span className="font-semibold">{payInfo.name}</span></p>
                 <div className="mt-3 rounded-xl bg-background/40 p-3">
                   <p className="text-xs text-muted-foreground">Amount to send</p>
@@ -302,18 +334,21 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 </div>
               </div>
 
-              {/* Steps */}
+              {/* Steps — checkmarks fill in automatically as the customer progresses */}
               <div className="space-y-2">
-                {[
-                  "Open your mobile money app or dial *115#",
-                  `Send K${totalPrice} to ${payInfo.number} (${payInfo.name})`,
-                  "Come back here and tap the button below",
-                ].map((s, i) => (
-                  <div key={i} className="flex items-start gap-3 text-sm">
-                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">{i + 1}</span>
-                    <span className="text-muted-foreground leading-snug">{s}</span>
-                  </div>
-                ))}
+                {paySteps.map((s, i) => {
+                  const done = i < paySepsCompleted;
+                  return (
+                    <div key={i} className="flex items-start gap-3 text-sm">
+                      <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                        done ? "bg-emerald-500 text-black" : "bg-primary/15 text-primary"
+                      }`}>
+                        {done ? <Check className="h-3 w-3" /> : i + 1}
+                      </span>
+                      <span className={`leading-snug ${done ? "text-foreground/60 line-through" : "text-muted-foreground"}`}>{s}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -367,19 +402,49 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
             </Button>
           )}
 
+          {/* One giant button at a time — never two competing actions on screen */}
           {step === "pay" && (
             <div className="space-y-2">
-              <Button
-                onClick={openWhatsApp}
-                className="h-14 w-full rounded-full text-base font-bold text-black hover:opacity-90"
-                style={{ background: "#25D366", boxShadow: "0 0 24px -8px rgba(37,211,102,0.6)" }}
-              >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                I've paid — confirm on WhatsApp
-              </Button>
-              <p className="text-center text-[11px] text-muted-foreground">
-                This opens WhatsApp with your order details pre-filled
-              </p>
+              {payPhase === "ready" ? (
+                <>
+                  <Button
+                    onClick={copyAndPay}
+                    className="h-16 w-full rounded-full text-base font-bold text-white hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #E5192A, #C9A84C)", boxShadow: "0 0 28px -6px rgba(229,25,42,0.6)" }}
+                  >
+                    <Copy className="mr-2 h-5 w-5" />
+                    Copy and Pay Now
+                  </Button>
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    Copies our number & opens your dialer with {USSD_CODE}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openWhatsApp}
+                    className="block w-full text-center text-[10px] text-muted-foreground/70 underline"
+                  >
+                    Already sent the money? Skip to WhatsApp
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={openWhatsApp}
+                    className="h-16 w-full rounded-full text-base font-bold text-black hover:opacity-90 animate-pulse"
+                    style={{ background: "#25D366", boxShadow: "0 0 28px -6px rgba(37,211,102,0.7)" }}
+                  >
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    I've Paid — Confirm on WhatsApp
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={copyAndPay}
+                    className="flex w-full items-center justify-center gap-1 text-center text-[11px] text-muted-foreground underline"
+                  >
+                    <Phone className="h-3 w-3" /> Didn't dial yet? Tap to copy number & reopen dialer
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -397,4 +462,4 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       </DialogContent>
     </Dialog>
   );
-    }
+  }
