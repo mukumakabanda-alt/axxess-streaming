@@ -761,7 +761,7 @@ export function Hero3D() {
 
           {/* ── 5. Trust pills ── */}
           <motion.div variants={fadeUp} className="mt-6 flex flex-wrap justify-center gap-2">
-            {["⚡ 15-min activation", "🔒 No card required", "✓ 2-day free trial"].map((t) => (
+            {["⚡ 15-min activation", "🔒 No card required", "✓ No contract"].map((t) => (
               <span
                 key={t}
                 className="hero-trust-pill"
@@ -778,10 +778,17 @@ export function Hero3D() {
             ))}
           </motion.div>
 
-          {/* ── 6. SINGLE CTA: Start Free Trial ── */}
+          {/* ── 6. SINGLE CTA: See Plans ── */}
           <motion.div variants={fadeUp} className="mt-8 flex justify-center">
-            <a href="/trial" className="hero-btn-primary">
-              <span style={{ position: "relative", zIndex: 1 }}>Start Free Trial</span>
+            <a
+              href="#plans"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="hero-btn-primary"
+            >
+              <span style={{ position: "relative", zIndex: 1 }}>See Plans</span>
               <span className="hero-btn-arrow" style={{ position: "relative", zIndex: 1 }}>→</span>
             </a>
           </motion.div>
