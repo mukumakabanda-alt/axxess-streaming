@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Trash2, Copy, MessageSquare, Pencil } from "lucide-react";
+import { normalizePhone } from "@/lib/whatsapp";
 
 type Sub = {
   id: string;
@@ -113,7 +114,7 @@ export function SubscriptionsTab() {
             const fd = new FormData(e.currentTarget);
             const { error } = await supabase.from("subscriptions").insert({
               customer_name: String(fd.get("customer_name")),
-              customer_phone: String(fd.get("customer_phone")),
+              customer_phone: normalizePhone(String(fd.get("customer_phone"))),
               service_name: String(fd.get("service_name")),
               start_date: String(fd.get("start_date")),
               end_date: String(fd.get("end_date")),
@@ -160,4 +161,4 @@ export function SubscriptionsTab() {
       </Dialog>
     </div>
   );
-}
+      }
