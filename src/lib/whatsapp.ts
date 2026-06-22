@@ -76,4 +76,4 @@ export function paymentInstruction(network: Network) {
     };
   }
   return null;
-             }
+}
