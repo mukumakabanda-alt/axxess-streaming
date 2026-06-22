@@ -8,8 +8,8 @@ export function WhatsAppFab() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"
-      className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full text-black shadow-glow-green animate-pulse-glow transition-smooth hover:scale-110"
-      style={{ backgroundColor: "#25D366" }}
+      className="fixed right-4 z-[52] flex h-14 w-14 items-center justify-center rounded-full text-black shadow-glow-green animate-pulse-glow transition-smooth hover:scale-110"
+      style={{ backgroundColor: "#25D366", bottom: "88px" }}
     >
       <MessageCircle className="h-6 w-6" fill="currentColor" />
     </a>
