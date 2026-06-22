@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { X, MessageCircle } from "lucide-react";
 import { useLocation } from "@tanstack/react-router";
 
-const POPUP_KEY = "axx_wa_community_popup_v1";
+const POPUP_KEY        = "axx_wa_community_popup_v1";
 const WA_COMMUNITY_LINK = "https://chat.whatsapp.com/GS48ieAaKkUHtRIHp0YVv8?s=sw&p=a&mlu=3";
 
 export function WhatsAppCommunityPopup() {
   const [visible, setVisible] = useState(false);
-  const [show, setShow] = useState(false);
+  const [show,    setShow]    = useState(false);
   const { pathname } = useLocation();
 
   useEffect(() => {
@@ -15,15 +15,13 @@ export function WhatsAppCommunityPopup() {
     if (seen) return;
 
     const timer = setTimeout(() => {
-      const alreadySeen = sessionStorage.getItem(POPUP_KEY);
-      if (alreadySeen) return;
+      if (sessionStorage.getItem(POPUP_KEY)) return;
       setShow(true);
       setVisible(true);
     }, 20000);
 
     const onCheckoutPay = () => {
-      const alreadySeen = sessionStorage.getItem(POPUP_KEY);
-      if (alreadySeen) return;
+      if (sessionStorage.getItem(POPUP_KEY)) return;
       clearTimeout(timer);
       setShow(true);
       setVisible(true);
@@ -53,22 +51,23 @@ export function WhatsAppCommunityPopup() {
 
   return (
     <div
-      className="fixed bottom-24 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm"
+      className="fixed right-4 z-[51] w-[calc(100vw-2rem)] max-w-sm"
       style={{
+        bottom:    "96px",
         transform: visible ? "translateY(0) scale(1)" : "translateY(16px) scale(0.97)",
-        opacity: visible ? 1 : 0,
+        opacity:   visible ? 1 : 0,
         transition: "all 400ms cubic-bezier(0.16, 1, 0.3, 1)",
         pointerEvents: visible ? "auto" : "none",
       }}
     >
       <div
         style={{
-          background: "rgba(12,12,12,0.95)",
-          border: "1px solid rgba(37,211,102,0.3)",
-          borderRadius: 16,
+          background:    "rgba(12,12,12,0.95)",
+          border:        "1px solid rgba(37,211,102,0.3)",
+          borderRadius:  16,
           backdropFilter: "blur(24px) saturate(180%)",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
-          overflow: "hidden",
+          boxShadow:     "0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
+          overflow:      "hidden",
         }}
       >
         <div style={{ height: 2, background: "linear-gradient(90deg, #25D366, #128C7E)" }} />
@@ -82,9 +81,7 @@ export function WhatsAppCommunityPopup() {
               >
                 <MessageCircle className="h-4 w-4" style={{ color: "#25D366" }} />
               </div>
-              <span
-                style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", color: "#25D366" }}
-              >
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", color: "#25D366" }}>
                 Join the community
               </span>
             </div>
@@ -116,4 +113,4 @@ export function WhatsAppCommunityPopup() {
       </div>
     </div>
   );
-}
+              }
