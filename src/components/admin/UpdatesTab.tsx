@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Send, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 type U = { id: string; title: string; body: string; is_published: boolean; created_at: string };
@@ -15,6 +15,7 @@ export function UpdatesTab() {
   const [items,   setItems]   = useState<U[]>([]);
   const [editing, setEditing] = useState<U | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [sendingId, setSendingId] = useState<string | null>(null);
 
   const load = async () => {
     const { data } = await supabase.from("updates").select("*").order("created_at", { ascending: false });
@@ -43,6 +44,30 @@ export function UpdatesTab() {
     load();
   };
 
+  // Manual override/retest path for the notify-news edge function. It's
+  // shaped as a fake "just published" webhook payload, which is what
+  // notify-news expects from the real Database Webhook. notify-news itself
+  // dedupes on notification_log (entity_type='update', entity_id, reminder_key
+  // ='news_broadcast'), so this — like the real webhook — can only succeed
+  // once per post; calling it again for an already-sent post returns
+  // "already sent" rather than re-sending.
+  const sendPushNow = async (u: U) => {
+    if (!confirm(`Send a push notification for "${u.title}" now?`)) return;
+    setSendingId(u.id);
+    const { data, error } = await supabase.functions.invoke("notify-news", {
+      body: {
+        type: "UPDATE",
+        record: { id: u.id, title: u.title, body: u.body, is_published: true },
+        old_record: { is_published: false },
+      },
+    });
+    setSendingId(null);
+    if (error) return toast.error("Push failed: " + error.message);
+    if (data?.skipped) return toast(`Not sent — ${data.skipped}`);
+    if (data?.ok === false) return toast.error("Push failed — check notification_log for details");
+    toast.success("Push sent!");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -68,6 +93,14 @@ export function UpdatesTab() {
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={u.is_published} onCheckedChange={() => toggle(u)} />
+                <button
+                  onClick={() => sendPushNow(u)}
+                  disabled={sendingId === u.id}
+                  className="rounded-md p-1.5 hover:bg-muted disabled:opacity-50"
+                  title="Send push now"
+                >
+                  {sendingId === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </button>
                 <button
                   onClick={() => setEditing(u)}
                   className="rounded-md p-1.5 hover:bg-muted"
@@ -131,4 +164,4 @@ export function UpdatesTab() {
       </Dialog>
     </div>
   );
-              }
+    }
