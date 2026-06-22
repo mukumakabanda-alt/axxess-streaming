@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { rememberCustomer } from "@/lib/customer";
+import { normalizePhone } from "@/lib/whatsapp";
 import { recordRewardUnlocks } from "@/lib/rewards";
 import { showRewardUnlock } from "./RewardUnlockToast";
 
@@ -124,12 +125,18 @@ export function Testimonials() {
     setSubmitting(true);
     const finalMessage = messageVal || `Rated us ${rating} out of 5 ⭐`;
 
+    // Normalize once so this matches the phone format used everywhere else
+    // (checkout, points lookup, OneSignal targeting). Without this, the same
+    // customer typing their number differently here vs. at checkout splits
+    // their points across two rows and breaks reminder targeting.
+    const normalizedPhone = normalizePhone(parsed.data.phone);
+
     const { error } = await supabase.from("public_messages").insert({
       name: parsed.data.name,
       message: finalMessage,
       screenshot_url: null,
       rating: rating || null,
-      phone: parsed.data.phone,
+      phone: normalizedPhone,
     });
 
     if (error) { setSubmitting(false); toast.error("Could not send: " + error.message); return; }
@@ -139,14 +146,14 @@ export function Testimonials() {
     try {
       const { data: prev } = await supabase
         .from("customer_points").select("points")
-        .eq("customer_phone", parsed.data.phone).maybeSingle();
+        .eq("customer_phone", normalizedPhone).maybeSingle();
       const prevPoints = prev?.points ?? 0;
       const { data: newTotal } = await supabase.rpc("award_points", {
-        _phone: parsed.data.phone, _name: parsed.data.name,
+        _phone: normalizedPhone, _name: parsed.data.name,
         _delta: 5, _reason: "Left a review",
       });
       const newPoints = (newTotal as number) ?? prevPoints + 5;
-      const unlocks = await recordRewardUnlocks(parsed.data.phone, parsed.data.name, prevPoints, newPoints);
+      const unlocks = await recordRewardUnlocks(normalizedPhone, parsed.data.name, prevPoints, newPoints);
       unlocks.forEach((u) => showRewardUnlock(u.points, u.label));
       toast.success("Thanks! +5 points added to your rewards 🎉");
     } catch {
@@ -361,4 +368,4 @@ export function Testimonials() {
       </div>
     </section>
   );
-                                                    }
+    }
