@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Search, Copy, Trash2, Pencil, MessageSquare, Plus } from "lucide-react";
 import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
 import { recordRewardUnlocks } from "@/lib/rewards";
+import { normalizePhone } from "@/lib/whatsapp";
 
 type Order = {
   id: string;
@@ -298,11 +299,11 @@ export function OrdersTab() {
               e.preventDefault();
               const fd = new FormData(e.currentTarget);
               const { error } = await supabase.from("orders").insert({
-                customer_name:         String(fd.get("customer_name")),
-                customer_phone:        String(fd.get("customer_phone")),
-                service_name_snapshot: String(fd.get("service")),
-                price_snapshot:        Number(fd.get("price")),
-              });
+  customer_name:         String(fd.get("customer_name")),
+  customer_phone:        normalizePhone(String(fd.get("customer_phone"))),
+  service_name_snapshot: String(fd.get("service")),
+  price_snapshot:        Number(fd.get("price")),
+});
               if (error) return toast.error(error.message);
               toast.success("Order added");
               setShowNew(false);
