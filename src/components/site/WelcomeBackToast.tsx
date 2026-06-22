@@ -23,7 +23,7 @@ export function WelcomeBackToast() {
   return (
     <div
       className="pointer-events-none fixed right-3 top-20 z-[55] sm:right-5"
-      style={{ animation: "reward-slide 4.3s cubic-bezier(.4,0,.2,1) forwards" }}
+       style={{ animation: "reward-slide 4.5s cubic-bezier(.4,0,.2,1) forwards" }}
     >
       <div className="pointer-events-auto rounded-full border border-primary/30 bg-card/95 px-4 py-2 text-xs font-medium text-foreground/90 shadow-card backdrop-blur-md">
         Welcome back, <span className="font-bold text-primary">{name}</span> 👋
