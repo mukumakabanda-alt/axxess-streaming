@@ -438,7 +438,7 @@ async function fetchLiveNews(): Promise<Article[]> {
           opinion,
           category,
           emoji:       emojis[i % emojis.length],
-          shareText:   `😮 ${title}\n\n${hook}\n\n📲 Read on Axxess News: axxess-streaming.lovable.app/news`,
+          shareText:   `😮 ${title}\n\n${hook}\n\n📲 Read on Axxess News: ${typeof window !== "undefined" ? window.location.origin : "https://axxess-streaming.lovable.app"}/news`,
           tmdbId, tmdbType, posterUrl, backdropUrl, trailerKey, rating, cast,
           accentColor,
           stats: [
