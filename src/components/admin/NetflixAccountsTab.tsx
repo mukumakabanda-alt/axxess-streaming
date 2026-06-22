@@ -117,14 +117,6 @@ export function NetflixAccountsTab() {
     }).eq("id", p.id);
     if (error) return toast.error(error.message);
 
-    // Log alert
-    await supabase.from("notification_log").insert({
-      type:  "vulnerable_alert",
-      title: "⚠️ VULNERABLE: Netflix profile",
-      body:  `Profile "${p.profile_name}" is now VULNERABLE. Change the PIN before reassigning.`,
-      meta:  { profile_id: p.id, account_id: p.account_id, service: "netflix" },
-    }).throwOnError().catch(() => {});
-
     toast.warning(`Profile "${p.profile_name}" flagged as VULNERABLE. Change the PIN before reusing.`);
     load();
   };
@@ -440,4 +432,4 @@ export function NetflixAccountsTab() {
 
     </div>
   );
-}
+           }
