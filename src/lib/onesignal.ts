@@ -17,20 +17,25 @@ export function initOneSignal(): void {
 
   window.OneSignalDeferred.push(async (OneSignal: any) => {
     await OneSignal.init({
-      appId: ONESIGNAL_APP_ID,
-      notifyButton: { enable: false },
-      serviceWorkerParam: { scope: "/" },
+      appId:               ONESIGNAL_APP_ID,
+      notifyButton:        { enable: false },
+      // serviceWorkerPath tells OneSignal exactly where to register the SW.
+      // Without this, v16 defaults to /OneSignalSDK.sw.js — which must exist
+      // at that path. Lovable doesn't copy it automatically, so we point
+      // explicitly to the CDN-hosted SW that OneSignal's page.js registers
+      // via importScripts. If you later self-host the SW, update this path.
+      serviceWorkerPath:   "OneSignalSDK.sw.js",
+      serviceWorkerParam:  { scope: "/" },
       promptOptions: {
         slidedown: {
           prompts: [
             {
-              type: "push",
+              type:       "push",
               autoPrompt: true,
               text: {
-                actionMessage:
-                  "Get notified about new streaming deals, drops & Axxess news 🎬",
-                acceptButton: "Yes, notify me",
-                cancelButton: "Maybe later",
+                actionMessage:  "Get notified about new streaming deals, drops & Axxess news 🎬",
+                acceptButton:   "Yes, notify me",
+                cancelButton:   "Maybe later",
               },
               delay: {
                 pageViews: 2,
@@ -65,17 +70,12 @@ export function initOneSignal(): void {
   });
 }
 
-/* ─── Welcome push ────────────────────────────────────────────────────────
-   Fires once per device the moment push permission is granted. Calls the
-   send-welcome-push edge function (server-side, holds the OneSignal REST
-   API key) rather than calling OneSignal's REST API directly from the
-   client, since that key must never be exposed in browser code.
-
+/* ─── Welcome push ─────────────────────────────────────────────────────────
    Uses supabase.functions.invoke() rather than a raw fetch() — invoke()
    automatically attaches the project's anon key as the Authorization
    header, which Supabase edge functions require by default. A bare fetch()
-   to the function URL with no auth header gets rejected with a 401 before
-   the function ever runs, so the welcome push would silently never fire.
+   to the function URL with no auth header gets a 401 before the function
+   ever runs, so the welcome push would silently never fire.
 
    Fails silently — a missed welcome push should never block the UI. ──── */
 async function sendWelcomePush(subscriptionId: string): Promise<void> {
@@ -113,4 +113,4 @@ export function logoutOneSignalUser(): void {
   window.OneSignalDeferred.push((OneSignal: any) => {
     OneSignal.logout();
   });
- }
+}
