@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { z } from "zod";
 import { rememberCustomer, getRememberedName, getRememberedPhone, firstName } from "@/lib/customer";
+import { normalizePhone } from "@/lib/whatsapp";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 type Svc = { id: string; name: string; slug: string; is_full: boolean; price_kwacha: number };
@@ -73,11 +74,16 @@ export function Reserve() {
     const svc = services.find((s) => s.id === serviceId);
     setSubmitting(true);
 
+    // Normalize once so this matches the phone format used everywhere else
+    // (checkout, points lookup, OneSignal targeting) — otherwise this
+    // customer's reminders and points can silently fail to match later.
+    const normalizedPhone = normalizePhone(parsed.data.customer_phone);
+
     const { error, data } = await supabase
       .from("reservations")
       .insert({
         customer_name:  parsed.data.customer_name,
-        customer_phone: parsed.data.customer_phone,
+        customer_phone: normalizedPhone,
         service_id:     parsed.data.service_id,
         service_name:   svc?.name ?? "Unknown",
         note:           null,
@@ -605,4 +611,4 @@ export function Reserve() {
       `}</style>
     </section>
   );
-    }
+                                 }
