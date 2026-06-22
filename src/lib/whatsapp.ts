@@ -43,9 +43,9 @@ export function normalizePhone(raw: string): string {
 
 export type Network = "mtn" | "airtel" | "zamtel" | "unknown";
 
-const MTN_PREFIXES = ["96", "76", "78"];
-const AIRTEL_PREFIXES = ["97", "77", "95", "75", "57", "99"];
-const ZAMTEL_PREFIXES = ["50", "51", "52"];
+const MTN_PREFIXES = ["96", "76"];
+const AIRTEL_PREFIXES = ["97", "77", "57"];
+const ZAMTEL_PREFIXES = ["95", "75"];
 
 export function detectNetwork(raw: string): Network {
   const digits = normalizePhone(raw);
