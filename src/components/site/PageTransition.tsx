@@ -3,25 +3,34 @@ import { useLocation } from "@tanstack/react-router";
 
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
-  const ref = useRef<HTMLDivElement>(null);
+  const ref          = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // Kick a CSS animation directly on the DOM node — no state, no flicker,
-    // no rAF race. The element goes from opacity 0 to 1 in 180ms then stays.
-    el.style.opacity = "0";
-    el.style.transform = "translateY(6px)";
-    const id = setTimeout(() => {
-      el.style.transition = "opacity 180ms ease-out, transform 180ms ease-out";
-      el.style.opacity = "1";
-      el.style.transform = "translateY(0)";
-    }, 16); // one frame — enough for the browser to register the starting state
-    return () => clearTimeout(id);
+    // Start invisible, then animate in on the next frame.
+    // willChange hints the compositor to promote this layer early,
+    // eliminating the repaint that caused the blank flash.
+    el.style.opacity    = "0";
+    el.style.transform  = "translateY(6px)";
+    el.style.transition = "none";
+
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transition = "opacity 180ms ease-out, transform 180ms ease-out";
+        el.style.opacity    = "1";
+        el.style.transform  = "translateY(0)";
+      });
+    });
+
+    return () => cancelAnimationFrame(id);
   }, [pathname]);
 
   return (
-    <div ref={ref} style={{ opacity: 0 }}>
+    <div
+      ref={ref}
+      style={{ opacity: 1, willChange: "opacity, transform" }}
+    >
       {children}
     </div>
   );
