@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Lock, Check, Sparkles, Loader2, Zap, Users, Star, Crown, MessageCircle } from "lucide-react";
 import { REWARD_TIERS, recordRewardUnlocks } from "@/lib/rewards";
 import { getUser } from "@/lib/customer";
+import { normalizePhone } from "@/lib/whatsapp";
 import { showRewardUnlock } from "./RewardUnlockToast";
 
 const STORAGE_KEY = "axx_customer_phone";
@@ -42,10 +43,15 @@ export function PointsRewards() {
 
   const lookup = async (p: string) => {
     setLoading(true);
+    // Normalize once so this matches the phone format used everywhere else
+    // (checkout, reviews, OneSignal targeting) — otherwise a customer can
+    // look up "0770..." here while their points were stored under
+    // "260770..." from checkout, and see the wrong (or no) balance.
+    const normalizedPhone = normalizePhone(p);
     const { data } = await supabase
       .from("customer_points")
       .select("points,customer_name")
-      .eq("customer_phone", p.trim())
+      .eq("customer_phone", normalizedPhone)
       .maybeSingle();
     const newPoints = data?.points ?? 0;
     const prev = prevPointsRef.current;
@@ -54,7 +60,7 @@ export function PointsRewards() {
     setLoaded(true);
     setLoading(false);
     if (prev !== null && newPoints > prev) {
-      const unlocks = await recordRewardUnlocks(p.trim(), data?.customer_name ?? null, prev, newPoints);
+      const unlocks = await recordRewardUnlocks(normalizedPhone, data?.customer_name ?? null, prev, newPoints);
       unlocks.forEach((u) => showRewardUnlock(u.points, u.label));
       if (unlocks.length > 0) {
         const topUnlock = REWARD_TIERS.find((t) => t.points === unlocks[unlocks.length - 1].points);
@@ -372,4 +378,4 @@ export function PointsRewards() {
       </div>
     </section>
   );
-            }
+                                                }
