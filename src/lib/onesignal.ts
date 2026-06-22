@@ -113,4 +113,4 @@ export function logoutOneSignalUser(): void {
   window.OneSignalDeferred.push((OneSignal: any) => {
     OneSignal.logout();
   });
-                                       }
+ }
