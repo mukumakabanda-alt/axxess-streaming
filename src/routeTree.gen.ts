@@ -9,20 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TrialRouteImport } from './routes/trial'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as ReserveRouteImport } from './routes/reserve'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminLoginRouteImport } from './routes/admin.login'
 
-const TrialRoute = TrialRouteImport.update({
-  id: '/trial',
-  path: '/trial',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RewardsRoute = RewardsRouteImport.update({
   id: '/rewards',
   path: '/rewards',
@@ -53,11 +46,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminLoginRoute = AdminLoginRouteImport.update({
-  id: '/admin/login',
-  path: '/admin/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -65,8 +53,6 @@ export interface FileRoutesByFullPath {
   '/news': typeof NewsRoute
   '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
-  '/trial': typeof TrialRoute
-  '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -75,8 +61,6 @@ export interface FileRoutesByTo {
   '/news': typeof NewsRoute
   '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
-  '/trial': typeof TrialRoute
-  '/admin/login': typeof AdminLoginRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -86,8 +70,6 @@ export interface FileRoutesById {
   '/news': typeof NewsRoute
   '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
-  '/trial': typeof TrialRoute
-  '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -98,8 +80,6 @@ export interface FileRouteTypes {
     | '/news'
     | '/reserve'
     | '/rewards'
-    | '/trial'
-    | '/admin/login'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -108,8 +88,6 @@ export interface FileRouteTypes {
     | '/news'
     | '/reserve'
     | '/rewards'
-    | '/trial'
-    | '/admin/login'
     | '/admin'
   id:
     | '__root__'
@@ -118,8 +96,6 @@ export interface FileRouteTypes {
     | '/news'
     | '/reserve'
     | '/rewards'
-    | '/trial'
-    | '/admin/login'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -129,20 +105,11 @@ export interface RootRouteChildren {
   NewsRoute: typeof NewsRoute
   ReserveRoute: typeof ReserveRoute
   RewardsRoute: typeof RewardsRoute
-  TrialRoute: typeof TrialRoute
-  AdminLoginRoute: typeof AdminLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/trial': {
-      id: '/trial'
-      path: '/trial'
-      fullPath: '/trial'
-      preLoaderRoute: typeof TrialRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/rewards': {
       id: '/rewards'
       path: '/rewards'
@@ -185,13 +152,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/login': {
-      id: '/admin/login'
-      path: '/admin/login'
-      fullPath: '/admin/login'
-      preLoaderRoute: typeof AdminLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -201,8 +161,6 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRoute: NewsRoute,
   ReserveRoute: ReserveRoute,
   RewardsRoute: RewardsRoute,
-  TrialRoute: TrialRoute,
-  AdminLoginRoute: AdminLoginRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
