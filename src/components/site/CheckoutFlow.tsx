@@ -6,36 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, MessageCircle, Copy, Check, Zap, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
-import { WHATSAPP_PRIMARY, normalizePhone } from "@/lib/whatsapp";
+import { WHATSAPP_PRIMARY, normalizePhone, detectNetwork, type Network } from "@/lib/whatsapp";
 import { loginOneSignalUser, setOneSignalTags } from "@/lib/onesignal";
 import { toast } from "sonner";
 
 type Service = { id: string; name: string; price_kwacha: number };
 type Step = "details" | "pay" | "done";
-type Network = "mtn" | "airtel" | "zamtel" | "unknown";
 type PayPhase = "ready" | "dialed";
-
-const MTN_PREFIXES = ["96", "76"];
-const AIRTEL_PREFIXES = ["97", "77", "57"];
-const ZAMTEL_PREFIXES = ["95", "75"];
 
 // The USSD code customers dial to send mobile money. Encoded for use in a
 // tel: link — encodeURIComponent turns "#" into "%23" while leaving "*"
 // alone, which is exactly what mobile dialers expect to show "*115#".
 const USSD_CODE = "*115#";
 const USSD_TEL_HREF = `tel:${encodeURIComponent(USSD_CODE)}`;
-
-function detectNetwork(raw: string): Network {
-  const digits = raw.replace(/\D/g, "");
-  let local = digits;
-  if (local.startsWith("260")) local = local.slice(3);
-  if (local.startsWith("0")) local = local.slice(1);
-  const prefix = local.slice(0, 2);
-  if (MTN_PREFIXES.includes(prefix)) return "mtn";
-  if (AIRTEL_PREFIXES.includes(prefix)) return "airtel";
-  if (ZAMTEL_PREFIXES.includes(prefix)) return "zamtel";
-  return "unknown";
-}
 
 // We only hold MTN and Airtel Money lines. Zamtel numbers are detected
 // correctly (for the badge/messaging) but always pay into the Airtel
