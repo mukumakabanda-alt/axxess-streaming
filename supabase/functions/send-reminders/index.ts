@@ -11,7 +11,13 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const ONESIGNAL_APP_ID = "03fb7168-1d9c-4fb9-8064-01a8c6333053";
 const ONESIGNAL_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY");
 
-async function sendPush(externalId: string, heading: string, message: string) {
+// Single source of truth for the live site URL — used to deep-link push
+// notifications straight to /renew with the phone pre-filled, so tapping
+// a reminder lands the customer on their subscription with nothing left
+// to type. Update this if the custom domain changes.
+const SITE_URL = "https://axxess-streaming.lovable.app";
+
+async function sendPush(externalId: string, heading: string, message: string, url?: string) {
   if (!ONESIGNAL_API_KEY) {
     return { ok: false, body: { error: "Missing ONESIGNAL_REST_API_KEY secret" } };
   }
@@ -27,6 +33,7 @@ async function sendPush(externalId: string, heading: string, message: string) {
       include_aliases: { external_id: [externalId] },
       headings: { en: heading },
       contents: { en: message },
+      ...(url ? { url } : {}),
     }),
   });
   const body = await res.json().catch(() => ({}));
@@ -41,6 +48,7 @@ async function claimAndSend(
   phone: string,
   heading: string,
   message: string,
+  url?: string,
 ): Promise<"sent" | "failed" | "skipped"> {
   const { data: claimed, error: claimErr } = await supabase
     .from("notification_log")
@@ -56,7 +64,7 @@ async function claimAndSend(
   }
 
   const phoneDigits = phone.replace(/\D/g, "");
-  const { ok, body } = await sendPush(phoneDigits, heading, message);
+  const { ok, body } = await sendPush(phoneDigits, heading, message, url);
 
   await supabase
     .from("notification_log")
@@ -114,8 +122,12 @@ Deno.serve(async (_req: Request) => {
 
     if (!reminderKey) { results.skipped++; continue; }
 
-    const msg     = SUB_MESSAGES[reminderKey];
-    const outcome = await claimAndSend(supabase, "subscription", sub.id, reminderKey, sub.customer_phone, msg.heading, msg.body);
+    const msg = SUB_MESSAGES[reminderKey];
+    // Deep-link straight to /renew with the phone pre-filled — this is what
+    // makes "tap notification → see your plan → pay" an actual one-tap
+    // flow instead of dropping them on the homepage to retype their number.
+    const renewUrl = `${SITE_URL}/renew?phone=${encodeURIComponent(sub.customer_phone)}`;
+    const outcome = await claimAndSend(supabase, "subscription", sub.id, reminderKey, sub.customer_phone, msg.heading, msg.body, renewUrl);
     if (outcome === "sent")   results.subscriptions++;
     else if (outcome === "failed") results.failed++;
     else results.skipped++;
