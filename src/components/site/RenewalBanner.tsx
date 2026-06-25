@@ -12,7 +12,10 @@ export function RenewalBanner() {
     if (!u?.renewalDate) return;
     const ms = new Date(u.renewalDate).getTime() - Date.now();
     const d  = Math.ceil(ms / 86400000);
-    if (d <= 7 && d >= 0) {
+    // Show for 7 days out through however long they've been expired —
+    // lapsed customers are the ones most likely to churn for good, so
+    // they need this nudge more than anyone, not less.
+    if (d <= 7) {
       setDays(d);
       setPhone(normalizePhone(u.whatsapp || ""));
     }
@@ -20,12 +23,15 @@ export function RenewalBanner() {
 
   if (days === null) return null;
 
-  const urgent = days <= 3;
-  const cls    = urgent
+  const expired = days < 0;
+  const urgent  = expired || days <= 3;
+  const cls     = urgent
     ? "border-destructive/60 bg-destructive/15 animate-pulse-glow"
     : "border-amber-500/40 bg-amber-500/10";
   const Icon = urgent ? AlertTriangle : Clock;
-  const text = urgent
+  const text = expired
+    ? `🚨 Your access ended ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} ago. Renew now to restore it.`
+    : urgent
     ? `🚨 Only ${days} day${days === 1 ? "" : "s"} left! Renew now or lose access.`
     : `⏰ Your subscription renews in ${days} day${days === 1 ? "" : "s"}. Renew to keep access.`;
 
