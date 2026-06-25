@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,28 +22,64 @@ const PAY_DETAILS = {
   airtel: { name: "Ngoma Audrian",   number: "0574161927", label: "Airtel Money",     color: "text-red-400",    bg: "bg-red-500/10",    border: "border-red-500/30",    dot: "bg-red-400"    },
 };
 
-export function CheckoutFlow({ service, onClose }: { service: Service | null; onClose: () => void }) {
+export function CheckoutFlow({
+  service,
+  onClose,
+  initialMonths = 1,
+  quickRenew = false,
+}: {
+  service: Service | null;
+  onClose: () => void;
+  /** Duration chosen before opening checkout (e.g. on /renew's card). Defaults to 1 month for first-time checkout. */
+  initialMonths?: number;
+  /**
+   * When true AND we already trust the stored name/phone/network for this
+   * device, skip the "enter your details" screen entirely and place the
+   * order automatically, landing straight on the payment screen. This is
+   * what makes renewal a 2-minute job instead of a repeat of checkout.
+   */
+  quickRenew?: boolean;
+}) {
   const [step,       setStep]       = useState<Step>("details");
   const [name,       setName]       = useState(getRememberedName());
   const [phone,      setPhone]      = useState(getRememberedPhone());
-  const [months,     setMonths]     = useState(1);
+  const [months,     setMonths]     = useState(initialMonths);
   const [submitting, setSubmitting] = useState(false);
   const [copied,     setCopied]     = useState<"number" | null>(null);
   const [payPhase,   setPayPhase]   = useState<PayPhase>("ready");
   // Stores the computed expiry so the done screen can show it
   const [expiryDate, setExpiryDate] = useState<string>("");
+  // Guards against placing the same quick-renew order twice (e.g. React
+  // re-running effects) — tracks the last `service` object we auto-placed for.
+  const autoPlacedFor = useRef<Service | null>(null);
 
   useEffect(() => {
-    if (service) {
-      setStep("details");
-      // Always re-read from localStorage when the dialog opens — catches
-      // info entered on other pages (e.g. /renew) since the last open
-      setName(getRememberedName());
-      setPhone(getRememberedPhone());
-      setMonths(1);
-      setCopied(null);
-      setPayPhase("ready");
+    if (!service) return;
+
+    setStep("details");
+    setCopied(null);
+    setPayPhase("ready");
+
+    // Always re-read from localStorage when the dialog opens — catches
+    // info entered on other pages (e.g. /renew) since the last open
+    const remName  = getRememberedName();
+    const remPhone = getRememberedPhone();
+    setName(remName);
+    setPhone(remPhone);
+    setMonths(initialMonths);
+
+    const net   = detectNetwork(remPhone);
+    const ready = remName.trim().length >= 2 && remPhone.trim().length >= 9 && net !== "unknown";
+
+    if (quickRenew && ready && autoPlacedFor.current !== service) {
+      autoPlacedFor.current = service;
+      // Jump straight to payment and place the order in the background —
+      // a renewing customer already gave us their name, phone, and plan
+      // on /renew, so there's nothing left to ask them.
+      setStep("pay");
+      placeOrder(remName, remPhone, initialMonths, service);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [service]);
 
   const network = useMemo(() => detectNetwork(phone), [phone]);
@@ -58,23 +94,22 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   const isAllAccess = /all.?access|bundle/i.test(service.name);
   const isNetflix   = /netflix/i.test(service.name);
 
-  const submitDetails = async () => {
-    if (name.trim().length < 2)  return toast.error("Enter your full name");
-    if (phone.trim().length < 9) return toast.error("Enter a valid WhatsApp number");
-    if (!payInfo)                return toast.error("Network not detected — check your number");
-
+  // Shared order-placement logic — called either by the "Continue" button
+  // (first-time checkout) or automatically on open (quick renewal).
+  const placeOrder = async (orderName: string, orderPhone: string, orderMonths: number, orderService: Service) => {
     setSubmitting(true);
 
-    const normalizedPhone = normalizePhone(phone);
-    const durationDays    = 30 * months;
+    const normalizedPhone = normalizePhone(orderPhone);
+    const durationDays    = 30 * orderMonths;
     const expiresAt       = new Date();
     expiresAt.setDate(expiresAt.getDate() + durationDays);
     const expiresIso      = expiresAt.toISOString();
+    const orderTotal      = Number(orderService.price_kwacha) * orderMonths;
 
     // Persist everything we now know about this customer — name, phone,
     // plan, and renewal date. This is what makes the RenewalBanner show
     // and pre-fills every future form on the site for this device.
-    rememberCustomer(name, normalizedPhone, service.name, expiresIso);
+    rememberCustomer(orderName, normalizedPhone, orderService.name, expiresIso);
     rememberRenewalDate(expiresIso);
     setExpiryDate(expiresAt.toLocaleDateString("en-ZM", { day: "numeric", month: "long", year: "numeric" }));
 
@@ -82,25 +117,32 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
     // push reminders (send-reminders edge function) can reach them
     loginOneSignalUser(normalizedPhone);
     setOneSignalTags({
-      plan:       service.name,
-      months:     String(months),
+      plan:       orderService.name,
+      months:     String(orderMonths),
       phone:      normalizedPhone,
       last_order: new Date().toISOString().split("T")[0],
       renewal:    expiresAt.toISOString().split("T")[0],
     });
 
     await supabase.from("orders").insert({
-      customer_name:          name.trim(),
+      customer_name:          orderName.trim(),
       customer_phone:         normalizedPhone,
-      service_id:             service.id,
-      service_name_snapshot:  months > 1 ? `${service.name} (${months} months)` : service.name,
-      price_snapshot:         totalPrice,
+      service_id:             orderService.id,
+      service_name_snapshot:  orderMonths > 1 ? `${orderService.name} (${orderMonths} months)` : orderService.name,
+      price_snapshot:         orderTotal,
       duration_days:          durationDays,
       expires_at:             expiresIso,
     });
 
     setSubmitting(false);
     setStep("pay");
+  };
+
+  const submitDetails = async () => {
+    if (name.trim().length < 2)  return toast.error("Enter your full name");
+    if (phone.trim().length < 9) return toast.error("Enter a valid WhatsApp number");
+    if (!payInfo)                return toast.error("Network not detected — check your number");
+    await placeOrder(name, phone, months, service);
   };
 
   const copyAndPay = () => {
@@ -468,4 +510,4 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       </DialogContent>
     </Dialog>
   );
-}
+                                               }
