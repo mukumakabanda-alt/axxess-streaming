@@ -65,6 +65,7 @@ function RenewPage() {
   const [subs,         setSubs]         = useState<SubRecord[] | null>(null);
   const [services,     setServices]     = useState<Service[]>([]);
   const [selectedSvc,  setSelectedSvc]  = useState<Service | null>(null);
+  const [renewMonths,  setRenewMonths]  = useState(1);
   const [pushLinked,   setPushLinked]   = useState(false);
   const [promptingPush,setPromptingPush]= useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -375,7 +376,7 @@ function RenewPage() {
                       {svc && (
                         <RenewDurationPicker
                           service={svc}
-                          onSelect={(s) => setSelectedSvc(s)}
+                          onSelect={(s, m) => { setSelectedSvc(s); setRenewMonths(m); }}
                         />
                       )}
 
@@ -421,7 +422,7 @@ function RenewPage() {
                       {upsellServices(subs).map((s) => (
                         <button
                           key={s.id}
-                          onClick={() => setSelectedSvc(s)}
+                          onClick={() => { setSelectedSvc(s); setRenewMonths(1); }}
                           className="w-full flex items-center justify-between rounded-2xl border p-3 text-left transition-all hover:border-primary/40"
                           style={{ borderColor: "rgba(201,168,76,0.2)", background: "rgba(201,168,76,0.04)" }}
                         >
@@ -459,8 +460,16 @@ function RenewPage() {
         </div>
       </section>
 
-      {/* CheckoutFlow opens pre-configured for the selected service */}
-      <CheckoutFlow service={selectedSvc} onClose={() => setSelectedSvc(null)} />
+      {/* CheckoutFlow opens pre-configured for the selected service.
+          quickRenew skips the "enter your details" screen since we already
+          have this customer's name/phone from the lookup above — this is
+          what keeps renewal under 2 minutes. */}
+      <CheckoutFlow
+        service={selectedSvc}
+        initialMonths={renewMonths}
+        quickRenew
+        onClose={() => { setSelectedSvc(null); setRenewMonths(1); }}
+      />
     </SiteShell>
   );
 }
@@ -473,7 +482,7 @@ function RenewDurationPicker({
   onSelect,
 }: {
   service: Service;
-  onSelect: (s: Service) => void;
+  onSelect: (s: Service, months: number) => void;
 }) {
   const [months, setMonths] = useState(1);
 
@@ -492,9 +501,9 @@ function RenewDurationPicker({
               type="button"
               onClick={() => {
                 setMonths(m);
-                // Pass a modified service object with the right price
-                // so CheckoutFlow shows the correct total
-                onSelect({ ...service, price_kwacha: service.price_kwacha });
+                // Pass the actual month count through so CheckoutFlow shows
+                // the correct multi-month total instead of resetting to 1.
+                onSelect(service, m);
               }}
               className={`relative rounded-xl border px-2 py-2 text-center transition-all ${
                 active
