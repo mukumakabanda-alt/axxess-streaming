@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, MessageCircle, Copy, Check, Zap, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
+import { rememberCustomer, rememberRenewalDate, getRememberedName, getRememberedPhone } from "@/lib/customer";
 import { WHATSAPP_PRIMARY, normalizePhone, detectNetwork, type Network } from "@/lib/whatsapp";
 import { loginOneSignalUser, setOneSignalTags } from "@/lib/onesignal";
 import { toast } from "sonner";
@@ -14,32 +14,30 @@ type Service = { id: string; name: string; price_kwacha: number };
 type Step = "details" | "pay" | "done";
 type PayPhase = "ready" | "dialed";
 
-// The USSD code customers dial to send mobile money. Encoded for use in a
-// tel: link — encodeURIComponent turns "#" into "%23" while leaving "*"
-// alone, which is exactly what mobile dialers expect to show "*115#".
-const USSD_CODE = "*115#";
+const USSD_CODE     = "*115#";
 const USSD_TEL_HREF = `tel:${encodeURIComponent(USSD_CODE)}`;
 
-// We only hold MTN and Airtel Money lines. Zamtel numbers are detected
-// correctly (for the badge/messaging) but always pay into the Airtel
-// account below — see `isRerouted` further down.
 const PAY_DETAILS = {
-  mtn: { name: "Stanley Kabanda", number: "0765101494", label: "MTN Mobile Money", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/30", dot: "bg-yellow-400" },
-  airtel: { name: "Ngoma Audrian", number: "0574161927", label: "Airtel Money", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/30", dot: "bg-red-400" },
+  mtn:    { name: "Stanley Kabanda", number: "0765101494", label: "MTN Mobile Money", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/30", dot: "bg-yellow-400" },
+  airtel: { name: "Ngoma Audrian",   number: "0574161927", label: "Airtel Money",     color: "text-red-400",    bg: "bg-red-500/10",    border: "border-red-500/30",    dot: "bg-red-400"    },
 };
 
 export function CheckoutFlow({ service, onClose }: { service: Service | null; onClose: () => void }) {
-  const [step, setStep] = useState<Step>("details");
-  const [name, setName] = useState(getRememberedName());
-  const [phone, setPhone] = useState(getRememberedPhone());
-  const [months, setMonths] = useState(1);
+  const [step,       setStep]       = useState<Step>("details");
+  const [name,       setName]       = useState(getRememberedName());
+  const [phone,      setPhone]      = useState(getRememberedPhone());
+  const [months,     setMonths]     = useState(1);
   const [submitting, setSubmitting] = useState(false);
-  const [copied, setCopied] = useState<"number" | null>(null);
-  const [payPhase, setPayPhase] = useState<PayPhase>("ready");
+  const [copied,     setCopied]     = useState<"number" | null>(null);
+  const [payPhase,   setPayPhase]   = useState<PayPhase>("ready");
+  // Stores the computed expiry so the done screen can show it
+  const [expiryDate, setExpiryDate] = useState<string>("");
 
   useEffect(() => {
     if (service) {
       setStep("details");
+      // Always re-read from localStorage when the dialog opens — catches
+      // info entered on other pages (e.g. /renew) since the last open
       setName(getRememberedName());
       setPhone(getRememberedPhone());
       setMonths(1);
@@ -49,82 +47,71 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
   }, [service]);
 
   const network = useMemo(() => detectNetwork(phone), [phone]);
-
-  // `network` reflects the customer's actual carrier (used for badges and
-  // messaging). `payInfo` is where the money actually has to go — Zamtel
-  // numbers are rerouted to the Airtel Money account since we don't have
-  // a Zamtel Money line. `isRerouted` flags that case so we can explain it
-  // clearly instead of silently showing an Airtel number to a Zamtel user.
   const payInfo =
-    network === "mtn" ? PAY_DETAILS.mtn :
+    network === "mtn"    ? PAY_DETAILS.mtn    :
     network === "airtel" ? PAY_DETAILS.airtel :
     network === "zamtel" ? PAY_DETAILS.airtel : null;
   const isRerouted = network === "zamtel";
 
   if (!service) return null;
-  const totalPrice = Number(service.price_kwacha) * months;
+  const totalPrice  = Number(service.price_kwacha) * months;
   const isAllAccess = /all.?access|bundle/i.test(service.name);
-  const isNetflix = /netflix/i.test(service.name);
+  const isNetflix   = /netflix/i.test(service.name);
 
   const submitDetails = async () => {
-    if (name.trim().length < 2) return toast.error("Enter your full name");
+    if (name.trim().length < 2)  return toast.error("Enter your full name");
     if (phone.trim().length < 9) return toast.error("Enter a valid WhatsApp number");
-    if (!payInfo) return toast.error("Network not detected — check your number");
+    if (!payInfo)                return toast.error("Network not detected — check your number");
 
     setSubmitting(true);
-    rememberCustomer(name, phone);
 
-    // Normalize once so the OneSignal external_id and the customer_phone
-    // stored in Supabase are identical — the backend reminder job matches
-    // on this exact string, so any drift here breaks targeting silently.
     const normalizedPhone = normalizePhone(phone);
+    const durationDays    = 30 * months;
+    const expiresAt       = new Date();
+    expiresAt.setDate(expiresAt.getDate() + durationDays);
+    const expiresIso      = expiresAt.toISOString();
 
-    // Tag user in OneSignal for targeted push notifications
+    // Persist everything we now know about this customer — name, phone,
+    // plan, and renewal date. This is what makes the RenewalBanner show
+    // and pre-fills every future form on the site for this device.
+    rememberCustomer(name, normalizedPhone, service.name, expiresIso);
+    rememberRenewalDate(expiresIso);
+    setExpiryDate(expiresAt.toLocaleDateString("en-ZM", { day: "numeric", month: "long", year: "numeric" }));
+
+    // Link this device to the phone number in OneSignal so automated
+    // push reminders (send-reminders edge function) can reach them
     loginOneSignalUser(normalizedPhone);
     setOneSignalTags({
-      plan: service.name,
-      months: String(months),
-      phone: normalizedPhone,
+      plan:       service.name,
+      months:     String(months),
+      phone:      normalizedPhone,
       last_order: new Date().toISOString().split("T")[0],
+      renewal:    expiresAt.toISOString().split("T")[0],
     });
 
-    const durationDays = 30 * months;
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + durationDays);
     await supabase.from("orders").insert({
-      customer_name: name.trim(),
-      customer_phone: normalizedPhone,
-      service_id: service.id,
-      service_name_snapshot: months > 1 ? `${service.name} (${months} months)` : service.name,
-      price_snapshot: totalPrice,
-      duration_days: durationDays,
-      expires_at: expiresAt.toISOString(),
+      customer_name:          name.trim(),
+      customer_phone:         normalizedPhone,
+      service_id:             service.id,
+      service_name_snapshot:  months > 1 ? `${service.name} (${months} months)` : service.name,
+      price_snapshot:         totalPrice,
+      duration_days:          durationDays,
+      expires_at:             expiresIso,
     });
+
     setSubmitting(false);
     setStep("pay");
   };
 
-  // The single, idiot-proof "do everything for me" action:
-  // 1. Copy our mobile money number to the clipboard.
-  // 2. Open the phone's dialer with *115# already typed in, so all the
-  //    customer has to do is tap the call button on their own phone.
-  // Clipboard write and dialer launch are fired from the same tap so
-  // mobile browsers don't block either as an unrelated, non-user-initiated
-  // action. If clipboard access fails for any reason, the number is still
-  // shown large on screen, so nothing blocks the customer from continuing.
   const copyAndPay = () => {
     if (!payInfo) return;
-
     navigator.clipboard?.writeText(payInfo.number).then(
       () => toast.success("Number copied! Opening your dialer…"),
-      () => toast("Couldn't auto-copy — just use the number shown above."),
+      () => toast("Couldn't auto-copy — use the number shown above."),
     );
-
     setCopied("number");
     setPayPhase("dialed");
     window.setTimeout(() => setCopied(null), 4000);
-
-    // Hand off to the phone's native dialer, pre-filled with *115#.
     window.location.href = USSD_TEL_HREF;
   };
 
@@ -145,6 +132,11 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       upsellLine;
 
     window.open(`https://wa.me/${WHATSAPP_PRIMARY}?text=${encodeURIComponent(msg)}`, "_blank");
+
+    // Fire the checkout-pay-step event so the WA community popup knows
+    // we're at peak engagement and can show itself
+    window.dispatchEvent(new Event("axx:checkout-pay-step"));
+
     setStep("done");
   };
 
@@ -152,8 +144,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
 
   const progressWidth = step === "details" ? "33%" : step === "pay" ? "66%" : "100%";
 
-  // Drives the checkmarks on the numbered instructions below — once the
-  // customer has tapped "Copy and Pay Now", steps 1 and 2 are done.
   const paySteps = [
     `Tap "Copy and Pay Now" below`,
     `Your dialer opens with ${USSD_CODE} ready — tap the green call button on your phone`,
@@ -215,7 +205,7 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your full name"
-                    autoFocus
+                    autoFocus={!name}
                   />
                 </div>
                 <div>
@@ -229,9 +219,9 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                   />
                   {phone.length >= 3 && (
                     <div className="mt-2 text-xs">
-                      {network === "mtn" && <span className="rounded-full bg-yellow-500/15 px-2.5 py-1 font-semibold text-yellow-400">● MTN detected</span>}
-                      {network === "airtel" && <span className="rounded-full bg-red-500/15 px-2.5 py-1 font-semibold text-red-400">● Airtel detected</span>}
-                      {network === "zamtel" && (
+                      {network === "mtn"     && <span className="rounded-full bg-yellow-500/15 px-2.5 py-1 font-semibold text-yellow-400">● MTN detected</span>}
+                      {network === "airtel"  && <span className="rounded-full bg-red-500/15 px-2.5 py-1 font-semibold text-red-400">● Airtel detected</span>}
+                      {network === "zamtel"  && (
                         <>
                           <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-400">● Zamtel detected</span>
                           <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
@@ -272,18 +262,13 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                   <p className="mt-1.5 text-[11px] text-muted-foreground">Pay once, enjoy longer. No need to renew every month.</p>
                 </div>
 
-                {/* Upsell nudge — only show if not already on All Access */}
+                {/* Upsell nudge */}
                 {!isAllAccess && (
                   <div className="rounded-xl p-3 flex items-start gap-3" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
                     <Zap className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: "#C9A84C" }} />
                     <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
                       <span className="font-bold" style={{ color: "#C9A84C" }}>Upgrade tip:</span> Get Netflix + Prime Video together for just K140/mo.{" "}
-                      <button
-                        type="button"
-                        onClick={onClose}
-                        className="underline"
-                        style={{ color: "#C9A84C" }}
-                      >
+                      <button type="button" onClick={onClose} className="underline" style={{ color: "#C9A84C" }}>
                         See All Access
                       </button>
                     </p>
@@ -303,8 +288,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 </p>
               </div>
 
-              {/* Zamtel → Airtel reroute notice — shown before they see the number,
-                  so it's never a surprise that the label says Airtel. */}
               {isRerouted && (
                 <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3 flex items-start gap-3">
                   <Zap className="h-4 w-4 flex-shrink-0 mt-0.5 text-emerald-400" />
@@ -315,7 +298,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 </div>
               )}
 
-              {/* Network breadcrumb */}
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   <span className={`h-1.5 w-1.5 rounded-full ${payInfo.dot}`} />
@@ -327,7 +309,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <span>Confirm on WhatsApp</span>
               </div>
 
-              {/* Payment box */}
               <div className={`rounded-2xl border ${payInfo.border} ${payInfo.bg} p-5`}>
                 <div className="flex items-center justify-between">
                   <p className={`text-xs font-bold uppercase tracking-wider ${payInfo.color}`}>{payInfo.label}</p>
@@ -346,7 +327,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 </div>
               </div>
 
-              {/* Steps — checkmarks fill in automatically as the customer progresses */}
               <div className="space-y-2">
                 {paySteps.map((s, i) => {
                   const done = i < paySepsCompleted;
@@ -376,6 +356,11 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
                   Send the message to confirm your payment. We'll reply with your login details within 15 minutes.
                 </p>
+                {expiryDate && (
+                  <p className="mt-2 text-xs font-semibold" style={{ color: "#C9A84C" }}>
+                    Your access runs until {expiryDate}
+                  </p>
+                )}
               </div>
               <div className="rounded-2xl border border-border bg-card p-4 text-left w-full text-xs text-muted-foreground leading-relaxed">
                 <p className="font-semibold text-foreground mb-1 text-sm">Your message includes:</p>
@@ -386,7 +371,22 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
                 {!isAllAccess && <p style={{ color: "#C9A84C" }}>✓ All Access upgrade enquiry</p>}
               </div>
 
-              {/* Upsell on done screen */}
+              {/* Renewal bookmark — so they come back here next month */}
+              <div className="w-full rounded-2xl p-4 text-left" style={{ background: "rgba(229,25,42,0.06)", border: "1px solid rgba(229,25,42,0.15)" }}>
+                <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#E5192A" }}>🔖 For next time</p>
+                <p className="text-sm font-semibold text-white mb-0.5">Renew in seconds</p>
+                <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.45)" }}>
+                  Bookmark <span className="font-semibold text-white">axxess-streaming.lovable.app/renew</span> — tap it next month and your details are already filled in.
+                </p>
+                <a
+                  href="/renew"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                  style={{ background: "rgba(229,25,42,0.15)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.3)" }}
+                >
+                  Go to /renew →
+                </a>
+              </div>
+
               {!isAllAccess && (
                 <div className="w-full rounded-2xl p-4 text-left" style={{ background: "linear-gradient(135deg, rgba(229,25,42,0.08), rgba(201,168,76,0.05))", border: "1px solid rgba(229,25,42,0.15)" }}>
                   <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#E5192A" }}>💡 While you wait</p>
@@ -398,7 +398,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
               )}
             </div>
           )}
-
         </div>
 
         {/* ── Sticky CTA ── */}
@@ -414,7 +413,6 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
             </Button>
           )}
 
-          {/* One giant button at a time — never two competing actions on screen */}
           {step === "pay" && (
             <div className="space-y-2">
               {payPhase === "ready" ? (
@@ -461,12 +459,8 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
           )}
 
           {step === "done" && (
-            <Button
-              onClick={close}
-              variant="outline"
-              className="h-14 w-full rounded-full text-base font-semibold"
-            >
-              Close
+            <Button onClick={close} variant="outline" className="h-14 w-full rounded-full text-base font-semibold">
+              Done
             </Button>
           )}
         </div>
@@ -474,4 +468,4 @@ export function CheckoutFlow({ service, onClose }: { service: Service | null; on
       </DialogContent>
     </Dialog>
   );
-        }
+}
