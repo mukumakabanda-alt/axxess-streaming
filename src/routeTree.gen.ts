@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RewardsRouteImport } from './routes/rewards'
+import { Route as RenewRouteImport } from './routes/renew'
 import { Route as ReserveRouteImport } from './routes/reserve'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -19,6 +20,11 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 const RewardsRoute = RewardsRouteImport.update({
   id: '/rewards',
   path: '/rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RenewRoute = RenewRouteImport.update({
+  id: '/renew',
+  path: '/renew',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReserveRoute = ReserveRouteImport.update({
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/news': typeof NewsRoute
   '/reserve': typeof ReserveRoute
+  '/renew': typeof RenewRoute
   '/rewards': typeof RewardsRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/news': typeof NewsRoute
   '/reserve': typeof ReserveRoute
+  '/renew': typeof RenewRoute
   '/rewards': typeof RewardsRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/news': typeof NewsRoute
   '/reserve': typeof ReserveRoute
+  '/renew': typeof RenewRoute
   '/rewards': typeof RewardsRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/news'
     | '/reserve'
+    | '/renew'
     | '/rewards'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/news'
     | '/reserve'
+    | '/renew'
     | '/rewards'
     | '/admin'
   id:
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/news'
     | '/reserve'
+    | '/renew'
     | '/rewards'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -104,6 +116,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   NewsRoute: typeof NewsRoute
   ReserveRoute: typeof ReserveRoute
+  RenewRoute: typeof RenewRoute
   RewardsRoute: typeof RewardsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -115,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/rewards'
       fullPath: '/rewards'
       preLoaderRoute: typeof RewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/renew': {
+      id: '/renew'
+      path: '/renew'
+      fullPath: '/renew'
+      preLoaderRoute: typeof RenewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reserve': {
@@ -160,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   NewsRoute: NewsRoute,
   ReserveRoute: ReserveRoute,
+  RenewRoute: RenewRoute,
   RewardsRoute: RewardsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
