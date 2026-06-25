@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { rememberSubscriptionId } from "@/lib/customer";
 
 const ONESIGNAL_APP_ID = "03fb7168-1d9c-4fb9-8064-01a8c6333053";
 
@@ -17,15 +18,10 @@ export function initOneSignal(): void {
 
   window.OneSignalDeferred.push(async (OneSignal: any) => {
     await OneSignal.init({
-      appId:               ONESIGNAL_APP_ID,
-      notifyButton:        { enable: false },
-      // serviceWorkerPath tells OneSignal exactly where to register the SW.
-      // Without this, v16 defaults to /OneSignalSDK.sw.js — which must exist
-      // at that path. Lovable doesn't copy it automatically, so we point
-      // explicitly to the CDN-hosted SW that OneSignal's page.js registers
-      // via importScripts. If you later self-host the SW, update this path.
-      serviceWorkerPath:   "OneSignalSDK.sw.js",
-      serviceWorkerParam:  { scope: "/" },
+      appId:              ONESIGNAL_APP_ID,
+      notifyButton:       { enable: false },
+      serviceWorkerPath:  "OneSignalSDK.sw.js",
+      serviceWorkerParam: { scope: "/" },
       promptOptions: {
         slidedown: {
           prompts: [
@@ -33,9 +29,9 @@ export function initOneSignal(): void {
               type:       "push",
               autoPrompt: true,
               text: {
-                actionMessage:  "Get notified about new streaming deals, drops & Axxess news 🎬",
-                acceptButton:   "Yes, notify me",
-                cancelButton:   "Maybe later",
+                actionMessage: "Get notified about new streaming deals, drops & Axxess news 🎬",
+                acceptButton:  "Yes, notify me",
+                cancelButton:  "Maybe later",
               },
               delay: {
                 pageViews: 2,
@@ -47,37 +43,29 @@ export function initOneSignal(): void {
       },
     });
 
-    /* Push subscription observer — fires the moment a device goes from
-       unsubscribed to subscribed (i.e. the instant permission is granted),
-       not just at checkout. Triggers an in-app message AND sends a
-       one-time welcome push via the edge function. */
-    OneSignal.User.PushSubscription.addEventListener(
-      "change",
-      (event: any) => {
-        const prev = event.previous?.id;
-        const curr = event.current?.id;
-        const justSubscribed = (!prev || prev === "") && curr && curr !== "";
+    // Subscribe observer — fires the moment permission is granted on this device.
+    // Stores the subscription ID locally so the /renew page can link
+    // WhatsApp customers to push without them needing to go through checkout.
+    OneSignal.User.PushSubscription.addEventListener("change", (event: any) => {
+      const prev = event.previous?.id;
+      const curr = event.current?.id;
+      const justSubscribed = (!prev || prev === "") && curr && curr !== "";
 
-        if (justSubscribed) {
-          OneSignal.InAppMessages.addTrigger(
-            "ai_implementation_campaign_email_journey",
-            "true",
-          );
-          sendWelcomePush(curr);
-        }
-      },
-    );
+      if (justSubscribed) {
+        // Persist to localStorage — used by /renew to link WA customers
+        rememberSubscriptionId(curr);
+
+        OneSignal.InAppMessages.addTrigger(
+          "ai_implementation_campaign_email_journey",
+          "true",
+        );
+        sendWelcomePush(curr);
+      }
+    });
   });
 }
 
-/* ─── Welcome push ─────────────────────────────────────────────────────────
-   Uses supabase.functions.invoke() rather than a raw fetch() — invoke()
-   automatically attaches the project's anon key as the Authorization
-   header, which Supabase edge functions require by default. A bare fetch()
-   to the function URL with no auth header gets a 401 before the function
-   ever runs, so the welcome push would silently never fire.
-
-   Fails silently — a missed welcome push should never block the UI. ──── */
+/* ─── Welcome push ───────────────────────────────────────────────────────── */
 async function sendWelcomePush(subscriptionId: string): Promise<void> {
   try {
     await supabase.functions.invoke("send-welcome-push", {
@@ -88,7 +76,7 @@ async function sendWelcomePush(subscriptionId: string): Promise<void> {
   }
 }
 
-/* ─── Tag a user (e.g. after purchase) ───────────────────────────────────── */
+/* ─── Tag a user after purchase ─────────────────────────────────────────── */
 export function setOneSignalTags(tags: Record<string, string>): void {
   if (typeof window === "undefined") return;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -97,12 +85,23 @@ export function setOneSignalTags(tags: Record<string, string>): void {
   });
 }
 
-/* ─── Identify user by phone ─────────────────────────────────────────────── */
+/* ─── Identify user by phone — links device to external_id in OneSignal ─── */
 export function loginOneSignalUser(externalId: string): void {
   if (typeof window === "undefined") return;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push((OneSignal: any) => {
     OneSignal.login(externalId);
+  });
+}
+
+/* ─── Prompt permission slidedown programmatically (for /renew page) ──────
+   Call this when a WhatsApp customer hits the renew page so they get linked
+   to push without needing to wait for the 2-pageview delay. ──────────── */
+export function promptPushPermission(): void {
+  if (typeof window === "undefined") return;
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push((OneSignal: any) => {
+    OneSignal.Slidedown.promptPush();
   });
 }
 
@@ -113,4 +112,4 @@ export function logoutOneSignalUser(): void {
   window.OneSignalDeferred.push((OneSignal: any) => {
     OneSignal.logout();
   });
-}
+    }
