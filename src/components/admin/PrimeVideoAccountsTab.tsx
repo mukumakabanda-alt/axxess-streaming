@@ -1,10 +1,9 @@
 // src/components/admin/PrimeVideoAccountsTab.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -12,111 +11,165 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Eye, EyeOff, Search } from "lucide-react";
+import {
+  Plus, Trash2, Eye, EyeOff, RotateCcw, UserPlus,
+  ChevronLeft, AlertTriangle, ShieldCheck, KeyRound,
+} from "lucide-react";
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-type PrimeAccount = {
+type Account = {
   id: string;
   account_email: string;
   account_password: string;
-  profile_slot: string | null;
   status: string;
-  assigned_customer_name: string | null;
-  assigned_customer_phone: string | null;
   notes: string | null;
-  created_at: string;
 };
 
-const STATUSES = ["available", "assigned", "expired", "issue"] as const;
-
-const empty = (): Partial<PrimeAccount> => ({
-  account_email: "",
-  account_password: "",
-  profile_slot: "",
-  status: "available",
-  assigned_customer_name: "",
-  assigned_customer_phone: "",
-  notes: "",
-});
-
-// ── Main Component ────────────────────────────────────────────────────────────
+type Profile = {
+  id: string;
+  account_id: string;
+  profile_index: number;
+  profile_name: string;
+  assigned_customer: string | null;
+  pin: string | null;
+  default_pin: string | null;
+  is_vulnerable: boolean;
+  status: string;
+};
 
 export function PrimeVideoAccountsTab() {
-  const [items, setItems] = useState<PrimeAccount[]>([]);
-  const [editing, setEditing] = useState<Partial<PrimeAccount> | null>(null);
-  const [showPwd, setShowPwd] = useState<Record<string, boolean>>({});
-  const [q, setQ] = useState("");
+  const [accounts,   setAccounts]   = useState<Account[]>([]);
+  const [profiles,   setProfiles]   = useState<Profile[]>([]);
+  const [openId,     setOpenId]     = useState<string | null>(null);
+  const [showPwd,    setShowPwd]    = useState<Record<string, boolean>>({});
+  const [adding,     setAdding]     = useState(false);
+  const [newEmail,   setNewEmail]   = useState("");
+  const [newPwd,     setNewPwd]     = useState("");
+  const [editProfile,setEditProfile]= useState<Profile | null>(null);
+  const [pinModal,   setPinModal]   = useState<Profile | null>(null);
+  const [newPin,     setNewPin]     = useState("");
 
   const load = async () => {
-    const { data, error } = await supabase
-      .from("account_inventory")
-      .select("*")
-      .eq("service_name", "Prime Video")
-      .order("created_at", { ascending: false });
-    if (error) { toast.error(error.message); return; }
-    setItems((data ?? []) as PrimeAccount[]);
+    const [{ data: a }, { data: p }] = await Promise.all([
+      supabase.from("prime_accounts").select("*").order("created_at", { ascending: false }),
+      supabase.from("prime_profiles").select("*").order("profile_index"),
+    ]);
+    setAccounts((a ?? []) as Account[]);
+    setProfiles((p ?? []) as Profile[]);
   };
   useEffect(() => { load(); }, []);
 
-  const save = async () => {
-    if (!editing) return;
-    if (!editing.account_email || !editing.account_password) {
-      return toast.error("Email and password are required");
-    }
-    const payload = {
-      service_name: "Prime Video",
-      account_email: editing.account_email,
-      account_password: editing.account_password,
-      profile_slot: editing.profile_slot || null,
-      status: editing.status || "available",
-      assigned_customer_name: editing.assigned_customer_name || null,
-      assigned_customer_phone: editing.assigned_customer_phone || null,
-      notes: editing.notes || null,
-    };
-    const { error } = editing.id
-      ? await supabase.from("account_inventory").update(payload).eq("id", editing.id)
-      : await supabase.from("account_inventory").insert(payload);
+  const profilesFor = (accountId: string) =>
+    profiles.filter(p => p.account_id === accountId).sort((a, b) => a.profile_index - b.profile_index);
+
+  const totals = useMemo(() => ({
+    total:      accounts.length,
+    active:     accounts.filter(a => a.status === "active").length,
+    assigned:   profiles.filter(p => p.status === "active" || p.status === "locked").length,
+    available:  profiles.filter(p => p.status === "available" && !p.is_vulnerable).length,
+    vulnerable: profiles.filter(p => p.is_vulnerable).length,
+  }), [accounts, profiles]);
+
+  const addAccount = async () => {
+    if (!newEmail || !newPwd) return toast.error("Email and password required");
+    const { error } = await supabase.from("prime_accounts").insert({
+      account_email:    newEmail.trim(),
+      account_password: newPwd.trim(),
+      status:           "active",
+    });
     if (error) return toast.error(error.message);
-    toast.success(editing.id ? "Account updated" : "Account added");
-    setEditing(null);
+    toast.success("Prime Video account added with profile slots");
+    setNewEmail(""); setNewPwd(""); setAdding(false);
     load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("Delete this Prime Video account permanently?")) return;
-    await supabase.from("account_inventory").delete().eq("id", id);
+  const removeAccount = async (id: string) => {
+    if (!confirm("Delete this Prime Video account and all its profiles?")) return;
+    const { error } = await supabase.from("prime_accounts").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Account deleted");
+    if (openId === id) setOpenId(null);
     load();
   };
 
-  const filtered = items.filter((a) => {
-    const m = q.toLowerCase().trim();
-    if (!m) return true;
-    return (
-      a.account_email.toLowerCase().includes(m) ||
-      (a.assigned_customer_name?.toLowerCase().includes(m) ?? false) ||
-      (a.assigned_customer_phone?.includes(m) ?? false)
-    );
-  });
-
-  const stats = {
-    total: items.length,
-    available: items.filter((a) => a.status === "available").length,
-    assigned: items.filter((a) => a.status === "assigned").length,
-    issue: items.filter((a) => a.status === "issue").length,
+  const saveProfile = async (p: Profile) => {
+    // BLOCK: cannot save as available if vulnerable
+    if (p.is_vulnerable && p.status === "available") {
+      toast.error("Change the PIN first before making this profile available.");
+      return;
+    }
+    const { error } = await supabase.from("prime_profiles").update({
+      profile_name:      p.profile_name,
+      assigned_customer: p.assigned_customer,
+      pin:               p.pin,
+      status:            p.status,
+    }).eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Profile updated");
+    setEditProfile(null);
+    load();
   };
+
+  const resetProfile = async (p: Profile) => {
+    if (!confirm("Mark this profile as expired and flag it as vulnerable?")) return;
+    const { error } = await supabase.from("prime_profiles").update({
+      assigned_customer: null,
+      status:            "available",
+      is_vulnerable:     true,
+    }).eq("id", p.id);
+    if (error) return toast.error(error.message);
+
+    toast.warning(`Profile "${p.profile_name}" flagged as VULNERABLE. Change the PIN before reusing.`);
+    load();
+  };
+
+  const quickAssign = async (accountId: string) => {
+    const next = profilesFor(accountId).find(p => p.status === "available" && !p.is_vulnerable);
+    if (!next) return toast.error("No clean available profiles");
+    const customer = prompt("Customer name to assign:");
+    if (!customer) return;
+    const pin = prompt("4-digit PIN (optional):") ?? "";
+    await supabase.from("prime_profiles").update({
+      assigned_customer: customer.trim(),
+      pin:               pin.replace(/\D/g, "").slice(0, 4) || null,
+      status:            "active",
+    }).eq("id", next.id);
+    toast.success(`Assigned to ${next.profile_name}`);
+    load();
+  };
+
+  // PIN change → clears vulnerable
+  const confirmPinChange = async () => {
+    if (!pinModal) return;
+    if (!newPin || newPin.length < 4) {
+      return toast.error("Enter the new 4-digit PIN you set on Prime Video.");
+    }
+    const { error } = await supabase.from("prime_profiles").update({
+      pin:           newPin,
+      default_pin:   newPin,
+      is_vulnerable: false,
+      status:        "available",
+    }).eq("id", pinModal.id);
+    if (error) return toast.error(error.message);
+    toast.success("PIN updated. Vulnerability cleared. Profile is now available.");
+    setPinModal(null);
+    setNewPin("");
+    load();
+  };
+
+  const open = openId ? accounts.find(a => a.id === openId) : null;
 
   return (
     <div className="space-y-6">
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
-          { label: "Total",     v: stats.total,     color: "text-white" },
-          { label: "Available", v: stats.available, color: "text-green-400" },
-          { label: "Assigned",  v: stats.assigned,  color: "text-blue-400" },
-          { label: "Issues",    v: stats.issue,      color: "text-red-400" },
-        ].map((s) => (
+          { label: "Total accounts", v: totals.total,      color: "text-white" },
+          { label: "Active",         v: totals.active,     color: "text-green-400" },
+          { label: "Assigned",       v: totals.assigned,   color: "text-blue-400" },
+          { label: "Available",      v: totals.available,  color: "text-green-400" },
+          { label: "Vulnerable",     v: totals.vulnerable, color: "text-orange-400" },
+        ].map(s => (
           <div key={s.label} className="rounded-2xl border border-border gradient-card p-4">
             <p className="text-xs uppercase text-muted-foreground">{s.label}</p>
             <p className={`mt-1 font-display text-2xl font-bold ${s.color}`}>{s.v}</p>
@@ -124,151 +177,261 @@ export function PrimeVideoAccountsTab() {
         ))}
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h3 className="font-display text-lg font-bold">Prime Video Accounts</h3>
-          <p className="text-xs text-muted-foreground">
-            Paid Prime Video credentials — ready to assign to customers.
-          </p>
+      {/* Vulnerable banner */}
+      {totals.vulnerable > 0 && (
+        <div
+          className="flex items-start gap-3 rounded-2xl p-4"
+          style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)" }}
+        >
+          <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-orange-400" />
+          <div>
+            <p className="text-sm font-bold text-orange-400">
+              {totals.vulnerable} vulnerable {totals.vulnerable === 1 ? "profile" : "profiles"} detected
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              These profiles have unchanged PINs from previous assignments. Open the profile, change the PIN on Prime Video, then confirm it here to clear the flag.
+            </p>
+          </div>
         </div>
-        <Button onClick={() => setEditing(empty())} className="rounded-full bg-primary">
-          <Plus className="h-4 w-4 mr-1" /> Add account
-        </Button>
-      </div>
+      )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by email or customer…" className="pl-9" />
-      </div>
+      {!open ? (
+        <>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-display text-lg font-bold">Prime Video Accounts</h3>
+              <p className="text-xs text-muted-foreground">Track shared accounts and their profiles.</p>
+            </div>
+            <Button onClick={() => setAdding(true)} className="rounded-full bg-primary">
+              <Plus className="mr-1 h-4 w-4" /> Add
+            </Button>
+          </div>
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-border">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-card text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="p-3 text-left">Credentials</th>
-                <th className="p-3 text-left">Profile</th>
-                <th className="p-3 text-left">Status</th>
-                <th className="p-3 text-left">Assigned to</th>
-                <th className="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No Prime Video accounts yet. Add one above.</td></tr>
-              )}
-              {filtered.map((a) => (
-                <tr key={a.id} className="border-t border-border">
-                  <td className="p-3 font-mono text-xs">
-                    <p>{a.account_email}</p>
-                    <p className="flex items-center gap-2 text-muted-foreground">
-                      {showPwd[a.id] ? a.account_password : "••••••••"}
-                      <button onClick={() => setShowPwd((p) => ({ ...p, [a.id]: !p[a.id] }))}>
-                        {showPwd[a.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                      </button>
-                    </p>
-                  </td>
-                  <td className="p-3 text-xs">{a.profile_slot ?? "—"}</td>
-                  <td className="p-3">
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                      a.status === "available" ? "bg-green-500/20 text-green-400" :
-                      a.status === "assigned" ? "bg-blue-500/20 text-blue-400" :
-                      a.status === "expired" ? "bg-yellow-500/20 text-yellow-400" :
-                      "bg-red-500/20 text-red-400"
-                    }`}>{a.status}</span>
-                  </td>
-                  <td className="p-3 text-xs">
-                    {a.assigned_customer_name ? (
-                      <>
-                        <p>{a.assigned_customer_name}</p>
-                        <p className="text-muted-foreground">{a.assigned_customer_phone}</p>
-                      </>
-                    ) : <span className="text-muted-foreground">—</span>}
-                  </td>
-                  <td className="p-3">
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => setEditing(a)} className="rounded-md p-1.5 hover:bg-muted"><Pencil className="h-4 w-4" /></button>
-                      <button onClick={() => remove(a.id)} className="rounded-md p-1.5 text-destructive hover:bg-muted"><Trash2 className="h-4 w-4" /></button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {accounts.length === 0 && (
+              <p className="text-sm text-muted-foreground">No Prime Video accounts yet.</p>
+            )}
+            {accounts.map(a => {
+              const ps   = profilesFor(a.id);
+              const used = ps.filter(p => p.status !== "available").length;
+              const vuln = ps.filter(p => p.is_vulnerable).length;
+              return (
+                <div key={a.id} className="rounded-2xl border border-border gradient-card p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-mono text-sm font-semibold">{a.account_email}</p>
+                      <p className="mt-1 flex items-center gap-2 font-mono text-xs text-muted-foreground">
+                        {showPwd[a.id] ? a.account_password : "••••••••"}
+                        <button onClick={() => setShowPwd(s => ({ ...s, [a.id]: !s[a.id] }))}>
+                          {showPwd[a.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                        </button>
+                      </p>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${a.status === "active" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"}`}>
+                      {a.status}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{used}/{ps.length || 5} profiles used</span>
+                    {vuln > 0 && (
+                      <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-orange-500/15 text-orange-400">
+                        <AlertTriangle className="h-2.5 w-2.5" /> {vuln} vulnerable
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-3 flex justify-end gap-1">
+                    <button onClick={() => quickAssign(a.id)} className="rounded-md p-1.5 hover:bg-muted" title="Quick assign">
+                      <UserPlus className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => removeAccount(a.id)} className="rounded-md p-1.5 text-destructive hover:bg-muted">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <Button onClick={() => setOpenId(a.id)} variant="outline" className="mt-3 w-full rounded-full">
+                    Open profiles
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="space-y-4">
+          <button onClick={() => setOpenId(null)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ChevronLeft className="h-4 w-4" /> Back
+          </button>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editing?.id ? "Edit account" : "Add Prime Video account"}</DialogTitle>
-          </DialogHeader>
-          {editing && (
-            <div className="space-y-3">
-              <div>
-                <Label>Email / Username</Label>
-                <Input
-                  value={editing.account_email ?? ""}
-                  onChange={(e) => setEditing({ ...editing, account_email: e.target.value })}
-                  placeholder="prime@example.com"
-                />
-              </div>
-              <div>
-                <Label>Password</Label>
-                <Input
-                  value={editing.account_password ?? ""}
-                  onChange={(e) => setEditing({ ...editing, account_password: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>Profile slot</Label>
-                  <Input
-                    placeholder="e.g. Profile 1"
-                    value={editing.profile_slot ?? ""}
-                    onChange={(e) => setEditing({ ...editing, profile_slot: e.target.value })}
-                  />
+          <div className="rounded-2xl border border-border gradient-card p-4">
+            <p className="font-mono text-sm font-semibold">{open.account_email}</p>
+            <p className="mt-1 flex items-center gap-2 font-mono text-xs text-muted-foreground">
+              {showPwd[open.id] ? open.account_password : "••••••••"}
+              <button onClick={() => setShowPwd(s => ({ ...s, [open.id]: !s[open.id] }))}>
+                {showPwd[open.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+              </button>
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {profilesFor(open.id).map(p => (
+              <div
+                key={p.id}
+                className="rounded-2xl border border-border gradient-card p-4"
+                style={p.is_vulnerable ? { borderColor: "rgba(249,115,22,0.4)" } : {}}
+              >
+                <div className="flex items-start justify-between">
+                  <p className="font-display text-base font-bold">{p.profile_name}</p>
+                  {p.is_vulnerable ? (
+                    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                      <AlertTriangle className="h-2.5 w-2.5" /> Vulnerable
+                    </span>
+                  ) : (
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      p.status === "available" ? "bg-green-500/20 text-green-400" :
+                      p.status === "locked"    ? "bg-red-500/20 text-red-400" :
+                      "bg-blue-500/20 text-blue-400"
+                    }`}>{p.status}</span>
+                  )}
                 </div>
-                <div>
-                  <Label>Status</Label>
-                  <Select
-                    value={editing.status ?? "available"}
-                    onValueChange={(v) => setEditing({ ...editing, status: v })}
+
+                <p className="mt-2 text-xs text-muted-foreground">Assigned to</p>
+                <p className="text-sm">{p.assigned_customer || <span className="text-muted-foreground">—</span>}</p>
+                <p className="mt-2 text-xs text-muted-foreground">PIN</p>
+                <p className="font-mono text-sm">{p.pin || <span className="text-muted-foreground">—</span>}</p>
+
+                {/* Vulnerable: PIN change CTA */}
+                {p.is_vulnerable && (
+                  <button
+                    onClick={() => { setPinModal(p); setNewPin(""); }}
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-all hover:opacity-90"
+                    style={{ background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.3)", color: "#f97316" }}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                    <KeyRound className="h-3.5 w-3.5" />
+                    Confirm PIN Changed
+                  </button>
+                )}
+
+                <div className="mt-3 flex flex-wrap gap-1">
+                  <button
+                    onClick={() => setEditProfile(p)}
+                    className="flex-1 rounded-md bg-muted px-2 py-1.5 text-xs hover:bg-muted/70"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => resetProfile(p)}
+                    className="rounded-md bg-muted px-2 py-1.5 text-xs hover:bg-muted/70"
+                    title="Expire + flag vulnerable"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>Assigned to (name)</Label>
-                  <Input value={editing.assigned_customer_name ?? ""} onChange={(e) => setEditing({ ...editing, assigned_customer_name: e.target.value })} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add account dialog */}
+      <Dialog open={adding} onOpenChange={setAdding}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Prime Video account</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Email / Username</Label><Input value={newEmail} onChange={e => setNewEmail(e.target.value)} /></div>
+            <div><Label>Password</Label><Input value={newPwd} onChange={e => setNewPwd(e.target.value)} /></div>
+            <p className="text-xs text-muted-foreground">Profile slots will be created automatically.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
+            <Button onClick={addAccount} className="bg-primary">Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit profile dialog — this is where a misassigned profile is corrected:
+          change "Assigned customer" to the right name and Save. */}
+      <Dialog open={!!editProfile} onOpenChange={o => !o && setEditProfile(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit profile</DialogTitle></DialogHeader>
+          {editProfile && (
+            <div className="space-y-3">
+              {editProfile.is_vulnerable && (
+                <div
+                  className="flex items-center gap-2 rounded-xl p-3 text-sm"
+                  style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)", color: "#f97316" }}
+                >
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  VULNERABLE — use "Confirm PIN Changed" to clear before reassigning.
                 </div>
-                <div>
-                  <Label>Assigned to (phone)</Label>
-                  <Input value={editing.assigned_customer_phone ?? ""} onChange={(e) => setEditing({ ...editing, assigned_customer_phone: e.target.value })} />
-                </div>
+              )}
+              <div><Label>Profile name</Label>
+                <Input value={editProfile.profile_name} onChange={e => setEditProfile({ ...editProfile, profile_name: e.target.value })} />
+              </div>
+              <div><Label>Assigned customer</Label>
+                <Input value={editProfile.assigned_customer ?? ""} onChange={e => setEditProfile({ ...editProfile, assigned_customer: e.target.value })} />
+              </div>
+              <div><Label>PIN (4 digits)</Label>
+                <Input maxLength={4} inputMode="numeric" value={editProfile.pin ?? ""} onChange={e => setEditProfile({ ...editProfile, pin: e.target.value.replace(/\D/g, "").slice(0, 4) })} />
               </div>
               <div>
-                <Label>Notes</Label>
-                <Textarea value={editing.notes ?? ""} onChange={(e) => setEditing({ ...editing, notes: e.target.value })} rows={2} />
+                <Label>Status</Label>
+                <Select value={editProfile.status} onValueChange={v => setEditProfile({ ...editProfile, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="locked">Locked</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editProfile.is_vulnerable && editProfile.status === "available" && (
+                  <p className="mt-1 text-xs text-orange-400">⚠️ Cannot set to Available while vulnerable.</p>
+                )}
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button onClick={save} className="bg-primary">Save</Button>
+            <Button variant="outline" onClick={() => setEditProfile(null)}>Cancel</Button>
+            <Button onClick={() => editProfile && saveProfile(editProfile)} className="bg-primary">Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PIN confirmation dialog */}
+      <Dialog open={!!pinModal} onOpenChange={o => { if (!o) { setPinModal(null); setNewPin(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-green-400" />
+              Confirm PIN Changed
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Enter the <strong className="text-foreground">new PIN</strong> you just set on Prime Video for profile{" "}
+              <span className="font-semibold text-foreground">{pinModal?.profile_name}</span>.
+            </p>
+            <div>
+              <Label>New PIN</Label>
+              <Input
+                maxLength={4}
+                inputMode="numeric"
+                placeholder="••••"
+                value={newPin}
+                onChange={e => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                className="font-mono text-lg tracking-widest"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPinModal(null); setNewPin(""); }}>Cancel</Button>
+            <Button onClick={confirmPinChange} className="gap-2" style={{ background: "#10b981", color: "#000" }}>
+              <ShieldCheck className="h-4 w-4" />
+              Confirm &amp; Clear Vulnerability
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
     </div>
   );
-              }
+    }
