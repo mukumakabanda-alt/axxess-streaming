@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, Loader2, Flame, Zap, ArrowRight } from "lucide-react";
+import { Check, Loader2, Flame, ArrowRight } from "lucide-react";
 import { CheckoutFlow } from "./CheckoutFlow";
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
+import { getRememberedPhone, rememberCustomer } from "@/lib/customer";
+import { normalizePhone } from "@/lib/whatsapp";
 
 /* ─── Real direct prices in ZMW ─────────────────────────────────────────────
    Netflix:    $9.99 USD × K17.5 = K175/mo
@@ -39,6 +41,12 @@ export function Pricing() {
   const [services,    setServices]    = useState<Service[] | null>(null);
   const [selected,    setSelected]    = useState<Service | null>(null);
   const [ordersToday, setOrdersToday] = useState<Record<string, number>>({});
+  // When true, CheckoutFlow skips the details screen and jumps straight to
+  // payment because we already found an active/recent subscription for this
+  // phone number — a returning customer never re-types their details.
+  const [quickRenew,  setQuickRenew]  = useState(false);
+  // Guards against double-clicking "Get Access" while the lookup is running
+  const [checkingId,  setCheckingId]  = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -70,6 +78,47 @@ export function Pricing() {
       });
   }, []);
 
+  // Called on "Get Access". If this device already has a remembered phone
+  // number, check Supabase for a real subscription under that number —
+  // this is the same lookup /renew uses, so it's always accurate, never
+  // just a guess from localStorage. Found → open checkout in quick-renew
+  // mode with their details already known. Not found (or no remembered
+  // phone yet) → open the normal first-time checkout form.
+  const handleGetAccess = async (service: Service) => {
+    const remembered = getRememberedPhone();
+
+    if (!remembered || remembered.trim().length < 9) {
+      setQuickRenew(false);
+      setSelected(service);
+      return;
+    }
+
+    setCheckingId(service.id);
+    const normalized = normalizePhone(remembered);
+
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("id, customer_name, customer_phone, service_name, end_date, is_active")
+      .eq("customer_phone", normalized)
+      .order("end_date", { ascending: false })
+      .limit(1);
+
+    setCheckingId(null);
+
+    const existing = data && data.length > 0 ? data[0] : null;
+
+    if (existing) {
+      // Refresh the remembered name/phone from the real record in case
+      // this device's localStorage is stale or was never fully set
+      rememberCustomer(existing.customer_name, normalized);
+      setQuickRenew(true);
+    } else {
+      setQuickRenew(false);
+    }
+
+    setSelected(service);
+  };
+
   return (
     <section id="plans" className="px-4 py-24 sm:px-6" style={{ background: "#080808" }}>
       <div className="mx-auto max-w-5xl">
@@ -85,24 +134,6 @@ export function Pricing() {
           <p className="text-base max-w-md" style={{ color: "rgba(255,255,255,0.4)", lineHeight: 1.7 }}>
             No card. No contract. Activated via WhatsApp in 15 minutes.
           </p>
-        </div>
-
-        {/* Savings banner */}
-        <div
-          className="mb-10 flex items-center gap-4 rounded-2xl px-5 py-4"
-          style={{ background: "linear-gradient(90deg, rgba(229,25,42,0.08), rgba(201,168,76,0.06))", border: "1px solid rgba(229,25,42,0.18)" }}
-        >
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(229,25,42,0.12)" }}>
-            <Zap className="h-5 w-5" style={{ color: "#E5192A" }} fill="currentColor" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-white leading-tight">
-              Netflix costs K175/mo if you pay directly. We charge K70.
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Based on $9.99 USD at current exchange rate (~K17.5/USD) — Jun 2026
-            </p>
-          </div>
         </div>
 
         {/* Plan cards */}
@@ -122,6 +153,7 @@ export function Pricing() {
               const saving     = direct ? direct.zmw - Number(s.price_kwacha) : 0;
               const savingPct  = direct ? Math.round((saving / direct.zmw) * 100) : 0;
               const todayCount = ordersToday[s.id] ?? ordersToday[s.name] ?? 0;
+              const isChecking = checkingId === s.id;
 
               return (
                 <div
@@ -221,11 +253,20 @@ export function Pricing() {
                     </a>
                   ) : (
                     <button
-                      onClick={() => setSelected(s)}
-                      className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+                      onClick={() => handleGetAccess(s)}
+                      disabled={isChecking}
+                      className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
                       style={{ background: accentHex, color: btnColor, boxShadow: `0 0 28px -6px ${accentHex}60` }}
                     >
-                      Get Access <ArrowRight className="h-3.5 w-3.5" />
+                      {isChecking ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking…
+                        </>
+                      ) : (
+                        <>
+                          Get Access <ArrowRight className="h-3.5 w-3.5" />
+                        </>
+                      )}
                     </button>
                   )}
 
@@ -261,7 +302,11 @@ export function Pricing() {
 
       </div>
 
-      <CheckoutFlow service={selected} onClose={() => setSelected(null)} />
+      <CheckoutFlow
+        service={selected}
+        onClose={() => { setSelected(null); setQuickRenew(false); }}
+        quickRenew={quickRenew}
+      />
     </section>
   );
-            }
+         }
