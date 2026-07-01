@@ -202,30 +202,34 @@ export function Testimonials() {
           <Carousel
             setApi={setApi}
             plugins={[autoplay.current]}
-            opts={{ loop: true, align: "start" }}
+            opts={{
+              loop: true,
+              align: "start",
+              duration: 34,
+            }}
             className="mt-10"
           >
-            <CarouselContent>
+            <CarouselContent className="-ml-3">
               {cards.map((c, idx) => (
-                <CarouselItem key={`${c.kind}-${c.id}`} className="basis-[72%] sm:basis-[40%] lg:basis-[28%]">
-                  <article className="relative h-full overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card to-background/60 shadow-card transition-smooth hover:-translate-y-0.5">
+                <CarouselItem key={`${c.kind}-${c.id}`} className="basis-[58%] pl-3 sm:basis-[32%] lg:basis-[22%]">
+                  <article className="relative h-full overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-card to-background/60 shadow-card transition-smooth hover:-translate-y-0.5">
                     <div className={`h-1 w-full bg-gradient-to-r ${ACCENT_BARS[idx % ACCENT_BARS.length]}`} />
-                    <div className="flex items-center gap-2.5 px-5 pt-4">
-                      <div className={`relative flex h-9 w-9 items-center justify-center rounded-full p-[2px] bg-gradient-to-tr ${ACCENT_BARS[idx % ACCENT_BARS.length]}`}>
-                        <span className="flex h-full w-full items-center justify-center rounded-full bg-card text-[13px] font-bold uppercase">
+                    <div className="flex items-center gap-2 px-4 pt-3">
+                      <div className={`relative flex h-7 w-7 items-center justify-center rounded-full p-[2px] bg-gradient-to-tr ${ACCENT_BARS[idx % ACCENT_BARS.length]}`}>
+                        <span className="flex h-full w-full items-center justify-center rounded-full bg-card text-[11px] font-bold uppercase">
                           {c.name.charAt(0)}
                         </span>
                       </div>
                       <div className="flex-1 leading-tight">
-                        <p className="text-sm font-semibold">{c.name}</p>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <p className="text-xs font-semibold">{c.name}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground">
                           Axxess Entertainment
                         </p>
                       </div>
                       {c.rating != null && c.rating > 0 && (
                         <div className="flex gap-0.5">
                           {Array.from({ length: c.rating }).map((_, i) => (
-                            <Star key={i} className="h-3 w-3 fill-primary text-primary" />
+                            <Star key={i} className="h-2.5 w-2.5 fill-primary text-primary" />
                           ))}
                         </div>
                       )}
@@ -236,21 +240,21 @@ export function Testimonials() {
                         src={c.screenshot_url}
                         alt={`${c.name}'s review`}
                         loading="lazy"
-                        className="mt-3 aspect-square w-full object-cover"
+                        className="mt-2.5 aspect-square w-full object-cover"
                       />
                     ) : (
-                      <div className="mt-3 flex aspect-square items-center justify-center bg-gradient-to-br from-secondary/50 to-card p-6 text-center">
-                        <Quote className="absolute h-12 w-12 text-primary/15" />
-                        <p className="relative font-display text-lg leading-snug text-foreground/90">
-                          "{c.message.length > 140 ? c.message.slice(0, 140) + "…" : c.message}"
+                      <div className="mt-2.5 flex aspect-square items-center justify-center bg-gradient-to-br from-secondary/50 to-card p-4 text-center">
+                        <Quote className="absolute h-9 w-9 text-primary/15" />
+                        <p className="relative font-display text-sm leading-snug text-foreground/90">
+                          "{c.message.length > 100 ? c.message.slice(0, 100) + "…" : c.message}"
                         </p>
                       </div>
                     )}
 
                     {c.screenshot_url && (
-                      <p className="px-5 py-3 text-sm text-foreground/85">
+                      <p className="px-4 py-2.5 text-xs text-foreground/85">
                         <span className="font-semibold">{c.name}</span>{" "}
-                        {c.message.length > 140 ? c.message.slice(0, 140) + "…" : c.message}
+                        {c.message.length > 100 ? c.message.slice(0, 100) + "…" : c.message}
                       </p>
                     )}
                   </article>
@@ -263,7 +267,7 @@ export function Testimonials() {
                   key={i}
                   aria-label={`Go to slide ${i + 1}`}
                   onClick={() => api?.scrollTo(i)}
-                  className={`h-1.5 rounded-full transition-all ${i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"}`}
+                  className={`h-1.5 rounded-full transition-all duration-500 ${i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"}`}
                 />
               ))}
             </div>
