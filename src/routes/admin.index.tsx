@@ -9,13 +9,12 @@ import { UpdatesTab } from "@/components/admin/UpdatesTab";
 import { ReferralsTab } from "@/components/admin/ReferralsTab";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 import { ReservationsTab } from "@/components/admin/ReservationsTab";
-import { AccountInventoryTab } from "@/components/admin/AccountInventoryTab";
 import { NetflixAccountsTab } from "@/components/admin/NetflixAccountsTab";
 import { PrimeVideoAccountsTab } from "@/components/admin/PrimeVideoAccountsTab";
 import {
   LayoutDashboard, ShoppingCart, Users, Package,
   BookOpen, Megaphone, Share2, Settings, Calendar,
-  Archive, Tv, PlayCircle, ChevronRight, Menu, X, ExternalLink,
+  Tv, PlayCircle, ChevronRight, Menu, X, ExternalLink,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")(({
@@ -30,7 +29,7 @@ export const Route = createFileRoute("/admin/")(({
 
 type TabId =
   | "overview" | "orders" | "reservations" | "subs"
-  | "services" | "inventory" | "netflix" | "prime"
+  | "services" | "netflix" | "prime"
   | "testimonials" | "updates" | "referrals" | "settings";
 
 const NAV: { id: TabId; label: string; icon: any; badge?: string }[] = [
@@ -39,7 +38,6 @@ const NAV: { id: TabId; label: string; icon: any; badge?: string }[] = [
   { id: "reservations", label: "Reservations",  icon: Calendar },
   { id: "subs",         label: "Subscriptions", icon: Users },
   { id: "services",     label: "Services",      icon: Package },
-  { id: "inventory",    label: "Inventory",     icon: Archive },
   { id: "netflix",      label: "Netflix",       icon: Tv },
   { id: "prime",        label: "Prime Video",   icon: PlayCircle },
   { id: "testimonials", label: "Testimonials",  icon: BookOpen },
@@ -175,7 +173,6 @@ function AdminPage() {
           {active === "reservations" && <ReservationsTab />}
           {active === "subs"         && <SubscriptionsTab />}
           {active === "services"     && <ServicesTab />}
-          {active === "inventory"    && <AccountInventoryTab />}
           {active === "netflix"      && <NetflixAccountsTab />}
           {active === "prime"        && <PrimeVideoAccountsTab />}
           {active === "testimonials" && <TestimonialsTab />}
@@ -186,4 +183,4 @@ function AdminPage() {
       </div>
     </div>
   );
-      }
+   }
