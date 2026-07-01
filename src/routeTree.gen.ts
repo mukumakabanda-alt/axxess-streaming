@@ -10,8 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RewardsRouteImport } from './routes/rewards'
-import { Route as RenewRouteImport } from './routes/renew'
 import { Route as ReserveRouteImport } from './routes/reserve'
+import { Route as RenewRouteImport } from './routes/renew'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
@@ -22,14 +22,14 @@ const RewardsRoute = RewardsRouteImport.update({
   path: '/rewards',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RenewRoute = RenewRouteImport.update({
-  id: '/renew',
-  path: '/renew',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ReserveRoute = ReserveRouteImport.update({
   id: '/reserve',
   path: '/reserve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RenewRoute = RenewRouteImport.update({
+  id: '/renew',
+  path: '/renew',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -57,8 +57,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/news': typeof NewsRoute
-  '/reserve': typeof ReserveRoute
   '/renew': typeof RenewRoute
+  '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -66,8 +66,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/news': typeof NewsRoute
-  '/reserve': typeof ReserveRoute
   '/renew': typeof RenewRoute
+  '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -76,8 +76,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/news': typeof NewsRoute
-  '/reserve': typeof ReserveRoute
   '/renew': typeof RenewRoute
+  '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -87,26 +87,19 @@ export interface FileRouteTypes {
     | '/'
     | '/contact'
     | '/news'
-    | '/reserve'
     | '/renew'
+    | '/reserve'
     | '/rewards'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/contact'
-    | '/news'
-    | '/reserve'
-    | '/renew'
-    | '/rewards'
-    | '/admin'
+  to: '/' | '/contact' | '/news' | '/renew' | '/reserve' | '/rewards' | '/admin'
   id:
     | '__root__'
     | '/'
     | '/contact'
     | '/news'
-    | '/reserve'
     | '/renew'
+    | '/reserve'
     | '/rewards'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -115,8 +108,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContactRoute: typeof ContactRoute
   NewsRoute: typeof NewsRoute
-  ReserveRoute: typeof ReserveRoute
   RenewRoute: typeof RenewRoute
+  ReserveRoute: typeof ReserveRoute
   RewardsRoute: typeof RewardsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -130,18 +123,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RewardsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/renew': {
-      id: '/renew'
-      path: '/renew'
-      fullPath: '/renew'
-      preLoaderRoute: typeof RenewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reserve': {
       id: '/reserve'
       path: '/reserve'
       fullPath: '/reserve'
       preLoaderRoute: typeof ReserveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/renew': {
+      id: '/renew'
+      path: '/renew'
+      fullPath: '/renew'
+      preLoaderRoute: typeof RenewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news': {
@@ -179,11 +172,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContactRoute: ContactRoute,
   NewsRoute: NewsRoute,
-  ReserveRoute: ReserveRoute,
   RenewRoute: RenewRoute,
+  ReserveRoute: ReserveRoute,
   RewardsRoute: RewardsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
