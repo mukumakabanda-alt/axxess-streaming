@@ -121,7 +121,9 @@ export type Database = {
           account_id: string
           assigned_customer: string | null
           created_at: string
+          default_pin: string | null
           id: string
+          is_vulnerable: boolean
           pin: string | null
           profile_index: number
           profile_name: string
@@ -132,7 +134,9 @@ export type Database = {
           account_id: string
           assigned_customer?: string | null
           created_at?: string
+          default_pin?: string | null
           id?: string
+          is_vulnerable?: boolean
           pin?: string | null
           profile_index: number
           profile_name?: string
@@ -143,7 +147,9 @@ export type Database = {
           account_id?: string
           assigned_customer?: string | null
           created_at?: string
+          default_pin?: string | null
           id?: string
+          is_vulnerable?: boolean
           pin?: string | null
           profile_index?: number
           profile_name?: string
@@ -283,6 +289,7 @@ export type Database = {
           is_approved: boolean
           message: string
           name: string
+          phone: string | null
           rating: number | null
           screenshot_url: string | null
         }
@@ -292,6 +299,7 @@ export type Database = {
           is_approved?: boolean
           message: string
           name: string
+          phone?: string | null
           rating?: number | null
           screenshot_url?: string | null
         }
@@ -301,6 +309,7 @@ export type Database = {
           is_approved?: boolean
           message?: string
           name?: string
+          phone?: string | null
           rating?: number | null
           screenshot_url?: string | null
         }

@@ -527,7 +527,7 @@ function HeroCanvas() {
         sprite.dispose();
         rings.forEach((r) => {
           r.geometry.dispose();
-          (r.material as THREE.Material).dispose();
+          (r.material as { dispose: () => void }).dispose();
         });
         if (renderer.domElement.parentNode === mount)
           mount.removeChild(renderer.domElement);
