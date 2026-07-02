@@ -14,51 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      account_inventory: {
-        Row: {
-          account_email: string
-          account_password: string
-          assigned_customer_name: string | null
-          assigned_customer_phone: string | null
-          assigned_order_id: string | null
-          created_at: string
-          id: string
-          notes: string | null
-          profile_slot: string | null
-          service_name: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          account_email: string
-          account_password: string
-          assigned_customer_name?: string | null
-          assigned_customer_phone?: string | null
-          assigned_order_id?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          profile_slot?: string | null
-          service_name: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          account_email?: string
-          account_password?: string
-          assigned_customer_name?: string | null
-          assigned_customer_phone?: string | null
-          assigned_order_id?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          profile_slot?: string | null
-          service_name?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       customer_points: {
         Row: {
           created_at: string
@@ -281,6 +236,86 @@ export type Database = {
           reason?: string
         }
         Relationships: []
+      }
+      prime_accounts: {
+        Row: {
+          account_email: string
+          account_password: string
+          created_at: string
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_email: string
+          account_password: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_email?: string
+          account_password?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prime_profiles: {
+        Row: {
+          account_id: string
+          assigned_customer: string | null
+          created_at: string
+          default_pin: string | null
+          id: string
+          is_vulnerable: boolean
+          pin: string | null
+          profile_index: number
+          profile_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          assigned_customer?: string | null
+          created_at?: string
+          default_pin?: string | null
+          id?: string
+          is_vulnerable?: boolean
+          pin?: string | null
+          profile_index: number
+          profile_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          assigned_customer?: string | null
+          created_at?: string
+          default_pin?: string | null
+          id?: string
+          is_vulnerable?: boolean
+          pin?: string | null
+          profile_index?: number
+          profile_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prime_profiles_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "prime_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       public_messages: {
         Row: {
@@ -604,24 +639,42 @@ export type Database = {
           created_at: string
           id: string
           is_published: boolean
+          like_count: number
+          likes_today: number
+          share_count: number
+          shares_today: number
           title: string
           updated_at: string
+          view_count: number
+          views_today: number
         }
         Insert: {
           body: string
           created_at?: string
           id?: string
           is_published?: boolean
+          like_count?: number
+          likes_today?: number
+          share_count?: number
+          shares_today?: number
           title: string
           updated_at?: string
+          view_count?: number
+          views_today?: number
         }
         Update: {
           body?: string
           created_at?: string
           id?: string
           is_published?: boolean
+          like_count?: number
+          likes_today?: number
+          share_count?: number
+          shares_today?: number
           title?: string
           updated_at?: string
+          view_count?: number
+          views_today?: number
         }
         Relationships: []
       }
@@ -662,6 +715,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_update_like: { Args: { _id: string }; Returns: undefined }
+      increment_update_share: { Args: { _id: string }; Returns: undefined }
+      increment_update_view: { Args: { _id: string }; Returns: undefined }
       log_page_visit: {
         Args: { _path: string; _referer: string; _session: string; _ua: string }
         Returns: undefined
