@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import { motion, type Variants, useMotionValue, useSpring } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -113,7 +113,6 @@ function ShowScroller() {
         }}
       >
         <img
-          key={show.poster}
           src={show.poster}
           alt={show.title}
           onLoad={() => setImgOk(true)}
@@ -177,7 +176,7 @@ function ShowScroller() {
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  PORTAL GLOW — the glowing door/gateway at scene centre                    */
 /* ═══════════════════════════════════════════════════════════════════════════ */
-function PortalGlow() {
+const PortalGlow = memo(function PortalGlow() {
   return (
     <div
       className="pointer-events-none absolute left-1/2 -translate-x-1/2"
@@ -249,23 +248,27 @@ function PortalGlow() {
         </div>
       </div>
 
-      {/* Floor glow — light pool beneath the door */}
+      {/* Floor glow — light pool beneath the door.
+          No live `filter: blur()` here: the soft edge is baked directly
+          into the gradient's stops, so the compositor only ever has to
+          animate opacity/transform (from portal-breathe), never re-blur
+          pixels on every frame. */}
       <div style={{
         position: "absolute",
         bottom: "-8%", left: "5%", right: "5%",
         height: "30%",
-        background: "radial-gradient(ellipse 70% 50% at 50% 100%, rgba(229,25,42,0.20), transparent 70%)",
-        filter: "blur(8px)",
+        background: "radial-gradient(ellipse 70% 50% at 50% 100%, rgba(229,25,42,0.20) 0%, rgba(229,25,42,0.12) 32%, rgba(229,25,42,0.05) 58%, transparent 78%)",
         animation: "portal-breathe 3.5s ease-in-out infinite",
+        willChange: "opacity, transform",
       }} />
     </div>
   );
-}
+});
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  SILHOUETTE FIGURE                                                          */
 /* ═══════════════════════════════════════════════════════════════════════════ */
-function SilhouetteFigure() {
+const SilhouetteFigure = memo(function SilhouetteFigure() {
   return (
     <div
       className="pointer-events-none absolute left-1/2 -translate-x-1/2"
@@ -302,7 +305,7 @@ function SilhouetteFigure() {
       </svg>
     </div>
   );
-}
+});
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  THREE.JS PARTICLE FIELD                                                    */
@@ -323,6 +326,17 @@ function HeroCanvas() {
       const reduced =
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // Mid-tier heuristic: prefers-reduced-motion is a binary switch, but a
+      // lot of budget Android phones don't set it and would still choke on
+      // the full 2800-particle field. Use logical core count as a rough
+      // proxy so those devices land on a smoother middle ground instead of
+      // either extreme.
+      const cores =
+        typeof navigator !== "undefined" && navigator.hardwareConcurrency
+          ? navigator.hardwareConcurrency
+          : 8;
+      const tier: "low" | "mid" | "full" = reduced ? "low" : cores <= 4 ? "mid" : "full";
 
       const W = () => mount.clientWidth;
       const H = () => mount.clientHeight;
@@ -363,7 +377,7 @@ function HeroCanvas() {
       const cWhite   = new THREE.Color(0xffffff);
 
       /* Outer field */
-      const PCOUNT    = reduced ? 800 : 2800;
+      const PCOUNT    = tier === "low" ? 800 : tier === "mid" ? 1700 : 2800;
       const positions = new Float32Array(PCOUNT * 3);
       const colors    = new Float32Array(PCOUNT * 3);
       const sizes     = new Float32Array(PCOUNT);
@@ -398,7 +412,7 @@ function HeroCanvas() {
       scene.add(points);
 
       /* Core cluster */
-      const CORE = reduced ? 100 : 400;
+      const CORE = tier === "low" ? 100 : tier === "mid" ? 240 : 400;
       const cPos = new Float32Array(CORE * 3);
       const cCol = new Float32Array(CORE * 3);
       for (let i = 0; i < CORE; i++) {
@@ -479,9 +493,20 @@ function HeroCanvas() {
       const onVis = () => (vis = document.visibilityState === "visible");
       document.addEventListener("visibilitychange", onVis);
 
+      // Previously the canvas kept rendering ~PCOUNT+CORE particles at full
+      // cost every frame once you scrolled past it — it only faded opacity
+      // toward 0 rather than actually stopping. Pause the loop entirely
+      // once the hero leaves the viewport, resume the instant it's back.
+      let inView = true;
+      const io = new IntersectionObserver(
+        ([entry]) => { inView = entry.isIntersecting; },
+        { threshold: 0 },
+      );
+      io.observe(mount);
+
       const tick = () => {
         raf = requestAnimationFrame(tick);
-        if (!vis) return;
+        if (!vis || !inView) return;
         const dt = Math.min(clock.getDelta(), 0.05);
         const t  = clock.elapsedTime;
 
@@ -516,6 +541,7 @@ function HeroCanvas() {
 
       const cleanup = () => {
         cancelAnimationFrame(raf);
+        io.disconnect();
         document.removeEventListener("visibilitychange", onVis);
         window.removeEventListener("mousemove",  onMouse);
         window.removeEventListener("touchmove",  onTouch);
@@ -547,31 +573,54 @@ function HeroCanvas() {
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  CURSOR SPOTLIGHT                                                           */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+// Diameter of the moving glow layer — matches the original "800px circle"
+// radius (radial-gradient's size arg is measured from centre), so the
+// visual falloff is identical to before.
+const SPOTLIGHT_SIZE = 1600;
+
 function CursorSpotlight() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || typeof window === "undefined") return;
     let x = window.innerWidth / 2, y = window.innerHeight / 2;
     let tx = x, ty = y;
     const move = (e: MouseEvent) => { tx = e.clientX; ty = e.clientY; };
-    window.addEventListener("mousemove", move);
+    window.addEventListener("mousemove", move, { passive: true });
     let raf = 0;
     const loop = () => {
       x += (tx - x) * 0.05;
       y += (ty - y) * 0.05;
-      el.style.background =
-        `radial-gradient(800px circle at ${x}px ${y}px, rgba(229,25,42,0.07), transparent 50%)`;
+      // The gradient itself is painted once (below, as a static background)
+      // and never touched again. Every frame here only updates `transform`,
+      // which the compositor can move on the GPU with no repaint at all —
+      // previously this rewrote a full-viewport `background` string 60x/sec.
+      el.style.transform = `translate3d(${x - SPOTLIGHT_SIZE / 2}px, ${y - SPOTLIGHT_SIZE / 2}px, 0)`;
       raf = requestAnimationFrame(loop);
     };
     loop();
     return () => { window.removeEventListener("mousemove", move); cancelAnimationFrame(raf); };
   }, []);
   return (
-    <div ref={ref}
-      className="pointer-events-none absolute inset-0"
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
       style={{ zIndex: 4, mixBlendMode: "screen" }}
-      aria-hidden />
+      aria-hidden
+    >
+      <div
+        ref={ref}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: SPOTLIGHT_SIZE,
+          height: SPOTLIGHT_SIZE,
+          background: "radial-gradient(circle at center, rgba(229,25,42,0.07), transparent 50%)",
+          transform: `translate3d(${SPOTLIGHT_SIZE / -2}px, ${SPOTLIGHT_SIZE / -2}px, 0)`,
+          willChange: "transform",
+        }}
+      />
+    </div>
   );
 }
 
@@ -594,11 +643,21 @@ export function Hero3D() {
       setActiveCount(Math.max(o ?? 0, s ?? 0));
     };
     load();
-    const iv = setInterval(load, 30_000);
+    // Skip the network round-trip while the tab is backgrounded — this
+    // was polling every 30s regardless of whether anyone could see the
+    // number update. Catches up immediately on refocus instead.
+    const iv = setInterval(() => { if (!document.hidden) load(); }, 30_000);
+    const onVisible = () => { if (!document.hidden) load(); };
+    document.addEventListener("visibilitychange", onVisible);
     const onScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener("scroll", onScroll, { passive: true });
     const t = setTimeout(() => setCanvasReady(true), 0);
-    return () => { clearInterval(iv); window.removeEventListener("scroll", onScroll); clearTimeout(t); };
+    return () => {
+      clearInterval(iv);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(t);
+    };
   }, []);
 
   /* Framer variants — cinematic, smooth pacing */
@@ -612,7 +671,10 @@ export function Hero3D() {
   };
   const headlineVariant: Variants = {
     hidden: { opacity: 0, y: 64, filter: "blur(12px)" },
-    show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1.8, ease: [0.12, 1, 0.2, 1] as any } },
+    // Same signature curve as fadeUp — previously a slightly different,
+    // unrelated bezier — so the whole entrance reads as one choreographed
+    // motion rather than parts assembled from different easings.
+    show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1.8, ease: [0.16, 1, 0.3, 1] as any } },
   };
 
   return (
@@ -687,11 +749,7 @@ export function Hero3D() {
                 border:         "1px solid rgba(255,255,255,0.07)",
               }}
             >
-              <span aria-hidden style={{
-                width: 6, height: 6, borderRadius: "50%",
-                background: "#E5192A", display: "inline-block",
-                animation: "hero-dot-pulse 2s ease infinite",
-              }} />
+              <span className="hero-live-dot" aria-hidden />
               <span style={{
                 fontSize: 12, fontWeight: 600,
                 color: "rgba(255,255,255,0.60)", letterSpacing: "0.3px",
@@ -823,9 +881,43 @@ export function Hero3D() {
       {/*  SCOPED KEYFRAMES + STYLES                                        */}
       {/* ══════════════════════════════════════════════════════════════════ */}
       <style>{`
-        @keyframes hero-dot-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(229,25,42,0.5); }
-          50%       { box-shadow: 0 0 0 7px rgba(229,25,42,0); }
+        :root {
+          /* One signature easing curve for every one-shot / hover transition
+             in this file, so entrances, hovers, and reveals all feel like
+             the same choreography instead of assembled from mismatched
+             curves. Ambient infinite loops (breathe/flicker/scroll-line)
+             intentionally keep symmetric ease-in-out — they need to look
+             the same forwards and backwards, this curve doesn't. */
+          --axx-ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .hero-live-dot {
+          position: relative;
+          display: inline-block;
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #E5192A;
+          flex-shrink: 0;
+        }
+        .hero-live-dot::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          /* Static box-shadow value — never changes across the animation,
+             so it's painted once. Only opacity/transform move, which the
+             compositor can animate with zero repaint. Previously this
+             animated the box-shadow spread itself (0 → 7px), forcing a
+             repaint on every frame. */
+          box-shadow: 0 0 0 7px rgba(229,25,42,0.5);
+          opacity: 0.9;
+          transform: scale(0.3);
+          animation: hero-dot-pulse-ring 2s ease infinite;
+          pointer-events: none;
+        }
+        @keyframes hero-dot-pulse-ring {
+          0%   { opacity: 0.9; transform: scale(0.3); }
+          70%  { opacity: 0;   transform: scale(1);   }
+          100% { opacity: 0;   transform: scale(1);   }
         }
         @keyframes hero-scroll-line {
           0%   { transform: scaleY(0); opacity: 0; transform-origin: top; }
@@ -853,7 +945,7 @@ export function Hero3D() {
           mix-blend-mode: overlay;
         }
         .hero-trust-pill {
-          transition: all 220ms cubic-bezier(0.25,0.46,0.45,0.94);
+          transition: all 220ms var(--axx-ease);
         }
         .hero-trust-pill:hover {
           border-color: rgba(255,255,255,0.13) !important;
@@ -869,7 +961,7 @@ export function Hero3D() {
           font-size: 16px; font-weight: 700;
           color: #fff; cursor: pointer; text-decoration: none;
           letter-spacing: 0.3px;
-          transition: all 240ms cubic-bezier(0.25,0.46,0.45,0.94);
+          transition: all 240ms var(--axx-ease);
           box-shadow:
             0 0 0 1px rgba(229,25,42,0.3),
             0 8px 32px rgba(229,25,42,0.45),
@@ -891,9 +983,9 @@ export function Hero3D() {
         }
         .hero-btn-primary:hover::before { left: 160%; }
         .hero-btn-primary:hover .hero-btn-arrow { transform: translateX(6px); }
-        .hero-btn-arrow { transition: transform 240ms ease; }
+        .hero-btn-arrow { transition: transform 240ms var(--axx-ease); }
         .hero-btn-primary:active { transform: scale(0.98) translateY(0px); }
       `}</style>
     </section>
   );
-    }
+  }
