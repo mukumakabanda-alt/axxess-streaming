@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site/SiteShell";
 import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Flame, RefreshCw, Play, Share2, BookmarkPlus,
   ChevronRight, Eye, ThumbsUp, Clock, Sparkles,
-  Zap, X, MessageCircle,
+  Zap, X, MessageCircle, TrendingUp,
 } from "lucide-react";
 
 export const Route = createFileRoute("/news")({
@@ -52,13 +53,26 @@ type UserPrefs = {
   categoryScores: Record<string, number>;
 };
 
+type NewsSettings = {
+  bannerEnabled: boolean;
+  bannerMessage: string;
+  heroEnabled: boolean;
+  cacheMinutes: number;
+};
+
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 const NEWSDATA_KEY = (import.meta as any).env?.VITE_NEWSDATA_KEY ?? "pub_528ce14853854ade8b07e37ff6146996";
 const TMDB_KEY = (import.meta as any).env?.VITE_TMDB_KEY ?? "a88d5ae60c54ee1720dd60feda898521";
 const PREFS_KEY = "axx_news_prefs_v4";
 const CACHE_KEY = "axx_news_cache_v6";
-const CACHE_TTL = 1000 * 60 * 45;
 const WA = "260770514809";
+
+const DEFAULT_SETTINGS: NewsSettings = {
+  bannerEnabled: true,
+  bannerMessage: "🎬 Everything you're reading about — watch it. Netflix K70 · Prime K60",
+  heroEnabled: true,
+  cacheMinutes: 45,
+};
 
 const CATEGORIES = [
   { id: "all",    label: "🔥 All",     color: "#E5192A" },
@@ -161,6 +175,41 @@ function getCategory(text: string): Article["category"] {
   if (t.includes("movie") || t.includes("film") || t.includes("cinema"))     return "movies";
   if (t.includes("celebrity") || t.includes("drama") || t.includes("beef"))  return "tea";
   return "hot";
+}
+
+/* ─── Copy quality: turn a thin API description into a punchy hook + a
+   readable two-part body, instead of dumping the raw description or
+   falling back to one repeated generic line. Never invents facts — it
+   only reshapes what NewsData/TMDB actually returned. ─────────────────── */
+const HOOK_OPENERS = [
+  "Here's the one everyone's screenshotting today —",
+  "This dropped and group chats went quiet for a second —",
+  "Not the plot twist anyone asked for, but here we are —",
+  "The kind of story that ends up in every WhatsApp group —",
+  "Zero chill about this one —",
+  "This is the story your friends will bring up first —",
+];
+
+function splitSentences(text: string): string[] {
+  return text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+}
+
+function craftHook(title: string, desc: string): string {
+  const clean = (desc ?? "").trim();
+  if (clean.length > 40) {
+    const firstTwo = splitSentences(clean).slice(0, 2).join(" ");
+    return firstTwo.length > 180 ? firstTwo.slice(0, 177) + "…" : firstTwo;
+  }
+  const opener = HOOK_OPENERS[Math.floor(Math.random() * HOOK_OPENERS.length)];
+  return `${opener} ${title}.`;
+}
+
+function craftBody(title: string, desc: string, zambianAngle: string): string {
+  const clean = (desc ?? "").trim();
+  const lead = clean.length > 20
+    ? clean
+    : `${title} is the story everyone in the group chat is talking about right now.`;
+  return `${lead}\n\n🇿🇲 *Zambian angle:* ${zambianAngle}`;
 }
 
 const OPINIONS = [
@@ -370,13 +419,15 @@ async function enrichArticles(articles: Article[]): Promise<Article[]> {
         trailerKey:  tmdb.trailerKey ?? undefined,
         rating:      tmdb.rating,
         cast:        tmdb.cast,
-        stats: [
-          ...(a.stats ?? []),
-          ...(tmdb.rating ? [] : []),
-        ],
       };
     })
   );
+}
+
+/* ─── Stable id for live-fetched articles so likes/views/shares actually
+   accumulate across visits instead of resetting on every fetch ─────────── */
+function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-+|-+$)/g, "").slice(0, 60) || "article";
 }
 
 /* ─── NewsData.io live fetch ──────────────────────────────────────────────── */
@@ -400,8 +451,9 @@ async function fetchLiveNews(): Promise<Article[]> {
         const category      = getCategory(combined);
         const cta           = getCTA(combined);
         const zambianAngle  = getZambianAngle(combined);
-        const hook          = desc.length > 30 ? desc : `${title} — and the internet is not ready.`;
+        const hook          = craftHook(title, desc);
         const opinion       = OPINIONS[i % OPINIONS.length];
+        const articleKey    = (item.article_id as string | undefined) || slugify(title);
 
         let posterUrl: string | undefined;
         let backdropUrl: string | undefined;
@@ -431,10 +483,10 @@ async function fetchLiveNews(): Promise<Article[]> {
 
         const emojis = ["🔥","⚡","💥","🎬","📺","☕","👀","🎯"];
         return {
-          id:          `live-${i}-${Date.now()}`,
+          id:          articleKey,
           headline:    title,
           hook,
-          body:        `${desc}\n\n🇿🇲 *Zambian angle:* ${zambianAngle}`,
+          body:        craftBody(title, desc, zambianAngle),
           opinion,
           category,
           emoji:       emojis[i % emojis.length],
@@ -461,16 +513,46 @@ async function fetchLiveNews(): Promise<Article[]> {
   }
 }
 
-async function loadArticles(force: boolean): Promise<Article[]> {
+async function loadArticles(force: boolean, ttlMs: number): Promise<Article[]> {
   if (!force) {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY) ?? "null");
-      if (c && Date.now() - c.ts < CACHE_TTL) return c.articles;
+      if (c && Date.now() - c.ts < ttlMs) return c.articles;
     } catch {}
   }
   const articles = await fetchLiveNews();
   try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), articles })); } catch {}
   return articles;
+}
+
+/* ─── Settings — read live from the admin Settings tab (public.site_settings) ─ */
+async function loadNewsSettings(): Promise<NewsSettings> {
+  try {
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key,value")
+      .in("key", ["news_banner_enabled", "news_banner_message", "news_hero_enabled", "news_cache_minutes"]);
+    const map: Record<string, string> = {};
+    (data ?? []).forEach((r: any) => { if (r.value) map[r.key] = r.value; });
+    return {
+      bannerEnabled: map.news_banner_enabled !== "false",
+      bannerMessage: map.news_banner_message || DEFAULT_SETTINGS.bannerMessage,
+      heroEnabled:   map.news_hero_enabled !== "false",
+      cacheMinutes:  Number(map.news_cache_minutes) || DEFAULT_SETTINGS.cacheMinutes,
+    };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+/* ─── Server-side engagement tracking — fire-and-forget, never blocks the UI ─ */
+function fireRpc(fn: string, args: Record<string, unknown>) {
+  try {
+    supabase.rpc(fn as any, args as any).then(
+      () => {},
+      () => {},
+    );
+  } catch {}
 }
 
 /* ─── Prefs ──────────────────────────────────────────────────────────────── */
@@ -483,11 +565,16 @@ function addScore(p: UserPrefs, cat: string, d: number): UserPrefs {
   return { ...p, categoryScores: { ...p.categoryScores, [cat]: (p.categoryScores[cat] ?? 0) + d } };
 }
 
-/* ─── Skeleton ───────────────────────────────────────────────────────────── */
+/* ─── Skeletons ──────────────────────────────────────────────────────────── */
+function SkeletonHero() {
+  return (
+    <div className="rounded-3xl overflow-hidden animate-pulse" style={{ background: "rgba(14,14,14,0.9)", height: "clamp(280px, 62vw, 420px)" }} />
+  );
+}
 function SkeletonCard() {
   return (
     <div className="rounded-3xl overflow-hidden animate-pulse" style={{ background: "rgba(14,14,14,0.9)" }}>
-      <div className="w-full h-48 bg-white/5" />
+      <div className="w-full h-56 bg-white/5" />
       <div className="p-4 space-y-3">
         <div className="h-3 w-20 rounded-full bg-white/5" />
         <div className="h-5 w-4/5 rounded bg-white/5" />
@@ -501,11 +588,49 @@ function SkeletonCard() {
   );
 }
 
-/* ─── Article Card — visual-first layout ─────────────────────────────────── */
-function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
+/* ─── Trending strip — quick-scan rail, tap jumps straight to the card ───── */
+function TrendingStrip({ articles, onOpen }: { articles: Article[]; onOpen: (id: string) => void }) {
+  if (articles.length === 0) return null;
+  return (
+    <div className="px-4 py-3 sm:px-6 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+      <p className="mx-auto max-w-3xl flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest mb-2.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <TrendingUp className="h-3 w-3" /> Trending now
+      </p>
+      <div className="mx-auto max-w-3xl flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+        {articles.map((a) => {
+          const cat = CATEGORIES.find((c) => c.id === a.category) ?? CATEGORIES[1];
+          const accent = a.accentColor ?? cat.color;
+          const img = a.posterUrl ?? a.backdropUrl;
+          return (
+            <button
+              key={a.id}
+              onClick={() => onOpen(a.id)}
+              className="shrink-0 w-28 text-left rounded-2xl overflow-hidden transition-transform active:scale-95"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+            >
+              <div className="relative w-full h-16" style={{ background: img ? "#000" : accent + "22" }}>
+                {img && <img src={img} alt="" className="w-full h-full object-cover" style={{ opacity: 0.85 }} loading="lazy" />}
+                <span className="absolute bottom-1 left-1.5 text-[13px] leading-none">{a.emoji}</span>
+              </div>
+              <p className="px-2 py-1.5 text-[10px] font-bold leading-snug line-clamp-2" style={{ color: "rgba(255,255,255,0.75)" }}>
+                {a.headline}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Article Card — visual-first, cinematic layout. `featured` renders the
+   large hero treatment (headline overlaid on the image); otherwise it's the
+   standard feed card. ─────────────────────────────────────────────────── */
+function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare, featured = false }: {
   article: Article; prefs: UserPrefs;
   onLike: (id: string) => void; onBookmark: (id: string) => void;
   onView: (id: string) => void; onShare: (a: Article) => void;
+  featured?: boolean;
 }) {
   const [expanded, setExpanded]     = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -522,53 +647,73 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
 
   return (
     <article
+      id={`article-${article.id}`}
       className="relative overflow-hidden rounded-3xl transition-all duration-300"
       style={{
+        scrollMarginTop: 112,
         background: "rgba(10,10,10,0.95)",
-        border: `1px solid ${expanded ? accent + "50" : "rgba(255,255,255,0.07)"}`,
-        boxShadow: expanded ? `0 0 60px -10px ${accent}30, 0 8px 32px rgba(0,0,0,0.5)` : "0 2px 16px rgba(0,0,0,0.4)",
+        border: `1px solid ${expanded ? accent + "50" : "rgba(255,255,255,0.08)"}`,
+        boxShadow: expanded ? `0 0 60px -10px ${accent}35, 0 8px 32px rgba(0,0,0,0.55)` : "0 4px 24px rgba(0,0,0,0.45)",
       }}
     >
-      {/* ── VISUAL COVER — full width, grabs attention in 0.5s ── */}
+      {/* ── VISUAL COVER ── */}
       <div
-        className="relative w-full overflow-hidden cursor-pointer"
-        style={{ height: coverImg ? 220 : 120, background: coverImg ? "#000" : COVER_GRADIENTS[coverIdx] }}
+        className="group relative w-full overflow-hidden cursor-pointer"
+        style={{ height: featured ? "clamp(280px, 62vw, 420px)" : coverImg ? 224 : 128, background: coverImg ? "#000" : COVER_GRADIENTS[coverIdx] }}
         onClick={handleExpand}
       >
         {coverImg && (
           <img
             src={coverImg}
             alt={article.headline}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            style={{ opacity: 0.75 }}
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+            style={{ opacity: featured ? 0.92 : 0.78 }}
             loading="lazy"
           />
         )}
 
-        {/* Gradient overlay always */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(10,10,10,1) 0%, rgba(10,10,10,0.3) 60%, transparent 100%)" }} />
+        {/* Gradient scrim */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: featured
+              ? "linear-gradient(to top, rgba(6,6,6,0.97) 0%, rgba(6,6,6,0.55) 45%, rgba(6,6,6,0.05) 72%, transparent 100%)"
+              : "linear-gradient(to top, rgba(10,10,10,1) 0%, rgba(10,10,10,0.3) 60%, transparent 100%)",
+          }}
+        />
 
-        {/* Controversial banner on image */}
-        {article.controversial && (
-          <div className="absolute top-0 left-0 right-0 flex items-center gap-1.5 px-4 py-2 text-[10px] font-black uppercase tracking-widest" style={{ background: "linear-gradient(90deg, rgba(229,25,42,0.9), rgba(255,107,53,0.9))", backdropFilter: "blur(8px)" }}>
-            <Flame className="h-3 w-3" style={{ color: "#fff" }} />
-            <span style={{ color: "#fff" }}>Controversial take — you've been warned 👀</span>
+        {/* Corner tags */}
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {featured && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white" style={{ background: "rgba(229,25,42,0.92)", backdropFilter: "blur(8px)" }}>
+                <Sparkles className="h-2.5 w-2.5" /> Featured
+              </span>
+            )}
+            {article.controversial && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest" style={{ background: "rgba(0,0,0,0.6)", color: "#FF6B35", border: "1px solid rgba(255,107,53,0.4)", backdropFilter: "blur(8px)" }}>
+                <Flame className="h-2.5 w-2.5" /> Hot take
+              </span>
+            )}
           </div>
-        )}
+          <span className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white" style={{ background: accent + "cc", backdropFilter: "blur(8px)" }}>
+            {cat.label}
+          </span>
+        </div>
 
-        {/* Play button if trailer exists */}
+        {/* Play trailer */}
         {article.trailerKey && !showTrailer && (
           <button
             onClick={(e) => { e.stopPropagation(); setShowTrailer(true); handleExpand(); }}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 rounded-full px-5 py-3 font-bold text-sm text-white transition-all hover:scale-105"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 rounded-full px-5 py-3 font-bold text-sm text-white transition-transform hover:scale-105 active:scale-95"
             style={{ background: "rgba(229,25,42,0.92)", backdropFilter: "blur(12px)", boxShadow: `0 0 32px ${accent}80` }}
           >
             <Play className="h-4 w-4" fill="white" /> Watch Trailer
           </button>
         )}
 
-        {/* Poster thumbnail bottom-left if backdrop available */}
-        {article.backdropUrl && article.posterUrl && (
+        {/* Poster thumb (standard cards only — featured has its own overlay) */}
+        {!featured && article.backdropUrl && article.posterUrl && (
           <img
             src={article.posterUrl}
             alt=""
@@ -577,22 +722,23 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
           />
         )}
 
-        {/* Category badge top-right */}
-        <span
-          className="absolute top-3 right-3 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider"
-          style={{ background: accent + "cc", color: "#fff", backdropFilter: "blur(8px)" }}
-        >
-          {cat.label}
-        </span>
-
-        {/* Rating badge */}
+        {/* Rating */}
         {article.rating && (
-          <span
-            className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black"
-            style={{ background: "rgba(0,0,0,0.7)", color: "#C9A84C", backdropFilter: "blur(8px)" }}
-          >
+          <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: "rgba(0,0,0,0.7)", color: "#C9A84C", backdropFilter: "blur(8px)" }}>
             ⭐ {article.rating.toFixed(1)}
           </span>
+        )}
+
+        {/* Featured headline, overlaid directly on the image */}
+        {featured && (
+          <div className="absolute bottom-0 left-0 right-0 p-5 pb-6" onClick={handleExpand}>
+            <h1 className="font-display font-black text-white" style={{ fontSize: "clamp(22px, 6vw, 32px)", lineHeight: 1.05, letterSpacing: "-0.5px" }}>
+              {article.emoji} {article.headline}
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.78)", fontStyle: "italic" }}>
+              {article.hook}
+            </p>
+          </div>
         )}
       </div>
 
@@ -617,11 +763,11 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
       )}
 
       {/* ── TEXT CONTENT ── */}
-      <div className="p-4">
+      <div className={featured ? "p-5" : "p-4"}>
 
         {/* Cast pills */}
         {article.cast && article.cast.length > 0 && (
-          <div className="flex gap-1.5 flex-wrap mb-3">
+          <div className="flex flex-wrap gap-1.5 mb-3">
             {article.cast.map((name) => (
               <span key={name} className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: accent + "15", color: accent, border: `1px solid ${accent}25` }}>
                 {name}
@@ -630,23 +776,30 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
           </div>
         )}
 
-        {/* Headline */}
-        <h2
-          className="font-black leading-tight cursor-pointer transition-colors mb-2"
-          style={{ fontSize: "clamp(15px, 3.5vw, 19px)", color: "#fff", lineHeight: 1.25 }}
-          onClick={handleExpand}
-        >
-          {article.emoji} {article.headline}
-        </h2>
+        {/* Standard-card headline + hook (featured shows these overlaid on the image instead) */}
+        {!featured && (
+          <>
+            <h2
+              className="font-display font-black leading-tight cursor-pointer transition-colors mb-2"
+              style={{ fontSize: "clamp(15px, 3.5vw, 19px)", color: "#fff", lineHeight: 1.25 }}
+              onClick={handleExpand}
+            >
+              {article.emoji} {article.headline}
+            </h2>
+            <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(255,255,255,0.6)", fontStyle: "italic", lineHeight: 1.55 }}>
+              {article.hook}
+            </p>
+          </>
+        )}
 
-        {/* Hook — italic, attention-grabbing */}
-        <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(255,255,255,0.6)", fontStyle: "italic", lineHeight: 1.55 }}>
-          {article.hook}
-        </p>
+        {/* Read time */}
+        <div className="flex items-center gap-1 mb-3 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.28)" }}>
+          <Clock className="h-3 w-3" /> {article.readTime} min read
+        </div>
 
         {/* Stats row */}
         {article.stats && article.stats.length > 0 && (
-          <div className="flex gap-2 flex-wrap mb-3">
+          <div className="flex flex-wrap gap-2 mb-3">
             {article.stats.map((s) => (
               <div key={s.label} className="rounded-xl px-3 py-1.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <span className="block text-[9px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.3)" }}>{s.label}</span>
@@ -658,14 +811,14 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
 
         {/* Expanded body */}
         {expanded && (
-          <div className="text-sm leading-relaxed space-y-3 pt-3 mb-4 border-t" style={{ borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.72)" }}>
+          <div className="space-y-3 pt-3 mb-4 border-t text-sm leading-relaxed" style={{ borderColor: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.72)" }}>
             {article.body.split("\n\n").filter(Boolean).map((p, i) => (
               <p key={i}>{p}</p>
             ))}
 
             {/* Editor's hot take */}
-            <div className="rounded-2xl p-4 mt-2" style={{ background: `linear-gradient(135deg, ${accent}12, transparent)`, border: `1px solid ${accent}30` }}>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-1.5" style={{ color: accent }}>🎙️ Axxess Editor's Hot Take</p>
+            <div className="mt-2 rounded-2xl p-4" style={{ background: `linear-gradient(135deg, ${accent}12, transparent)`, border: `1px solid ${accent}30` }}>
+              <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest" style={{ color: accent }}>🎙️ Axxess Editor's Hot Take</p>
               <p className="text-sm italic leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>"{article.opinion}"</p>
             </div>
 
@@ -673,8 +826,8 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
             {article.cta && (
               <a
                 href={article.cta.url}
-                className="flex items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-90 mt-2"
-                style={{ background: accent, color: "#fff", boxShadow: `0 0 24px -6px ${accent}80` }}
+                className="mt-2 flex items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                style={{ background: accent, boxShadow: `0 0 24px -6px ${accent}80` }}
               >
                 <Zap className="h-4 w-4" fill="currentColor" /> {article.cta.label}
               </a>
@@ -685,14 +838,14 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
               href={`https://wa.me/${WA}?text=${encodeURIComponent(`Hi Axxess! I just read about ${article.headline.slice(0, 50)} and I want to subscribe. Can you help me?`)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold transition-all hover:opacity-90"
-              style={{ background: "#25D366", color: "#fff" }}
+              className="flex items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: "#25D366" }}
             >
               <MessageCircle className="h-4 w-4" /> Subscribe via WhatsApp
             </a>
 
             {article.sourceUrl && (
-              <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="block text-center text-[10px] transition-colors mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+              <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-1 block text-center text-[10px] transition-colors" style={{ color: "rgba(255,255,255,0.2)" }}>
                 Original source ↗
               </a>
             )}
@@ -700,12 +853,12 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
         )}
 
         {/* Action bar */}
-        <div className="flex items-center gap-1.5 flex-wrap mt-1">
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
           {!expanded && (
             <button
               onClick={handleExpand}
-              className="flex items-center gap-1 rounded-full px-3.5 py-2 text-xs font-bold transition-all"
-              style={{ background: accent, color: "#fff", boxShadow: `0 0 16px -4px ${accent}60` }}
+              className="flex items-center gap-1 rounded-full px-3.5 py-2 text-xs font-bold text-white transition-transform active:scale-95"
+              style={{ background: accent, boxShadow: `0 0 16px -4px ${accent}60` }}
             >
               Read <ChevronRight className="h-3 w-3" />
             </button>
@@ -713,7 +866,7 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
           {article.trailerKey && !showTrailer && !expanded && (
             <button
               onClick={(e) => { e.stopPropagation(); setShowTrailer(true); handleExpand(); }}
-              className="flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold transition-all"
+              className="flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold transition-transform active:scale-95"
               style={{ background: "rgba(229,25,42,0.12)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.3)" }}
             >
               <Play className="h-3 w-3" /> Trailer
@@ -721,26 +874,26 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare }: {
           )}
           <button
             onClick={() => onLike(article.id)}
-            className="flex items-center gap-1 rounded-full px-2.5 py-2 text-xs transition-all"
+            className="flex items-center gap-1 rounded-full px-2.5 py-2 text-xs transition-all active:scale-95"
             style={{ background: liked ? "rgba(229,25,42,0.15)" : "rgba(255,255,255,0.05)", color: liked ? "#E5192A" : "rgba(255,255,255,0.4)", border: liked ? "1px solid rgba(229,25,42,0.3)" : "1px solid transparent" }}
           >
             <ThumbsUp className="h-3 w-3" /> {liked ? "Liked" : "Like"}
           </button>
           <button
             onClick={() => onBookmark(article.id)}
-            className="flex items-center gap-1 rounded-full px-2.5 py-2 text-xs transition-all"
+            className="flex items-center gap-1 rounded-full px-2.5 py-2 text-xs transition-all active:scale-95"
             style={{ background: bookmarked ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.05)", color: bookmarked ? "#C9A84C" : "rgba(255,255,255,0.4)", border: bookmarked ? "1px solid rgba(201,168,76,0.3)" : "1px solid transparent" }}
           >
             <BookmarkPlus className="h-3 w-3" /> {bookmarked ? "Saved" : "Save"}
           </button>
           <button
             onClick={() => onShare(article)}
-            className="flex items-center gap-1 rounded-full px-2.5 py-2 text-xs transition-all ml-auto"
+            className="ml-auto flex items-center gap-1 rounded-full px-2.5 py-2 text-xs transition-all active:scale-95"
             style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}
           >
             <Share2 className="h-3 w-3" /> Share
           </button>
-          {viewed && <Eye className="h-3 w-3 ml-1" style={{ color: "rgba(255,255,255,0.15)" }} />}
+          {viewed && <Eye className="ml-1 h-3 w-3" style={{ color: "rgba(255,255,255,0.15)" }} />}
         </div>
       </div>
     </article>
@@ -756,23 +909,36 @@ function NewsPage() {
   const [refreshing,     setRefreshing]     = useState(false);
   const [shared,         setShared]         = useState<string | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [settings,       setSettings]       = useState<NewsSettings>(DEFAULT_SETTINGS);
 
-  const load = useCallback(async (force: boolean) => {
-    try {
-      force ? setRefreshing(true) : setLoading(true);
-      setArticles(await loadArticles(force));
-    } finally { setLoading(false); setRefreshing(false); }
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const s = await loadNewsSettings();
+      if (!alive) return;
+      setSettings(s);
+      const a = await loadArticles(false, s.cacheMinutes * 60 * 1000);
+      if (!alive) return;
+      setArticles(a);
+      setLoading(false);
+    })();
+    return () => { alive = false; };
   }, []);
 
-  useEffect(() => { load(false); }, [load]);
-
-  const handleRefresh = () => { try { localStorage.removeItem(CACHE_KEY); } catch {} load(true); };
+  const handleRefresh = useCallback(() => {
+    try { localStorage.removeItem(CACHE_KEY); } catch {}
+    setRefreshing(true);
+    loadArticles(true, settings.cacheMinutes * 60 * 1000)
+      .then(setArticles)
+      .finally(() => setRefreshing(false));
+  }, [settings.cacheMinutes]);
 
   const handleLike = (id: string) => {
     const a = articles.find((x) => x.id === id); if (!a) return;
     const p = loadPrefs(); const has = p.liked.includes(id);
     const up = { ...addScore(p, a.category, has ? -1 : 2), liked: has ? p.liked.filter((x) => x !== id) : [...p.liked, id] };
     savePrefs(up); setPrefs(up);
+    if (!has) fireRpc("increment_news_like", { _key: a.id, _headline: a.headline, _category: a.category });
   };
 
   const handleBookmark = (id: string) => {
@@ -787,12 +953,18 @@ function NewsPage() {
     const p = loadPrefs(); if (p.viewed.includes(id)) return;
     const up = { ...addScore(p, a.category, 1), viewed: [...p.viewed, id] };
     savePrefs(up); setPrefs(up);
+    fireRpc("increment_news_view", { _key: a.id, _headline: a.headline, _category: a.category });
   };
 
   const handleShare = (article: Article) => {
     const text = `${article.emoji} ${article.headline}\n\n${article.shareText}`;
     if (navigator.share) { navigator.share({ title: article.headline, text }).catch(() => {}); }
     else { navigator.clipboard.writeText(text).catch(() => {}); setShared(article.id); setTimeout(() => setShared(null), 2000); }
+    fireRpc("increment_news_share", { _key: article.id, _headline: article.headline, _category: article.category });
+  };
+
+  const scrollToArticle = (id: string) => {
+    document.getElementById(`article-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const filtered = activeCategory === "all" ? articles : articles.filter((a) => a.category === activeCategory);
@@ -802,24 +974,28 @@ function NewsPage() {
   );
   const savedArticles = articles.filter((a) => prefs.bookmarked.includes(a.id));
 
+  const heroArticle   = activeCategory === "all" && settings.heroEnabled ? sorted.find((a) => !!a.backdropUrl) ?? null : null;
+  const feedArticles  = heroArticle ? sorted.filter((a) => a.id !== heroArticle.id) : sorted;
+  const trendingItems = activeCategory === "all" ? sorted.filter((a) => a.id !== heroArticle?.id).slice(0, 8) : [];
+
   return (
     <SiteShell>
       <div className="min-h-screen" style={{ background: "#080808" }}>
 
         {/* ── Hero header ── */}
         <div className="relative overflow-hidden px-4 pt-8 pb-6 sm:px-6" style={{ background: "linear-gradient(180deg, rgba(229,25,42,0.1) 0%, transparent 100%)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          <div className="mx-auto max-w-3xl flex items-start justify-between gap-4">
+          <div className="mx-auto flex max-w-3xl items-start justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="mb-2 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em]" style={{ background: "rgba(229,25,42,0.12)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.25)" }}>
-                  <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "#E5192A", display: "inline-block" }} />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "#E5192A", display: "inline-block" }} />
                   Live · Updated daily
                 </span>
                 <span className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.25)" }}>
                   {new Date().toLocaleDateString("en-ZM", { weekday: "short", day: "numeric", month: "short" })}
                 </span>
               </div>
-              <h1 className="font-black leading-none" style={{ fontSize: "clamp(36px, 9vw, 56px)", letterSpacing: "-2.5px", color: "#fff" }}>
+              <h1 className="font-display font-black leading-none" style={{ fontSize: "clamp(36px, 9vw, 56px)", letterSpacing: "-2.5px", color: "#fff" }}>
                 Axxess{" "}
                 <span style={{ background: "linear-gradient(135deg, #E5192A 0%, #FF6B35 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                   News
@@ -832,7 +1008,7 @@ function NewsPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing || loading}
-              className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all shrink-0"
+              className="flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all active:scale-95"
               style={{ background: "rgba(229,25,42,0.08)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.25)" }}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
@@ -840,7 +1016,7 @@ function NewsPage() {
             </button>
           </div>
           {Object.keys(prefs.categoryScores).length > 0 && (
-            <div className="mt-3 mx-auto max-w-3xl flex items-center gap-2 rounded-xl px-3 py-2 text-xs" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)", color: "rgba(255,255,255,0.4)" }}>
+            <div className="mx-auto mt-3 flex max-w-3xl items-center gap-2 rounded-xl px-3 py-2 text-xs" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)", color: "rgba(255,255,255,0.4)" }}>
               <Sparkles className="h-3 w-3 shrink-0" style={{ color: "#C9A84C" }} />
               Feed personalised from your reading habits
             </div>
@@ -848,8 +1024,8 @@ function NewsPage() {
         </div>
 
         {/* ── Sticky category tabs ── */}
-        <div className="sticky top-[60px] z-30 overflow-x-auto scrollbar-none" style={{ background: "rgba(8,8,8,0.97)", borderBottom: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(16px)" }}>
-          <div className="flex gap-1 px-4 py-2.5 min-w-max sm:px-6">
+        <div className="scrollbar-none sticky top-[60px] z-30 overflow-x-auto" style={{ background: "rgba(8,8,8,0.97)", borderBottom: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(16px)" }}>
+          <div className="flex min-w-max gap-1 px-4 py-2.5 sm:px-6">
             {CATEGORIES.map((cat) => {
               const count  = cat.id === "all" ? articles.length : articles.filter((a) => a.category === cat.id).length;
               const active = activeCategory === cat.id;
@@ -857,7 +1033,7 @@ function NewsPage() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap"
+                  className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold transition-all"
                   style={{
                     background: active ? cat.color : "rgba(255,255,255,0.04)",
                     color:      active ? "#fff"     : "rgba(255,255,255,0.45)",
@@ -879,12 +1055,11 @@ function NewsPage() {
         </div>
 
         {/* ── Sticky conversion banner ── */}
-        {!bannerDismissed && !loading && articles.length > 0 && (
+        {settings.bannerEnabled && !bannerDismissed && !loading && articles.length > 0 && (
           <div className="sticky top-[108px] z-20 px-4 py-2 sm:px-6" style={{ background: "rgba(8,8,8,0.95)", backdropFilter: "blur(12px)" }}>
-            <div className="mx-auto max-w-3xl flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5" style={{ background: "linear-gradient(90deg, rgba(229,25,42,0.12), rgba(201,168,76,0.08))", border: "1px solid rgba(229,25,42,0.2)" }}>
+            <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-2xl px-4 py-2.5" style={{ background: "linear-gradient(90deg, rgba(229,25,42,0.12), rgba(201,168,76,0.08))", border: "1px solid rgba(229,25,42,0.2)" }}>
               <p className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
-                🎬 Everything you're reading about — watch it.{" "}
-                <a href="/#plans" className="font-black underline" style={{ color: "#E5192A" }}>Netflix K70 · Prime K60</a>
+                {settings.bannerMessage}
               </p>
               <button onClick={() => setBannerDismissed(true)} className="shrink-0 text-white/30 hover:text-white/60">
                 <X className="h-3.5 w-3.5" />
@@ -893,78 +1068,101 @@ function NewsPage() {
           </div>
         )}
 
-        {/* ── Saved strip ── */}
-        {savedArticles.length > 0 && (
-          <div className="px-4 py-3 sm:px-6 border-b" style={{ borderColor: "rgba(201,168,76,0.1)", background: "rgba(201,168,76,0.02)" }}>
-            <div className="mx-auto max-w-3xl">
-              <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "#C9A84C" }}>
-                <BookmarkPlus className="inline h-3 w-3 mr-1" />Saved
-              </p>
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                {savedArticles.map((a) => (
-                  <span key={a.id} className="rounded-xl px-3 py-1.5 text-xs whitespace-nowrap font-semibold" style={{ background: "rgba(201,168,76,0.08)", color: "rgba(255,255,255,0.65)", border: "1px solid rgba(201,168,76,0.15)" }}>
-                    {a.emoji} {a.headline.length > 30 ? a.headline.slice(0, 30) + "…" : a.headline}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Share toast ── */}
-        {shared && (
-          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 rounded-full px-5 py-2.5 text-sm font-bold" style={{ background: "#E5192A", color: "#fff", boxShadow: "0 8px 32px rgba(229,25,42,0.5)" }}>
-            Copied! Share the tea ☕
-          </div>
-        )}
-
-        {/* ── Articles grid ── */}
-        <div className="mx-auto max-w-3xl px-4 py-5 sm:px-6 space-y-4">
-          {loading && (
-            <>
-              {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
-              <p className="text-center text-xs py-4" style={{ color: "rgba(255,255,255,0.25)" }}>
-                <Sparkles className="inline h-3 w-3 mr-1" />Loading visuals + trailers...
-              </p>
-            </>
-          )}
-
-          {!loading && sorted.map((article) => (
-            <ArticleCard
-              key={article.id}
-              article={article}
-              prefs={prefs}
-              onLike={handleLike}
-              onBookmark={handleBookmark}
-              onView={handleView}
-              onShare={handleShare}
-            />
-          ))}
-
-          {!loading && sorted.length === 0 && (
-            <p className="text-center py-16 text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
-              Nothing in this category right now.
+        {loading && (
+          <div className="mx-auto max-w-3xl space-y-4 px-4 py-5 sm:px-6">
+            <SkeletonHero />
+            {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
+            <p className="py-4 text-center text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>
+              <Sparkles className="mr-1 inline h-3 w-3" />Loading visuals + trailers...
             </p>
-          )}
+          </div>
+        )}
 
-          {!loading && sorted.length > 0 && (
-            <div className="text-center pt-4 pb-10 space-y-3">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all"
-                style={{ background: "rgba(229,25,42,0.08)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.2)" }}
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                {refreshing ? "Getting fresh tea..." : "Load new stories ☕"}
-              </button>
-              <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>
-                Feed personalises to your taste over time
-              </p>
+        {!loading && (
+          <>
+            {/* ── Featured hero story ── */}
+            {heroArticle && (
+              <div className="mx-auto max-w-3xl px-4 pt-5 sm:px-6">
+                <ArticleCard
+                  article={heroArticle}
+                  prefs={prefs}
+                  onLike={handleLike}
+                  onBookmark={handleBookmark}
+                  onView={handleView}
+                  onShare={handleShare}
+                  featured
+                />
+              </div>
+            )}
+
+            {/* ── Trending strip ── */}
+            <TrendingStrip articles={trendingItems} onOpen={scrollToArticle} />
+
+            {/* ── Saved strip ── */}
+            {savedArticles.length > 0 && (
+              <div className="border-b px-4 py-3 sm:px-6" style={{ borderColor: "rgba(201,168,76,0.1)", background: "rgba(201,168,76,0.02)" }}>
+                <div className="mx-auto max-w-3xl">
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest" style={{ color: "#C9A84C" }}>
+                    <BookmarkPlus className="mr-1 inline h-3 w-3" />Saved
+                  </p>
+                  <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+                    {savedArticles.map((a) => (
+                      <button key={a.id} onClick={() => scrollToArticle(a.id)} className="whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-semibold" style={{ background: "rgba(201,168,76,0.08)", color: "rgba(255,255,255,0.65)", border: "1px solid rgba(201,168,76,0.15)" }}>
+                        {a.emoji} {a.headline.length > 30 ? a.headline.slice(0, 30) + "…" : a.headline}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Share toast ── */}
+            {shared && (
+              <div className="fixed left-1/2 top-20 z-50 -translate-x-1/2 rounded-full px-5 py-2.5 text-sm font-bold" style={{ background: "#E5192A", color: "#fff", boxShadow: "0 8px 32px rgba(229,25,42,0.5)" }}>
+                Copied! Share the tea ☕
+              </div>
+            )}
+
+            {/* ── Articles grid ── */}
+            <div className="mx-auto max-w-3xl space-y-4 px-4 py-5 sm:px-6">
+              {feedArticles.map((article) => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
+                  prefs={prefs}
+                  onLike={handleLike}
+                  onBookmark={handleBookmark}
+                  onView={handleView}
+                  onShare={handleShare}
+                />
+              ))}
+
+              {sorted.length === 0 && (
+                <p className="py-16 text-center text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  Nothing in this category right now.
+                </p>
+              )}
+
+              {sorted.length > 0 && (
+                <div className="space-y-3 pb-10 pt-4 text-center">
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all active:scale-95"
+                    style={{ background: "rgba(229,25,42,0.08)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.2)" }}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                    {refreshing ? "Getting fresh tea..." : "Load new stories ☕"}
+                  </button>
+                  <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>
+                    Feed personalises to your taste over time
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </SiteShell>
   );
-  }
+       }
