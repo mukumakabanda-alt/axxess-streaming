@@ -101,9 +101,20 @@ export function OverviewTab() {
       });
     })();
     loadUnlocks();
-    // Refresh unlocks every 15s so the admin sees them quickly
-    const t = setInterval(loadUnlocks, 15000);
-    return () => clearInterval(t);
+    // Refresh unlocks every 15s so the admin sees them quickly — but skip
+    // the request entirely while this tab isn't the active one (admins
+    // routinely leave this dashboard open in a background tab all day),
+    // and catch up immediately the moment it's focused again.
+    const t = setInterval(() => {
+      if (document.hidden) return;
+      loadUnlocks();
+    }, 15000);
+    const onVisible = () => { if (!document.hidden) loadUnlocks(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   const acknowledge = async (id: string) => {
@@ -242,4 +253,4 @@ export function OverviewTab() {
       </div>
     </div>
   );
-}
+                  }
