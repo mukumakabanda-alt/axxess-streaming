@@ -18,13 +18,23 @@ export function SiteHeader() {
 
   // Transparent over hero → glass on scroll
   // Also hides on scroll-down, reappears on scroll-up
+  const lastDir = useRef<"up" | "down">("up");
   useEffect(() => {
     const onScroll = () => {
-      const y   = window.scrollY;
-      const dir = y > lastY.current ? "down" : "up";
-      lastY.current = y;
+      const y     = window.scrollY;
+      const delta = y - lastY.current;
 
       setScrolled(y > 40);
+
+      // Ignore sub-8px deltas — without this, trackpad micro-scrolls and
+      // iOS's elastic overscroll bounce fire a stream of tiny opposite-
+      // direction scroll events, which previously flipped `dir` back and
+      // forth and made the header's hide/show transform jitter instead
+      // of committing to one direction.
+      const dir = Math.abs(delta) < 8 ? lastDir.current : delta > 0 ? "down" : "up";
+      lastDir.current = dir;
+      lastY.current   = y;
+
       // Only hide/show on interior pages — on home the hero is tall enough
       if (pathname === "/") {
         setVisible(true);
@@ -214,4 +224,4 @@ export function SiteHeader() {
       />
     </header>
   );
-   }
+                  }
