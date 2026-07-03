@@ -51,9 +51,18 @@ export const Route = createRootRoute({
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      // Previously a plain `<link rel="stylesheet">`, which blocks first
+      // paint on two network round-trips (the CSS file, then the font
+      // files it references) even with the preconnects above. Loading it
+      // as a `preload` and flipping it to a stylesheet once it arrives
+      // (the standard "loadCSS" pattern) removes that blocking hop —
+      // text renders immediately in a fallback font, then swaps in
+      // (already `display=swap`, so no flash-of-invisible-text either).
       {
-        rel: "stylesheet",
+        rel: "preload",
+        as: "style",
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
+        onLoad: "this.onload=null;this.rel='stylesheet'",
       },
     ],
   }),
@@ -87,4 +96,4 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return <Outlet />;
-       }
+        }
