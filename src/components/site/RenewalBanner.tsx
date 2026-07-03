@@ -26,7 +26,7 @@ export function RenewalBanner() {
   const expired = days < 0;
   const urgent  = expired || days <= 3;
   const cls     = urgent
-    ? "border-destructive/60 bg-destructive/15 animate-pulse-glow"
+    ? "relative border-destructive/60 bg-destructive/15 animate-pulse-glow"
     : "border-amber-500/40 bg-amber-500/10";
   const Icon = urgent ? AlertTriangle : Clock;
   const text = expired
@@ -54,4 +54,4 @@ export function RenewalBanner() {
       </div>
     </div>
   );
-}
+            }
