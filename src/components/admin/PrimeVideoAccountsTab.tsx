@@ -77,7 +77,7 @@ export function PrimeVideoAccountsTab() {
       status:           "active",
     });
     if (error) return toast.error(error.message);
-    toast.success("Prime Video account added with profile slots");
+    toast.success("Prime Video account added with 6 profile slots");
     setNewEmail(""); setNewPwd(""); setAdding(false);
     load();
   };
@@ -232,7 +232,7 @@ export function PrimeVideoAccountsTab() {
                     </span>
                   </div>
                   <div className="mt-2 flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">{used}/{ps.length || 5} profiles used</span>
+                    <span className="text-muted-foreground">{used}/{ps.length || 6} profiles used</span>
                     {vuln > 0 && (
                       <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-orange-500/15 text-orange-400">
                         <AlertTriangle className="h-2.5 w-2.5" /> {vuln} vulnerable
@@ -338,7 +338,7 @@ export function PrimeVideoAccountsTab() {
           <div className="space-y-3">
             <div><Label>Email / Username</Label><Input value={newEmail} onChange={e => setNewEmail(e.target.value)} /></div>
             <div><Label>Password</Label><Input value={newPwd} onChange={e => setNewPwd(e.target.value)} /></div>
-            <p className="text-xs text-muted-foreground">Profile slots will be created automatically.</p>
+            <p className="text-xs text-muted-foreground">6 profile slots will be created automatically.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
@@ -434,4 +434,4 @@ export function PrimeVideoAccountsTab() {
 
     </div>
   );
-    }
+      }
