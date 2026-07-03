@@ -121,6 +121,48 @@ export type Database = {
           },
         ]
       }
+      news_engagement: {
+        Row: {
+          article_key: string
+          category: string | null
+          first_seen_at: string
+          headline: string
+          last_seen_at: string
+          like_count: number
+          likes_today: number
+          share_count: number
+          shares_today: number
+          view_count: number
+          views_today: number
+        }
+        Insert: {
+          article_key: string
+          category?: string | null
+          first_seen_at?: string
+          headline?: string
+          last_seen_at?: string
+          like_count?: number
+          likes_today?: number
+          share_count?: number
+          shares_today?: number
+          view_count?: number
+          views_today?: number
+        }
+        Update: {
+          article_key?: string
+          category?: string | null
+          first_seen_at?: string
+          headline?: string
+          last_seen_at?: string
+          like_count?: number
+          likes_today?: number
+          share_count?: number
+          shares_today?: number
+          view_count?: number
+          views_today?: number
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           admin_notes: string | null
@@ -714,6 +756,18 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_news_like: {
+        Args: { _category: string; _headline: string; _key: string }
+        Returns: undefined
+      }
+      increment_news_share: {
+        Args: { _category: string; _headline: string; _key: string }
+        Returns: undefined
+      }
+      increment_news_view: {
+        Args: { _category: string; _headline: string; _key: string }
+        Returns: undefined
       }
       increment_update_like: { Args: { _id: string }; Returns: undefined }
       increment_update_share: { Args: { _id: string }; Returns: undefined }
