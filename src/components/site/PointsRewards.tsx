@@ -101,8 +101,21 @@ export function PointsRewards() {
 
   useEffect(() => {
     if (!loaded || !phone) return;
-    const iv = setInterval(() => lookup(phone), 8000);
-    return () => clearInterval(iv);
+    // Skip the network call while the tab is in the background — there's
+    // no one watching the balance update, so polling every 8s here was
+    // pure wasted battery/data. Refresh immediately the moment the tab
+    // regains focus instead, so the balance is never stale when the
+    // customer comes back to look at it.
+    const iv = setInterval(() => {
+      if (document.hidden) return;
+      lookup(phone);
+    }, 8000);
+    const onVisible = () => { if (!document.hidden) lookup(phone); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(iv);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [loaded, phone]);
 
   /* ── Derived state ── */
@@ -378,4 +391,4 @@ export function PointsRewards() {
       </div>
     </section>
   );
-                                                }
+  }
