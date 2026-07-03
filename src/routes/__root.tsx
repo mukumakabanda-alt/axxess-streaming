@@ -62,7 +62,8 @@ export const Route = createRootRoute({
         rel: "preload",
         as: "style",
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
-        onLoad: "this.onload=null;this.rel='stylesheet'",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onLoad: "this.onload=null;this.rel='stylesheet'" as any,
       },
     ],
   }),
