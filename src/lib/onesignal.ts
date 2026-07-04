@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { rememberSubscriptionId } from "@/lib/customer";
+import { rememberSubscriptionId, getRememberedPhone } from "@/lib/customer";
 
 const ONESIGNAL_APP_ID = "03fb7168-1d9c-4fb9-8064-01a8c6333053";
 
@@ -43,9 +43,13 @@ export function initOneSignal(): void {
       },
     });
 
-    // Subscribe observer — fires the moment permission is granted on this device.
-    // Stores the subscription ID locally so the /renew page can link
-    // WhatsApp customers to push without them needing to go through checkout.
+    // Subscribe observer — fires the moment permission is granted (or
+    // revoked) on this device. Stores the subscription ID locally so the
+    // /renew page can link WhatsApp customers to push without them needing
+    // to go through checkout, and mirrors the opt-in state to Supabase
+    // (best-effort) so the admin Subscriptions tab can show who's actually
+    // reachable by push — that's what lets Stan avoid double-sending a
+    // renewal reminder over WhatsApp to someone who already got it via push.
     OneSignal.User.PushSubscription.addEventListener("change", (event: any) => {
       const prev = event.previous?.id;
       const curr = event.current?.id;
@@ -61,6 +65,13 @@ export function initOneSignal(): void {
         );
         sendWelcomePush(curr);
       }
+
+      // Keep the admin-visible opt-in record in sync for whichever phone
+      // this device is currently identified as (if any yet).
+      const knownPhone = getRememberedPhone();
+      if (knownPhone) {
+        recordPushOptIn(knownPhone, !!curr && curr !== "", curr || null);
+      }
     });
   });
 }
@@ -73,6 +84,28 @@ async function sendWelcomePush(subscriptionId: string): Promise<void> {
     });
   } catch (err) {
     console.error("Welcome push failed:", err);
+  }
+}
+
+/* ─── Record push opt-in for the admin dashboard ──────────────────────────
+   Best-effort only, never throws — a failure here should never block the
+   actual push flow. Lets SubscriptionsTab show a tick for "reachable by
+   push" per customer, and lets send-reminders' notification_log answer
+   "already sent a renewal reminder" so Stan never has to guess before
+   following up manually on WhatsApp. */
+async function recordPushOptIn(phoneDigits: string, optedIn: boolean, onesignalId: string | null): Promise<void> {
+  if (!phoneDigits) return;
+  try {
+    if (optedIn) {
+      await (supabase as any).from("push_subscribers").upsert(
+        { customer_phone: phoneDigits, onesignal_id: onesignalId, updated_at: new Date().toISOString() },
+        { onConflict: "customer_phone" },
+      );
+    } else {
+      await (supabase as any).from("push_subscribers").delete().eq("customer_phone", phoneDigits);
+    }
+  } catch {
+    // Table may not exist yet if the migration hasn't been run — ignore.
   }
 }
 
@@ -91,6 +124,9 @@ export function loginOneSignalUser(externalId: string): void {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push((OneSignal: any) => {
     OneSignal.login(externalId);
+    const optedIn = !!OneSignal?.User?.PushSubscription?.optedIn;
+    const subId    = OneSignal?.User?.PushSubscription?.id || null;
+    recordPushOptIn(externalId, optedIn, subId);
   });
 }
 
@@ -112,4 +148,4 @@ export function logoutOneSignalUser(): void {
   window.OneSignalDeferred.push((OneSignal: any) => {
     OneSignal.logout();
   });
-    }
+                  }
