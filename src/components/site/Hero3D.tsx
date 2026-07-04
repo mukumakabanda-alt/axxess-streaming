@@ -426,7 +426,7 @@ function HeroCanvas() {
       scene.add(points);
 
       /* Core cluster */
-      const CORE = tier === "low" ? 100 : tier === "mid" ? 240 : 400;
+      const CORE = effectiveTier === "low" ? 80 : effectiveTier === "mid" ? 220 : 380;
       const cPos = new Float32Array(CORE * 3);
       const cCol = new Float32Array(CORE * 3);
       for (let i = 0; i < CORE; i++) {
