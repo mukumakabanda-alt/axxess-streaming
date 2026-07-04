@@ -391,7 +391,7 @@ function HeroCanvas() {
       const cWhite   = new THREE.Color(0xffffff);
 
       /* Outer field */
-      const PCOUNT    = tier === "low" ? 800 : tier === "mid" ? 1700 : 2800;
+      const PCOUNT    = effectiveTier === "low" ? 600 : effectiveTier === "mid" ? 1400 : 2400;
       const positions = new Float32Array(PCOUNT * 3);
       const colors    = new Float32Array(PCOUNT * 3);
       const sizes     = new Float32Array(PCOUNT);
