@@ -127,10 +127,10 @@ export function PrimeVideoAccountsTab() {
     if (!next) return toast.error("No clean available profiles");
     const customer = prompt("Customer name to assign:");
     if (!customer) return;
-    const pin = prompt("4-digit PIN (optional):") ?? "";
+    const pin = prompt("5-digit PIN (optional):") ?? "";
     await supabase.from("prime_profiles").update({
       assigned_customer: customer.trim(),
-      pin:               pin.replace(/\D/g, "").slice(0, 4) || null,
+      pin:               pin.replace(/\D/g, "").slice(0, 5) || null,
       status:            "active",
     }).eq("id", next.id);
     toast.success(`Assigned to ${next.profile_name}`);
@@ -140,8 +140,8 @@ export function PrimeVideoAccountsTab() {
   // PIN change → clears vulnerable
   const confirmPinChange = async () => {
     if (!pinModal) return;
-    if (!newPin || newPin.length < 4) {
-      return toast.error("Enter the new 4-digit PIN you set on Prime Video.");
+    if (!newPin || newPin.length < 5) {
+      return toast.error("Enter the new 5-digit PIN you set on Prime Video.");
     }
     const { error } = await supabase.from("prime_profiles").update({
       pin:           newPin,
@@ -369,8 +369,8 @@ export function PrimeVideoAccountsTab() {
               <div><Label>Assigned customer</Label>
                 <Input value={editProfile.assigned_customer ?? ""} onChange={e => setEditProfile({ ...editProfile, assigned_customer: e.target.value })} />
               </div>
-              <div><Label>PIN (4 digits)</Label>
-                <Input maxLength={4} inputMode="numeric" value={editProfile.pin ?? ""} onChange={e => setEditProfile({ ...editProfile, pin: e.target.value.replace(/\D/g, "").slice(0, 4) })} />
+              <div><Label>PIN (5 digits)</Label>
+                <Input maxLength={5} inputMode="numeric" value={editProfile.pin ?? ""} onChange={e => setEditProfile({ ...editProfile, pin: e.target.value.replace(/\D/g, "").slice(0, 5) })} />
               </div>
               <div>
                 <Label>Status</Label>
@@ -412,11 +412,11 @@ export function PrimeVideoAccountsTab() {
             <div>
               <Label>New PIN</Label>
               <Input
-                maxLength={4}
+                maxLength={5}
                 inputMode="numeric"
-                placeholder="••••"
+                placeholder="•••••"
                 value={newPin}
-                onChange={e => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                onChange={e => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 5))}
                 className="font-mono text-lg tracking-widest"
                 autoFocus
               />
@@ -434,4 +434,4 @@ export function PrimeVideoAccountsTab() {
 
     </div>
   );
-      }
+                                               }
