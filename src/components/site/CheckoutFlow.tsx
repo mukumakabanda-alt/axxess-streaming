@@ -99,6 +99,23 @@ export function CheckoutFlow({
   const placeOrder = async (orderName: string, orderPhone: string, orderMonths: number, orderService: Service) => {
     setSubmitting(true);
 
+    // Final inventory check, right at the moment of committing. Pricing and
+    // /renew already hide this plan once it's full, but a customer can sit
+    // on the page a while before confirming, so we re-check the live truth
+    // here instead of trusting whatever was true when the page loaded.
+    const { data: freshService } = await supabase
+      .from("services")
+      .select("is_full")
+      .eq("id", orderService.id)
+      .maybeSingle();
+
+    if (freshService?.is_full) {
+      setSubmitting(false);
+      toast.error(`${orderService.name} just filled up — taking you to reserve a slot instead.`);
+      window.location.href = "/reserve";
+      return;
+    }
+
     const normalizedPhone = normalizePhone(orderPhone);
     const durationDays    = 30 * orderMonths;
     const expiresAt       = new Date();
@@ -510,4 +527,4 @@ export function CheckoutFlow({
       </DialogContent>
     </Dialog>
   );
-                                               }
+}
