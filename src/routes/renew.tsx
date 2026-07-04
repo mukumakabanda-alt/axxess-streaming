@@ -33,7 +33,7 @@ export const Route = createFileRoute("/renew")({
   component: RenewPage,
 });
 
-type Service  = { id: string; name: string; price_kwacha: number };
+type Service  = { id: string; name: string; price_kwacha: number; is_full: boolean };
 type SubRecord = {
   id:             string;
   customer_name:  string;
@@ -79,7 +79,7 @@ function RenewPage() {
     // Load services for the checkout upsell
     supabase
       .from("services")
-      .select("id, name, price_kwacha")
+      .select("id, name, price_kwacha, is_full")
       .eq("is_active", true)
       .order("sort_order")
       .then(({ data }) => setServices((data ?? []) as Service[]));
@@ -342,6 +342,9 @@ function RenewPage() {
                   const colour = urgencyColour(dl);
                   const svc    = serviceForSub(sub);
                   const expired = dl < 0;
+                  // Live truth, not a guess — svc.is_full is kept in sync
+                  // automatically from real Netflix/Prime profile inventory.
+                  const full = !!svc?.is_full;
 
                   return (
                     <div
@@ -372,33 +375,53 @@ function RenewPage() {
                           : `You're good for now — tap below to renew early and lock in another month.`}
                       </p>
 
-                      {/* Duration picker */}
-                      {svc && (
-                        <RenewDurationPicker
-                          service={svc}
-                          onSelect={(s, m) => { setSelectedSvc(s); setRenewMonths(m); }}
-                        />
-                      )}
+                      {full ? (
+                        /* Full — same treatment as the Pricing cards: no
+                           point offering a duration picker for a plan that
+                           has no free profile to assign right now. */
+                        <>
+                          <p className="mt-3 text-xs text-muted-foreground">
+                            {sub.service_name} is full right now — no profile is free to assign.
+                          </p>
+                          <a
+                            href="/reserve"
+                            className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl border py-3.5 text-sm font-bold transition-all hover:border-primary/40"
+                            style={{ borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.6)" }}
+                          >
+                            Reserve a slot instead <ArrowRight className="h-4 w-4" />
+                          </a>
+                        </>
+                      ) : (
+                        <>
+                          {/* Duration picker */}
+                          {svc && (
+                            <RenewDurationPicker
+                              service={svc}
+                              onSelect={(s, m) => { setSelectedSvc(s); setRenewMonths(m); }}
+                            />
+                          )}
 
-                      {/* Renew CTA */}
-                      <button
-                        onClick={() => {
-                          const s = svc ?? services[0];
-                          if (s) setSelectedSvc(s);
-                        }}
-                        className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-black transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        style={{
-                          background: expired
-                            ? "linear-gradient(135deg, #E5192A, #b01020)"
-                            : "linear-gradient(135deg, #E5192A, #C9A84C)",
-                          color: "#fff",
-                          boxShadow: "0 0 24px -8px rgba(229,25,42,0.5)",
-                        }}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        {expired ? "Restore Access Now" : "Renew Now"}
-                        <ArrowRight className="h-4 w-4" />
-                      </button>
+                          {/* Renew CTA */}
+                          <button
+                            onClick={() => {
+                              const s = svc ?? services[0];
+                              if (s) setSelectedSvc(s);
+                            }}
+                            className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-black transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            style={{
+                              background: expired
+                                ? "linear-gradient(135deg, #E5192A, #b01020)"
+                                : "linear-gradient(135deg, #E5192A, #C9A84C)",
+                              color: "#fff",
+                              boxShadow: "0 0 24px -8px rgba(229,25,42,0.5)",
+                            }}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            {expired ? "Restore Access Now" : "Renew Now"}
+                            <ArrowRight className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   );
                 })}
@@ -420,23 +443,43 @@ function RenewPage() {
                     </p>
                     <div className="space-y-2">
                       {upsellServices(subs).map((s) => (
-                        <button
-                          key={s.id}
-                          onClick={() => { setSelectedSvc(s); setRenewMonths(1); }}
-                          className="w-full flex items-center justify-between rounded-2xl border p-3 text-left transition-all hover:border-primary/40"
-                          style={{ borderColor: "rgba(201,168,76,0.2)", background: "rgba(201,168,76,0.04)" }}
-                        >
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{s.name}</p>
-                            <p className="text-xs text-muted-foreground">K{s.price_kwacha}/month</p>
-                          </div>
-                          <span
-                            className="rounded-full px-3 py-1 text-xs font-bold"
-                            style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C" }}
+                        s.is_full ? (
+                          <a
+                            key={s.id}
+                            href="/reserve"
+                            className="w-full flex items-center justify-between rounded-2xl border p-3 text-left transition-all hover:border-primary/40"
+                            style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)" }}
                           >
-                            Add →
-                          </span>
-                        </button>
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{s.name}</p>
+                              <p className="text-xs text-muted-foreground">K{s.price_kwacha}/month</p>
+                            </div>
+                            <span
+                              className="rounded-full px-3 py-1 text-xs font-bold"
+                              style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}
+                            >
+                              Full
+                            </span>
+                          </a>
+                        ) : (
+                          <button
+                            key={s.id}
+                            onClick={() => { setSelectedSvc(s); setRenewMonths(1); }}
+                            className="w-full flex items-center justify-between rounded-2xl border p-3 text-left transition-all hover:border-primary/40"
+                            style={{ borderColor: "rgba(201,168,76,0.2)", background: "rgba(201,168,76,0.04)" }}
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{s.name}</p>
+                              <p className="text-xs text-muted-foreground">K{s.price_kwacha}/month</p>
+                            </div>
+                            <span
+                              className="rounded-full px-3 py-1 text-xs font-bold"
+                              style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C" }}
+                            >
+                              Add →
+                            </span>
+                          </button>
+                        )
                       ))}
                     </div>
                   </div>
@@ -526,4 +569,4 @@ function RenewDurationPicker({
       </div>
     </div>
   );
-}
+        }
