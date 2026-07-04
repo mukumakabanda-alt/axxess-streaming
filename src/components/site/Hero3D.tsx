@@ -338,6 +338,15 @@ function HeroCanvas() {
           : 8;
       const tier: "low" | "mid" | "full" = reduced ? "low" : cores <= 4 ? "mid" : "full";
 
+      // On tiny mobile viewports the render surface is dominated by the
+      // dozens of overlays on top (portal glow, silhouette, spotlight,
+      // vignette, grain, framer transitions). The particle pass is the one
+      // frame-cost we can shrink without changing the scene composition —
+      // force the "low" tier below 640px width so mid-range Androids
+      // don't drop frames during the entrance.
+      const smallViewport = typeof window !== "undefined" && window.innerWidth < 640;
+      const effectiveTier: "low" | "mid" | "full" = smallViewport && tier !== "low" ? "low" : tier;
+
       const W = () => mount.clientWidth;
       const H = () => mount.clientHeight;
 
@@ -348,14 +357,19 @@ function HeroCanvas() {
       camera.position.set(0, 0, 8);
 
       const renderer = new THREE.WebGLRenderer({
-        alpha: true, antialias: true,
+        alpha: true, antialias: effectiveTier === "full",
         powerPreference: "high-performance",
       });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      // Cap DPR at 1.5 — a 3x-DPR phone renders 9x the pixels of a 1x
+      // display, which is what makes the hero feel "laggy" on mobile
+      // even when the JS work is cheap. 1.5 is visually indistinguishable
+      // from 2/3 on this scene (mostly additive glows and grain).
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       renderer.setSize(W(), H());
       renderer.setClearColor(0x000000, 0);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       mount.appendChild(renderer.domElement);
+
 
       /* Sprite texture */
       const sc   = document.createElement("canvas");
