@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { Loader2, LogOut } from "lucide-react";
 import { OverviewTab } from "@/components/admin/OverviewTab";
 import { OrdersTab } from "@/components/admin/OrdersTab";
 import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
