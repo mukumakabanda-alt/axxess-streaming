@@ -750,6 +750,13 @@ export type Database = {
         Args: { _delta: number; _name: string; _phone: string; _reason: string }
         Returns: number
       }
+      get_customer_points: {
+        Args: { _phone: string }
+        Returns: {
+          customer_name: string
+          points: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
