@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as ReserveRouteImport } from './routes/reserve'
 import { Route as RenewRouteImport } from './routes/renew'
@@ -19,6 +20,11 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSetupRouteImport } from './routes/admin.setup'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RewardsRoute = RewardsRouteImport.update({
   id: '/rewards',
   path: '/rewards',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/renew': typeof RenewRoute
   '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/setup': typeof AdminSetupRoute
   '/admin/': typeof AdminIndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/renew': typeof RenewRoute
   '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/setup': typeof AdminSetupRoute
   '/admin': typeof AdminIndexRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/renew': typeof RenewRoute
   '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/setup': typeof AdminSetupRoute
   '/admin/': typeof AdminIndexRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/renew'
     | '/reserve'
     | '/rewards'
+    | '/sitemap.xml'
     | '/admin/login'
     | '/admin/setup'
     | '/admin/'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/renew'
     | '/reserve'
     | '/rewards'
+    | '/sitemap.xml'
     | '/admin/login'
     | '/admin/setup'
     | '/admin'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/renew'
     | '/reserve'
     | '/rewards'
+    | '/sitemap.xml'
     | '/admin/login'
     | '/admin/setup'
     | '/admin/'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   RenewRoute: typeof RenewRoute
   ReserveRoute: typeof ReserveRoute
   RewardsRoute: typeof RewardsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSetupRoute: typeof AdminSetupRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -149,6 +162,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rewards': {
       id: '/rewards'
       path: '/rewards'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   RenewRoute: RenewRoute,
   ReserveRoute: ReserveRoute,
   RewardsRoute: RewardsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSetupRoute: AdminSetupRoute,
   AdminIndexRoute: AdminIndexRoute,
