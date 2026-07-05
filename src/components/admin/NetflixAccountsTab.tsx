@@ -57,6 +57,49 @@ export function NetflixAccountsTab() {
   };
   useEffect(() => { load(); }, []);
 
+  // Live sync — reflects assignments/frees made from the Orders tab, the
+  // nightly expiry cron, or another admin session, the instant they
+  // happen, without needing to switch tabs away and back.
+  useEffect(() => {
+    const channel = supabase
+      .channel("netflix-tab-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "netflix_accounts" },
+        (payload) => {
+          if (payload.eventType === "DELETE") {
+            const id = (payload.old as any)?.id;
+            setAccounts((prev) => prev.filter((a) => a.id !== id));
+            return;
+          }
+          const row = payload.new as Account;
+          setAccounts((prev) => {
+            const exists = prev.some((a) => a.id === row.id);
+            return exists ? prev.map((a) => (a.id === row.id ? row : a)) : [row, ...prev];
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "netflix_profiles" },
+        (payload) => {
+          if (payload.eventType === "DELETE") {
+            const id = (payload.old as any)?.id;
+            setProfiles((prev) => prev.filter((p) => p.id !== id));
+            return;
+          }
+          const row = payload.new as Profile;
+          setProfiles((prev) => {
+            const exists = prev.some((p) => p.id === row.id);
+            return exists ? prev.map((p) => (p.id === row.id ? row : p)) : [...prev, row];
+          });
+        },
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   const profilesFor = (accountId: string) =>
     profiles.filter(p => p.account_id === accountId).sort((a, b) => a.profile_index - b.profile_index);
 
@@ -432,4 +475,4 @@ export function NetflixAccountsTab() {
 
     </div>
   );
-           }
+}
