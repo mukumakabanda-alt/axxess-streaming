@@ -178,6 +178,13 @@ function AdminPage() {
             >
               Admin
             </div>
+            <button
+              onClick={signOut}
+              title="Sign out"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-3 w-3" /> Sign out
+            </button>
           </div>
         </header>
 
