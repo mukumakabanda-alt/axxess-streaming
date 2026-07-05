@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { Loader2, LogOut } from "lucide-react";
 import { OverviewTab } from "@/components/admin/OverviewTab";
 import { OrdersTab } from "@/components/admin/OrdersTab";
 import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
@@ -47,10 +49,23 @@ const NAV: { id: TabId; label: string; icon: any; badge?: string }[] = [
 ];
 
 function AdminPage() {
+  const { loading, isAdmin, signOut } = useAdminAuth();
   const [active, setActive] = useState<TabId>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#080808] text-foreground">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (!isAdmin) {
+    return <Navigate to="/admin/login" />;
+  }
+
   const current = NAV.find((n) => n.id === active)!;
+
 
   const handleNav = (id: TabId) => {
     setActive(id);
@@ -163,6 +178,13 @@ function AdminPage() {
             >
               Admin
             </div>
+            <button
+              onClick={signOut}
+              title="Sign out"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-3 w-3" /> Sign out
+            </button>
           </div>
         </header>
 
