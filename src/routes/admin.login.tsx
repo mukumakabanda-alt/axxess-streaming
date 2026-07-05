@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -120,6 +120,13 @@ function AdminLoginPage() {
           {busy && <Loader2 className="h-4 w-4 animate-spin" />}
           Sign in
         </button>
+
+        <Link
+          to="/admin/setup"
+          className="block text-center text-xs text-muted-foreground hover:text-foreground"
+        >
+          First time here? Create the admin account
+        </Link>
       </form>
     </div>
   );
