@@ -49,10 +49,23 @@ const NAV: { id: TabId; label: string; icon: any; badge?: string }[] = [
 ];
 
 function AdminPage() {
+  const { loading, isAdmin, signOut } = useAdminAuth();
   const [active, setActive] = useState<TabId>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#080808] text-foreground">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (!isAdmin) {
+    return <Navigate to="/admin/login" />;
+  }
+
   const current = NAV.find((n) => n.id === active)!;
+
 
   const handleNav = (id: TabId) => {
     setActive(id);
