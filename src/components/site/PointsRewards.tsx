@@ -48,11 +48,9 @@ export function PointsRewards() {
     // look up "0770..." here while their points were stored under
     // "260770..." from checkout, and see the wrong (or no) balance.
     const normalizedPhone = normalizePhone(p);
-    const { data } = await supabase
-      .from("customer_points")
-      .select("points,customer_name")
-      .eq("customer_phone", normalizedPhone)
-      .maybeSingle();
+    const { data: rows } = await supabase
+      .rpc("get_customer_points", { _phone: normalizedPhone });
+    const data = Array.isArray(rows) ? rows[0] : null;
     const newPoints = data?.points ?? 0;
     const prev = prevPointsRef.current;
     setPoints(newPoints);

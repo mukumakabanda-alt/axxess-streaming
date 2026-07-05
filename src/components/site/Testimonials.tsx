@@ -144,9 +144,9 @@ export function Testimonials() {
     rememberCustomer(parsed.data.name, parsed.data.phone);
 
     try {
-      const { data: prev } = await supabase
-        .from("customer_points").select("points")
-        .eq("customer_phone", normalizedPhone).maybeSingle();
+      const { data: prevRows } = await supabase
+        .rpc("get_customer_points", { _phone: normalizedPhone });
+      const prev = Array.isArray(prevRows) ? prevRows[0] : null;
       const prevPoints = prev?.points ?? 0;
       const { data: newTotal } = await supabase.rpc("award_points", {
         _phone: normalizedPhone, _name: parsed.data.name,
