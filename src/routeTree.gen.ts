@@ -16,6 +16,7 @@ import { Route as NewsRouteImport } from './routes/news'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminSetupRouteImport } from './routes/admin.setup'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 
 const RewardsRoute = RewardsRouteImport.update({
@@ -53,6 +54,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSetupRoute = AdminSetupRouteImport.update({
+  id: '/admin/setup',
+  path: '/admin/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/setup': typeof AdminSetupRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/setup': typeof AdminSetupRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/reserve': typeof ReserveRoute
   '/rewards': typeof RewardsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/setup': typeof AdminSetupRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/reserve'
     | '/rewards'
     | '/admin/login'
+    | '/admin/setup'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/reserve'
     | '/rewards'
     | '/admin/login'
+    | '/admin/setup'
     | '/admin'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/reserve'
     | '/rewards'
     | '/admin/login'
+    | '/admin/setup'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   ReserveRoute: typeof ReserveRoute
   RewardsRoute: typeof RewardsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminSetupRoute: typeof AdminSetupRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/setup': {
+      id: '/admin/setup'
+      path: '/admin/setup'
+      fullPath: '/admin/setup'
+      preLoaderRoute: typeof AdminSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/admin/login'
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReserveRoute: ReserveRoute,
   RewardsRoute: RewardsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminSetupRoute: AdminSetupRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
