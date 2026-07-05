@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.award_points(text, text, integer, text) TO anon;
