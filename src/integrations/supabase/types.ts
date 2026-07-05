@@ -746,10 +746,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_exists: { Args: never; Returns: boolean }
       award_points: {
         Args: { _delta: number; _name: string; _phone: string; _reason: string }
         Returns: number
       }
+      claim_first_admin: { Args: never; Returns: boolean }
       get_customer_points: {
         Args: { _phone: string }
         Returns: {
