@@ -78,6 +78,49 @@ export function Pricing() {
       });
   }, []);
 
+  // Live sync — reflects Netflix/Prime profile fullness (via services.is_full)
+  // the instant it changes, so a customer sitting on this page doesn't need
+  // to refresh to see a plan flip to "Full" (or open back up).
+  useEffect(() => {
+    const channel = supabase
+      .channel("pricing-services-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "services" },
+        (payload) => {
+          setServices((prev) => {
+            if (!prev) return prev; // initial fetch hasn't landed yet
+
+            if (payload.eventType === "DELETE") {
+              const removedId = (payload.old as any)?.id;
+              return prev.filter((s) => s.id !== removedId);
+            }
+
+            const row = payload.new as any;
+            const normalized: Service = {
+              ...row,
+              features: Array.isArray(row.features) ? row.features : [],
+            };
+
+            // Deactivated while the page was open — treat like it vanished
+            if (!row.is_active) {
+              return prev.filter((s) => s.id !== normalized.id);
+            }
+
+            const exists = prev.some((s) => s.id === normalized.id);
+            const next = exists
+              ? prev.map((s) => (s.id === normalized.id ? normalized : s))
+              : [...prev, normalized];
+
+            return next.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          });
+        },
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   // Called on "Get Access". If this device already has a remembered phone
   // number, check Supabase for a real subscription under that number —
   // this is the same lookup /renew uses, so it's always accurate, never
@@ -309,4 +352,4 @@ export function Pricing() {
       />
     </section>
   );
-         }
+}
