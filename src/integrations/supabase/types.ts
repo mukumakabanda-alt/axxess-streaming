@@ -789,6 +789,15 @@ export type Database = {
         Args: { _code: string; _referer: string; _user_agent: string }
         Returns: undefined
       }
+      record_reward_unlock: {
+        Args: {
+          _name: string
+          _phone: string
+          _tier_label: string
+          _tier_points: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
