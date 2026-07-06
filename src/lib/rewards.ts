@@ -69,7 +69,7 @@ export async function recordRewardUnlocks(
     crossed.map((t) =>
       supabase.rpc("record_reward_unlock", {
         _phone: phone,
-        _name: name,
+        _name: name ?? "",
         _tier_points: t.points,
         _tier_label: t.label,
       }),
