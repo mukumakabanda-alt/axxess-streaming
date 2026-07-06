@@ -37,6 +37,14 @@ function truncate(text: string, max: number) {
 }
 
 Deno.serve(async (req: Request) => {
+  // Verify shared secret set by the DB trigger. Without this, anyone could
+  // POST arbitrary content and broadcast it as a push to every subscriber.
+  const expected = Deno.env.get("NOTIFY_NEWS_SECRET");
+  const provided = req.headers.get("x-notify-secret");
+  if (!expected || !provided || provided !== expected) {
+    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), { status: 401 });
+  }
+
   let payload: any;
   try {
     payload = await req.json();
