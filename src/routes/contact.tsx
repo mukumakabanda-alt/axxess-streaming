@@ -12,7 +12,9 @@ export const Route = createFileRoute("/contact")({
       { name: "description", content: "Get fast support from the Axxess Streaming team. Call us, chat on WhatsApp, or join the customer community." },
       { property: "og:title", content: "Contact & Support — Axxess Streaming" },
       { property: "og:description", content: "We're here to help — chat on WhatsApp anytime." },
+      { property: "og:url", content: "https://axxess-streaming.lovable.app/contact" },
     ],
+    links: [{ rel: "canonical", href: "https://axxess-streaming.lovable.app/contact" }],
   }),
   component: ContactPage,
 });

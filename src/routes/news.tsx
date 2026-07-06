@@ -15,7 +15,9 @@ export const Route = createFileRoute("/news")({
       { name: "description", content: "The most entertaining streaming news page in Zambia. Netflix, Prime Video, DStv. Real tea. Zero boring." },
       { property: "og:title", content: "Axxess News — We don't do boring" },
       { property: "og:description", content: "Hot takes on Netflix, Prime Video & everything trending in Zambia. Read at your own risk." },
+      { property: "og:url", content: "https://axxess-streaming.lovable.app/news" },
     ],
+    links: [{ rel: "canonical", href: "https://axxess-streaming.lovable.app/news" }],
   }),
   component: NewsPage,
 });
