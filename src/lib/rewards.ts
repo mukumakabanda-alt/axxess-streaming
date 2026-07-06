@@ -65,12 +65,15 @@ export async function recordRewardUnlocks(
   if (!phone || newPoints <= prevPoints) return [];
   const crossed = REWARD_TIERS.filter((t) => prevPoints < t.points && newPoints >= t.points);
   if (!crossed.length) return [];
-  const rows = crossed.map((t) => ({
-    customer_phone: phone,
-    customer_name: name,
-    tier_points: t.points,
-    tier_label: t.label,
-  }));
-  await supabase.from("reward_unlocks").insert(rows);
+  await Promise.all(
+    crossed.map((t) =>
+      supabase.rpc("record_reward_unlock", {
+        _phone: phone,
+        _name: name,
+        _tier_points: t.points,
+        _tier_label: t.label,
+      }),
+    ),
+  );
   return crossed.map((t) => ({ points: t.points, label: t.label, emoji: t.emoji }));
   }
