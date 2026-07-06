@@ -28,7 +28,9 @@ export const Route = createFileRoute("/renew")({
     meta: [
       { title: "Renew — Axxess Streaming" },
       { name: "description", content: "Renew your Axxess subscription in under 60 seconds. No need to message us first." },
+      { property: "og:url", content: "https://axxess-streaming.lovable.app/renew" },
     ],
+    links: [{ rel: "canonical", href: "https://axxess-streaming.lovable.app/renew" }],
   }),
   component: RenewPage,
 });

@@ -48,11 +48,13 @@ function DeferredSection({ minHeight, children }: { minHeight: number; children:
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Axxess Entertainment — Netflix & Prime Video in Zambia" },
+      { title: "Axxess Entertainment — Netflix & Prime in Zambia" },
       { name: "description", content: "Zambia's premium streaming platform. Netflix K70/mo, Prime Video K60/mo, All Access K140/mo. No card needed. Activated via WhatsApp in 15 minutes." },
-      { property: "og:title", content: "Axxess Entertainment — Netflix & Prime Video in Zambia" },
+      { property: "og:title", content: "Axxess Entertainment — Netflix & Prime in Zambia" },
       { property: "og:description", content: "Netflix K70/mo. Prime Video K60/mo. All Access K140/mo. No card. WhatsApp activation in 15 minutes. Zambia's #1 streaming deal." },
+      { property: "og:url", content: "https://axxess-streaming.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://axxess-streaming.lovable.app/" }],
   }),
   component: HomePage,
 });
