@@ -1,6 +1,7 @@
 // src/components/admin/PrimeVideoAccountsTab.tsx
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { hasTransientResultError, retryTransient } from "@/lib/retry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,16 +83,24 @@ export function PrimeVideoAccountsTab() {
     if (!newEmail || !newPwd) return toast.error("Email and password required");
     if (savingAccount) return;
     setSavingAccount(true);
-    const { error } = await supabase.from("prime_accounts").insert({
-      account_email:    newEmail.trim(),
-      account_password: newPwd.trim(),
-      status:           "active",
-    });
-    setSavingAccount(false);
-    if (error) return toast.error(error.message);
-    toast.success("Prime Video account added with 6 profile slots");
-    setNewEmail(""); setNewPwd(""); setAdding(false);
-    load();
+    try {
+      const { error } = await retryTransient(
+        () => supabase.from("prime_accounts").insert({
+          account_email:    newEmail.trim(),
+          account_password: newPwd.trim(),
+          status:           "active",
+        }),
+        { shouldRetryResult: hasTransientResultError },
+      );
+      if (error) return toast.error(error.message);
+      toast.success("Prime Video account added with 6 profile slots");
+      setNewEmail(""); setNewPwd(""); setAdding(false);
+      load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not add Prime Video account");
+    } finally {
+      setSavingAccount(false);
+    }
   };
 
   const removeAccount = async (id: string) => {
