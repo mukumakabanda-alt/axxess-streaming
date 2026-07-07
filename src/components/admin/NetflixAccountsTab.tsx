@@ -12,7 +12,7 @@ import {
 import { toast } from "sonner";
 import {
   Plus, Trash2, Eye, EyeOff, RotateCcw, UserPlus,
-  ChevronLeft, AlertTriangle, ShieldCheck, KeyRound,
+  ChevronLeft, AlertTriangle, ShieldCheck, KeyRound, Loader2,
 } from "lucide-react";
 
 type Account = {

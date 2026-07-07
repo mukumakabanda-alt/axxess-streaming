@@ -26,12 +26,12 @@ export function isTransientError(error: unknown) {
   return TRANSIENT_ERROR_PARTS.some((part) => text.includes(part));
 }
 
-export function hasTransientResultError(result: { error?: unknown }) {
+export function hasTransientResultError<T extends { error?: unknown }>(result: T) {
   return isTransientError(result.error);
 }
 
 export async function retryTransient<T>(
-  operation: () => Promise<T>,
+  operation: () => PromiseLike<T>,
   { attempts = 3, delayMs = 350, shouldRetryResult }: RetryOptions<T> = {},
 ) {
   let lastThrown: unknown;
