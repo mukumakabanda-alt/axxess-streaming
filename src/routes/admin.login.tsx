@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { hasTransientResultError, retryTransient } from "@/lib/retry";
 import { Loader2, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/admin/login")({
@@ -30,26 +31,38 @@ function AdminLoginPage() {
     e.preventDefault();
     setBusy(true);
     setErr(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    const credentials = { email: email.trim(), password };
+    const { error } = await retryTransient(
+      () => supabase.auth.signInWithPassword(credentials),
+      { shouldRetryResult: hasTransientResultError },
+    );
     if (error) {
       setBusy(false);
       setErr(error.message);
       return;
     }
-    const { data: userData } = await supabase.auth.getUser();
+    const { data: userData } = await retryTransient(
+      () => supabase.auth.getUser(),
+      { shouldRetryResult: hasTransientResultError },
+    );
     const uid = userData.user?.id;
     if (!uid) {
       setBusy(false);
       setErr("Sign-in failed. Try again.");
       return;
     }
-    const { data: roleOk } = await supabase.rpc("has_role", {
-      _user_id: uid,
-      _role: "admin",
-    });
+    const { data: roleOk, error: roleError } = await retryTransient(
+      () => supabase.rpc("has_role", {
+        _user_id: uid,
+        _role: "admin",
+      }),
+      { shouldRetryResult: hasTransientResultError },
+    );
+    if (roleError) {
+      setBusy(false);
+      setErr("Signed in, but admin verification could not complete. Please try again.");
+      return;
+    }
     if (roleOk !== true) {
       await supabase.auth.signOut();
       setBusy(false);

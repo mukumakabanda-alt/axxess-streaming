@@ -43,6 +43,7 @@ export function NetflixAccountsTab() {
   const [adding,     setAdding]     = useState(false);
   const [newEmail,   setNewEmail]   = useState("");
   const [newPwd,     setNewPwd]     = useState("");
+  const [savingAccount, setSavingAccount] = useState(false);
   const [editProfile,setEditProfile]= useState<Profile | null>(null);
   const [pinModal,   setPinModal]   = useState<Profile | null>(null);
   const [newPin,     setNewPin]     = useState("");
@@ -100,8 +101,16 @@ export function NetflixAccountsTab() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const profilesFor = (accountId: string) =>
-    profiles.filter(p => p.account_id === accountId).sort((a, b) => a.profile_index - b.profile_index);
+  const profilesFor = (accountId: string) => {
+    const byIndex = new Map<number, Profile>();
+    profiles
+      .filter(p => p.account_id === accountId)
+      .sort((a, b) => a.profile_index - b.profile_index)
+      .forEach((profile) => {
+        if (!byIndex.has(profile.profile_index)) byIndex.set(profile.profile_index, profile);
+      });
+    return [...byIndex.values()];
+  };
 
   const totals = useMemo(() => ({
     total:      accounts.length,
@@ -113,11 +122,14 @@ export function NetflixAccountsTab() {
 
   const addAccount = async () => {
     if (!newEmail || !newPwd) return toast.error("Email and password required");
+    if (savingAccount) return;
+    setSavingAccount(true);
     const { error } = await supabase.from("netflix_accounts").insert({
       account_email:    newEmail.trim(),
       account_password: newPwd.trim(),
       status:           "active",
     });
+    setSavingAccount(false);
     if (error) return toast.error(error.message);
     toast.success("Netflix account added with 5 profile slots");
     setNewEmail(""); setNewPwd(""); setAdding(false);
@@ -384,7 +396,10 @@ export function NetflixAccountsTab() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
-            <Button onClick={addAccount} className="bg-primary">Add</Button>
+            <Button onClick={addAccount} disabled={savingAccount} className="bg-primary">
+              {savingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

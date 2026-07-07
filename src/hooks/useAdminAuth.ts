@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { hasTransientResultError, retryTransient } from "@/lib/retry";
 
 export function useAdminAuth() {
   const [loading, setLoading] = useState(true);
@@ -18,19 +19,26 @@ export function useAdminAuth() {
         }
         return;
       }
-      const { data, error } = await supabase.rpc("has_role", {
-        _user_id: uid,
-        _role: "admin",
-      });
+      const { data, error } = await retryTransient(
+        () => supabase.rpc("has_role", {
+          _user_id: uid,
+          _role: "admin",
+        }),
+        { shouldRetryResult: hasTransientResultError },
+      );
       if (cancelled) return;
       setUserId(uid);
       setIsAdmin(!error && data === true);
       setLoading(false);
     };
 
-    supabase.auth.getUser().then(({ data }) => {
-      check(data.user?.id ?? null);
-    });
+    retryTransient(() => supabase.auth.getUser(), { shouldRetryResult: hasTransientResultError })
+      .then(({ data }) => {
+        check(data.user?.id ?? null);
+      })
+      .catch(() => {
+        check(null);
+      });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setLoading(true);
