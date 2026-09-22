@@ -206,7 +206,7 @@ export function OrdersTab() {
     const days  = o.duration_days ?? 30;
     const start = new Date();
     const end   = new Date(); end.setDate(end.getDate() + days);
-    await (supabase as any).from("subscriptions").insert({
+    const { error } = await (supabase as any).from("subscriptions").insert({
       order_id:            o.id,
       customer_name:       o.customer_name,
       customer_phone:      o.customer_phone,
@@ -217,7 +217,12 @@ export function OrdersTab() {
       netflix_profile_id:  netflixProfileId,
       prime_profile_id:    primeProfileId,
     });
+    if (error) {
+      toast.error(`Subscription not created: ${error.message}`);
+      return false;
+    }
     toast.success(`Subscription created (${days} days)`);
+    return true;
   };
 
   // Renewal — same customer, same service. Days stack on top of whatever
@@ -242,8 +247,13 @@ export function OrdersTab() {
     if (netflixProfileId) patch.netflix_profile_id = netflixProfileId;
     if (primeProfileId)   patch.prime_profile_id   = primeProfileId;
 
-    await (supabase as any).from("subscriptions").update(patch).eq("id", existing.id);
+    const { error } = await (supabase as any).from("subscriptions").update(patch).eq("id", existing.id);
+    if (error) {
+      toast.error(`Renewal failed: ${error.message}`);
+      return false;
+    }
     toast.success(`Renewed — extended to ${patch.end_date}`);
+    return true;
   };
 
   const awardCompletionPoints = async (o: Order) => {

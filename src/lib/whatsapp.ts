@@ -21,9 +21,9 @@ export function orderMessage(serviceName: string, price: number) {
  * Zambia country code (260) and no leading "+", "0", or spaces/dashes.
  *
  * Examples:
- *   normalizePhone("0770 514 809")   -> "260574161927"
+ *   normalizePhone("0574 161 927")   -> "260574161927"
  *   normalizePhone("+260574161927")  -> "260574161927"
- *   normalizePhone("770-514-809")    -> "260574161927"
+ *   normalizePhone("574-161-927")    -> "260574161927"
  *   normalizePhone("260574161927")   -> "260574161927"
  */
 export function normalizePhone(raw: string): string {

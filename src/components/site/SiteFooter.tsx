@@ -38,7 +38,7 @@ export function SiteFooter() {
               Contact
             </h4>
             <ul className="mt-4 space-y-3 text-sm">
-              <li className="text-foreground/70">+260 76 510 1494</li>
+              <li className="text-foreground/70">+260 57 416 1927</li>
               <li>
                 <a
                   href={`https://wa.me/${WHATSAPP_PRIMARY}`}
