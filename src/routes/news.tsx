@@ -67,7 +67,7 @@ const NEWSDATA_KEY = (import.meta as any).env?.VITE_NEWSDATA_KEY ?? "pub_528ce14
 const TMDB_KEY = (import.meta as any).env?.VITE_TMDB_KEY ?? "a88d5ae60c54ee1720dd60feda898521";
 const PREFS_KEY = "axx_news_prefs_v4";
 const CACHE_KEY = "axx_news_cache_v6";
-const WA = "260770514809";
+const WA = "260574161927";
 
 const DEFAULT_SETTINGS: NewsSettings = {
   bannerEnabled: true,

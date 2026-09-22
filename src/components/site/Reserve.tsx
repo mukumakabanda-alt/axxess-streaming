@@ -123,7 +123,7 @@ export function Reserve() {
     const waMessage = encodeURIComponent(
       `Hi Axxess! I just reserved my ${confirmed.serviceName} slot.\n\nName: ${confirmed.name}\nWhatsApp: ${confirmed.phone}\n\nPlease confirm my place on the list. 🙏`
     );
-    const waLink = `https://wa.me/260770514809?text=${waMessage}`;
+    const waLink = `https://wa.me/260574161927?text=${waMessage}`;
 
     return (
       <section className="min-h-[80vh] flex items-center justify-center px-4 py-16 sm:px-6">

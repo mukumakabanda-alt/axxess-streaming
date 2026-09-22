@@ -206,7 +206,7 @@ export function OrdersTab() {
     const days  = o.duration_days ?? 30;
     const start = new Date();
     const end   = new Date(); end.setDate(end.getDate() + days);
-    await (supabase as any).from("subscriptions").insert({
+    const { error } = await (supabase as any).from("subscriptions").insert({
       order_id:            o.id,
       customer_name:       o.customer_name,
       customer_phone:      o.customer_phone,
@@ -217,7 +217,12 @@ export function OrdersTab() {
       netflix_profile_id:  netflixProfileId,
       prime_profile_id:    primeProfileId,
     });
+    if (error) {
+      toast.error(`Subscription not created: ${error.message}`);
+      return false;
+    }
     toast.success(`Subscription created (${days} days)`);
+    return true;
   };
 
   // Renewal — same customer, same service. Days stack on top of whatever
@@ -242,8 +247,13 @@ export function OrdersTab() {
     if (netflixProfileId) patch.netflix_profile_id = netflixProfileId;
     if (primeProfileId)   patch.prime_profile_id   = primeProfileId;
 
-    await (supabase as any).from("subscriptions").update(patch).eq("id", existing.id);
+    const { error } = await (supabase as any).from("subscriptions").update(patch).eq("id", existing.id);
+    if (error) {
+      toast.error(`Renewal failed: ${error.message}`);
+      return false;
+    }
     toast.success(`Renewed — extended to ${patch.end_date}`);
+    return true;
   };
 
   const awardCompletionPoints = async (o: Order) => {
@@ -383,21 +393,22 @@ export function OrdersTab() {
     if (needPrime && !primeProfileId)     return toast.error("Pick a Prime Video profile first");
 
     if (netflixProfileId) {
-      await supabase.from("netflix_profiles")
+      const { error } = await supabase.from("netflix_profiles")
         .update({ status: "active", assigned_customer: o.customer_name })
         .eq("id", netflixProfileId);
+      if (error) return toast.error(`Netflix profile not assigned: ${error.message}`);
     }
     if (primeProfileId) {
-      await supabase.from("prime_profiles")
+      const { error } = await supabase.from("prime_profiles")
         .update({ status: "active", assigned_customer: o.customer_name })
         .eq("id", primeProfileId);
+      if (error) return toast.error(`Prime profile not assigned: ${error.message}`);
     }
 
-    if (existing) {
-      await extendSubscription(existing, o, netflixProfileId, primeProfileId);
-    } else {
-      await createFreshSubscription(o, netflixProfileId, primeProfileId);
-    }
+    const ok = existing
+      ? await extendSubscription(existing, o, netflixProfileId, primeProfileId)
+      : await createFreshSubscription(o, netflixProfileId, primeProfileId);
+    if (!ok) return;
 
     setAssignDialog(null);
     await finalizeOrderStatus(o, targetStatus, netflixProfileId, primeProfileId);
