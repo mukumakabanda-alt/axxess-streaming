@@ -393,21 +393,22 @@ export function OrdersTab() {
     if (needPrime && !primeProfileId)     return toast.error("Pick a Prime Video profile first");
 
     if (netflixProfileId) {
-      await supabase.from("netflix_profiles")
+      const { error } = await supabase.from("netflix_profiles")
         .update({ status: "active", assigned_customer: o.customer_name })
         .eq("id", netflixProfileId);
+      if (error) return toast.error(`Netflix profile not assigned: ${error.message}`);
     }
     if (primeProfileId) {
-      await supabase.from("prime_profiles")
+      const { error } = await supabase.from("prime_profiles")
         .update({ status: "active", assigned_customer: o.customer_name })
         .eq("id", primeProfileId);
+      if (error) return toast.error(`Prime profile not assigned: ${error.message}`);
     }
 
-    if (existing) {
-      await extendSubscription(existing, o, netflixProfileId, primeProfileId);
-    } else {
-      await createFreshSubscription(o, netflixProfileId, primeProfileId);
-    }
+    const ok = existing
+      ? await extendSubscription(existing, o, netflixProfileId, primeProfileId)
+      : await createFreshSubscription(o, netflixProfileId, primeProfileId);
+    if (!ok) return;
 
     setAssignDialog(null);
     await finalizeOrderStatus(o, targetStatus, netflixProfileId, primeProfileId);
