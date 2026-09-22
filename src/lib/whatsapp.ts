@@ -1,5 +1,5 @@
 // Single source of truth for WhatsApp & payment numbers.
-export const WHATSAPP_PRIMARY = "260770514809";
+export const WHATSAPP_PRIMARY = "260574161927";
 export const WHATSAPP_SECONDARY = "260762073206";
 export const MTN_PAYMENT_NUMBER = "0765101494";
 export const MTN_PAYMENT_NAME = "Stanley Kabanda";
@@ -21,10 +21,10 @@ export function orderMessage(serviceName: string, price: number) {
  * Zambia country code (260) and no leading "+", "0", or spaces/dashes.
  *
  * Examples:
- *   normalizePhone("0770 514 809")   -> "260770514809"
- *   normalizePhone("+260770514809")  -> "260770514809"
- *   normalizePhone("770-514-809")    -> "260770514809"
- *   normalizePhone("260770514809")   -> "260770514809"
+ *   normalizePhone("0770 514 809")   -> "260574161927"
+ *   normalizePhone("+260574161927")  -> "260574161927"
+ *   normalizePhone("770-514-809")    -> "260574161927"
+ *   normalizePhone("260574161927")   -> "260574161927"
  */
 export function normalizePhone(raw: string): string {
   let digits = (raw || "").replace(/\D/g, "");

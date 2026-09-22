@@ -9,7 +9,7 @@ import { normalizePhone } from "@/lib/whatsapp";
 import { showRewardUnlock } from "./RewardUnlockToast";
 
 const STORAGE_KEY = "axx_customer_phone";
-const WA = "260770514809";
+const WA = "260574161927";
 
 export function PointsRewards() {
   const [phone, setPhone] = useState("");
