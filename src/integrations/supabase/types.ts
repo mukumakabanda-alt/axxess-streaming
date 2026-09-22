@@ -173,9 +173,11 @@ export type Database = {
           duration_days: number | null
           expires_at: string | null
           id: string
+          netflix_profile_id: string | null
           notes: string | null
           payment_status: string
           price_snapshot: number
+          prime_profile_id: string | null
           referral_code: string | null
           service_id: string | null
           service_name_snapshot: string
@@ -191,9 +193,11 @@ export type Database = {
           duration_days?: number | null
           expires_at?: string | null
           id?: string
+          netflix_profile_id?: string | null
           notes?: string | null
           payment_status?: string
           price_snapshot: number
+          prime_profile_id?: string | null
           referral_code?: string | null
           service_id?: string | null
           service_name_snapshot: string
@@ -209,9 +213,11 @@ export type Database = {
           duration_days?: number | null
           expires_at?: string | null
           id?: string
+          netflix_profile_id?: string | null
           notes?: string | null
           payment_status?: string
           price_snapshot?: number
+          prime_profile_id?: string | null
           referral_code?: string | null
           service_id?: string | null
           service_name_snapshot?: string
@@ -219,6 +225,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_netflix_profile_id_fkey"
+            columns: ["netflix_profile_id"]
+            isOneToOne: false
+            referencedRelation: "netflix_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_prime_profile_id_fkey"
+            columns: ["prime_profile_id"]
+            isOneToOne: false
+            referencedRelation: "prime_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_service_id_fkey"
             columns: ["service_id"]
@@ -603,7 +623,9 @@ export type Database = {
           end_date: string
           id: string
           is_active: boolean
+          netflix_profile_id: string | null
           order_id: string | null
+          prime_profile_id: string | null
           service_name: string
           start_date: string
           updated_at: string
@@ -615,7 +637,9 @@ export type Database = {
           end_date: string
           id?: string
           is_active?: boolean
+          netflix_profile_id?: string | null
           order_id?: string | null
+          prime_profile_id?: string | null
           service_name: string
           start_date?: string
           updated_at?: string
@@ -627,17 +651,33 @@ export type Database = {
           end_date?: string
           id?: string
           is_active?: boolean
+          netflix_profile_id?: string | null
           order_id?: string | null
+          prime_profile_id?: string | null
           service_name?: string
           start_date?: string
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "subscriptions_netflix_profile_id_fkey"
+            columns: ["netflix_profile_id"]
+            isOneToOne: false
+            referencedRelation: "netflix_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "subscriptions_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_prime_profile_id_fkey"
+            columns: ["prime_profile_id"]
+            isOneToOne: false
+            referencedRelation: "prime_profiles"
             referencedColumns: ["id"]
           },
         ]
