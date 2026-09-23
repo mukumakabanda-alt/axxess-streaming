@@ -119,18 +119,19 @@ export function SettingsTab() {
             placeholder="https://chat.whatsapp.com/..."
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
-            Shown on the Contact page's "Join the community" button.
+            Used by the "Join the community" button on the Contact page and by the pop-up invite
+            that appears on the site.
           </p>
         </div>
         <div className="mt-4 flex gap-2 rounded-xl p-3" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
           <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "#C9A84C" }} />
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-            Your support number and payment numbers live in code (<code className="text-[11px]">src/lib/whatsapp.ts</code>), not here — changing them needs a code edit, not a settings edit. Say the word if you want those made editable from this screen too.
+            Everything on this page updates the whole site the moment you save — the same link and
+            numbers are used everywhere, no code edits needed.
           </p>
         </div>
       </div>
 
-      </div>
 
       {/* WhatsApp number */}
       <div className="rounded-2xl border border-border gradient-card p-6">
