@@ -17,9 +17,10 @@ type PayPhase = "ready" | "dialed";
 const USSD_CODE     = "*115#";
 const USSD_TEL_HREF = `tel:${encodeURIComponent(USSD_CODE)}`;
 
-const PAY_DETAILS = {
-  mtn:    { name: "Stanley Kabanda", number: "0765101494", label: "MTN Mobile Money", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/30", dot: "bg-yellow-400" },
-  airtel: { name: "Ngoma Audrian",   number: "0574161927", label: "Airtel Money",     color: "text-red-400",    bg: "bg-red-500/10",    border: "border-red-500/30",    dot: "bg-red-400"    },
+// Styling only — the actual number/name come from Admin → Settings.
+const PAY_STYLE = {
+  mtn:    { label: "MTN Mobile Money", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/30", dot: "bg-yellow-400" },
+  airtel: { label: "Airtel Money",     color: "text-red-400",    bg: "bg-red-500/10",    border: "border-red-500/30",    dot: "bg-red-400"    },
 };
 
 export function CheckoutFlow({
