@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { X, MessageCircle } from "lucide-react";
 import { useLocation } from "@tanstack/react-router";
+import { useSiteConfig } from "@/lib/siteConfig";
 
 const POPUP_KEY        = "axx_wa_community_popup_v1";
-const WA_COMMUNITY_LINK = "https://chat.whatsapp.com/GS48ieAaKkUHtRIHp0YVv8?s=sw&p=a&mlu=3";
+const FALLBACK_COMMUNITY_LINK = "https://chat.whatsapp.com/GS48ieAaKkUHtRIHp0YVv8?s=sw&p=a&mlu=3";
 
 export function WhatsAppCommunityPopup() {
+  const cfg = useSiteConfig();
   const [visible, setVisible] = useState(false);
   const [show,    setShow]    = useState(false);
   const { pathname } = useLocation();
@@ -42,7 +44,7 @@ export function WhatsAppCommunityPopup() {
 
   const join = () => {
     sessionStorage.setItem(POPUP_KEY, "1");
-    window.open(WA_COMMUNITY_LINK, "_blank");
+    window.open(cfg.whatsappGroupLink || FALLBACK_COMMUNITY_LINK, "_blank");
     setVisible(false);
     setTimeout(() => setShow(false), 400);
   };

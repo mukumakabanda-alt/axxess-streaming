@@ -16,7 +16,7 @@ import {
   getUser, rememberCustomer, getRememberedPhone, firstName,
 } from "@/lib/customer";
 import {
-  normalizePhone, WHATSAPP_PRIMARY, waLink,
+  normalizePhone, waLink,
 } from "@/lib/whatsapp";
 import {
   loginOneSignalUser, setOneSignalTags, promptPushPermission,
@@ -262,7 +262,7 @@ function RenewPage() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   We couldn't find a subscription for that number. Double-check it's the one you used, or{" "}
                   <a
-                    href={waLink(WHATSAPP_PRIMARY, "Hi Axxess! I need help finding my subscription.")}
+                    href={waLink(cfg.whatsappNumber, "Hi Axxess! I need help finding my subscription.")}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline text-primary"
@@ -491,7 +491,7 @@ function RenewPage() {
                 <p className="text-center text-xs text-muted-foreground pt-1">
                   Prefer to renew manually?{" "}
                   <a
-                    href={waLink(WHATSAPP_PRIMARY, `Hi Axxess! I'd like to renew my subscription for ${subs[0]?.customer_name}.`)}
+                    href={waLink(cfg.whatsappNumber, `Hi Axxess! I'd like to renew my subscription for ${subs[0]?.customer_name}.`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline text-foreground"

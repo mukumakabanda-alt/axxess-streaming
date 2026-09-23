@@ -1,10 +1,12 @@
 import { MessageCircle } from "lucide-react";
-import { WHATSAPP_PRIMARY, waLink } from "@/lib/whatsapp";
+import { waLink } from "@/lib/whatsapp";
+import { useSiteConfig } from "@/lib/siteConfig";
 
 export function WhatsAppFab() {
+  const cfg = useSiteConfig();
   return (
     <a
-      href={waLink(WHATSAPP_PRIMARY, "Hi Axxess Streaming!")}
+      href={waLink(cfg.whatsappNumber, "Hi Axxess Streaming!")}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Search, Copy, Trash2, Pencil, MessageSquare, Plus } from "lucide-react";
-import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
+import { useSiteConfig } from "@/lib/siteConfig";
 import { recordRewardUnlocks } from "@/lib/rewards";
 import { normalizePhone } from "@/lib/whatsapp";
 import {

@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { WHATSAPP_PRIMARY } from "@/lib/whatsapp";
+import { useSiteConfig } from "@/lib/siteConfig";
 import { MessageCircle } from "lucide-react";
 
 export function SiteFooter() {
+  const cfg = useSiteConfig();
+  const display = `+${cfg.whatsappNumber.slice(0,3)} ${cfg.whatsappNumber.slice(3,5)} ${cfg.whatsappNumber.slice(5,8)} ${cfg.whatsappNumber.slice(8)}`;
   return (
     <footer className="border-t border-border bg-card pb-28">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -38,10 +40,10 @@ export function SiteFooter() {
               Contact
             </h4>
             <ul className="mt-4 space-y-3 text-sm">
-              <li className="text-foreground/70">+260 57 416 1927</li>
+              <li className="text-foreground/70">{display}</li>
               <li>
                 <a
-                  href={`https://wa.me/${WHATSAPP_PRIMARY}`}
+                  href={`https://wa.me/${cfg.whatsappNumber}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
