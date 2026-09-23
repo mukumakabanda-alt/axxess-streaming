@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ const ACCENT_BARS = [
 ];
 
 export function Testimonials() {
+  const cfg = useSiteConfig();
   const [items,      setItems]      = useState<Testimonial[]>([]);
   const [messages,   setMessages]   = useState<PublicMessage[]>([]);
   const [submitting, setSubmitting] = useState(false);

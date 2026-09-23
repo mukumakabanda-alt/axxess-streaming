@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ const schema = z.object({
 
 /* ─── Reserve component ──────────────────────────────────────────────────── */
 export function Reserve() {
+  const cfg = useSiteConfig();
   const formRef    = useRef<HTMLFormElement>(null);
   const nameRef    = useRef<HTMLInputElement>(null);
 

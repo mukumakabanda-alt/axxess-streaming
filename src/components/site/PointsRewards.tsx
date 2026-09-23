@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ const STORAGE_KEY = "axx_customer_phone";
 
 
 export function PointsRewards() {
+  const cfg = useSiteConfig();
   const [phone, setPhone] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [points, setPoints] = useState(0);

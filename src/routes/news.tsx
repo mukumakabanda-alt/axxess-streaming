@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site/SiteShell";
 import { useEffect, useState, useCallback } from "react";
@@ -634,6 +635,7 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare, feat
   onView: (id: string) => void; onShare: (a: Article) => void;
   featured?: boolean;
 }) {
+  const cfg = useSiteConfig();
   const [expanded, setExpanded]     = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
 
