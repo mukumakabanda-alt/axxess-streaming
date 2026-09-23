@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -9,9 +10,10 @@ import { normalizePhone } from "@/lib/whatsapp";
 import { showRewardUnlock } from "./RewardUnlockToast";
 
 const STORAGE_KEY = "axx_customer_phone";
-const WA = "260574161927";
+
 
 export function PointsRewards() {
+  const cfg = useSiteConfig();
   const [phone, setPhone] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [points, setPoints] = useState(0);
@@ -350,7 +352,7 @@ export function PointsRewards() {
                       {/* Claim button */}
                       {unlocked && (
                         <a
-                          href={`https://wa.me/${WA}?text=${encodeURIComponent(claimMsg(tier))}`}
+                          href={`https://wa.me/${cfg.whatsappNumber}?text=${encodeURIComponent(claimMsg(tier))}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex-shrink-0 flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-bold transition-all hover:opacity-90"
@@ -372,7 +374,7 @@ export function PointsRewards() {
                     Refer a friend (+10 pts) or renew early (+5 pts). Every point counts.
                   </p>
                   <a
-                    href={`https://wa.me/${WA}?text=${encodeURIComponent("Hi Axxess! I want to refer a friend and earn points. How does it work?")}`}
+                    href={`https://wa.me/${cfg.whatsappNumber}?text=${encodeURIComponent("Hi Axxess! I want to refer a friend and earn points. How does it work?")}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90"

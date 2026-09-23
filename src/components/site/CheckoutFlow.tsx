@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, MessageCircle, Copy, Check, Zap, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { rememberCustomer, rememberRenewalDate, getRememberedName, getRememberedPhone } from "@/lib/customer";
-import { WHATSAPP_PRIMARY, normalizePhone, detectNetwork, type Network } from "@/lib/whatsapp";
+import { normalizePhone, detectNetwork, type Network } from "@/lib/whatsapp";
+import { useSiteConfig } from "@/lib/siteConfig";
 import { loginOneSignalUser, setOneSignalTags } from "@/lib/onesignal";
 import { toast } from "sonner";
 
@@ -17,9 +18,10 @@ type PayPhase = "ready" | "dialed";
 const USSD_CODE     = "*115#";
 const USSD_TEL_HREF = `tel:${encodeURIComponent(USSD_CODE)}`;
 
-const PAY_DETAILS = {
-  mtn:    { name: "Stanley Kabanda", number: "0765101494", label: "MTN Mobile Money", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/30", dot: "bg-yellow-400" },
-  airtel: { name: "Ngoma Audrian",   number: "0574161927", label: "Airtel Money",     color: "text-red-400",    bg: "bg-red-500/10",    border: "border-red-500/30",    dot: "bg-red-400"    },
+// Styling only — the actual number/name come from Admin → Settings.
+const PAY_STYLE = {
+  mtn:    { label: "MTN Mobile Money", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/30", dot: "bg-yellow-400" },
+  airtel: { label: "Airtel Money",     color: "text-red-400",    bg: "bg-red-500/10",    border: "border-red-500/30",    dot: "bg-red-400"    },
 };
 
 export function CheckoutFlow({
@@ -40,6 +42,7 @@ export function CheckoutFlow({
    */
   quickRenew?: boolean;
 }) {
+  const cfg = useSiteConfig();
   const [step,       setStep]       = useState<Step>("details");
   const [name,       setName]       = useState(getRememberedName());
   const [phone,      setPhone]      = useState(getRememberedPhone());
@@ -83,10 +86,12 @@ export function CheckoutFlow({
   }, [service]);
 
   const network = useMemo(() => detectNetwork(phone), [phone]);
-  const payInfo =
-    network === "mtn"    ? PAY_DETAILS.mtn    :
-    network === "airtel" ? PAY_DETAILS.airtel :
-    network === "zamtel" ? PAY_DETAILS.airtel : null;
+  const payInfo = useMemo(() => {
+    if (network === "mtn") return { ...PAY_STYLE.mtn, number: cfg.mtnNumber, name: cfg.mtnName };
+    if (network === "airtel" || network === "zamtel")
+      return { ...PAY_STYLE.airtel, number: cfg.airtelNumber, name: cfg.airtelName };
+    return null;
+  }, [network, cfg]);
   const isRerouted = network === "zamtel";
 
   if (!service) return null;
@@ -190,7 +195,7 @@ export function CheckoutFlow({
       `Please confirm my payment and send me my profile/login details. Thank you! 🙏` +
       upsellLine;
 
-    window.open(`https://wa.me/${WHATSAPP_PRIMARY}?text=${encodeURIComponent(msg)}`, "_blank");
+    window.open(`https://wa.me/${cfg.whatsappNumber}?text=${encodeURIComponent(msg)}`, "_blank");
 
     // Fire the checkout-pay-step event so the WA community popup knows
     // we're at peak engagement and can show itself

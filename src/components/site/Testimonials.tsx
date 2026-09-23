@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ const ACCENT_BARS = [
 ];
 
 export function Testimonials() {
+  const cfg = useSiteConfig();
   const [items,      setItems]      = useState<Testimonial[]>([]);
   const [messages,   setMessages]   = useState<PublicMessage[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -303,7 +305,7 @@ export function Testimonials() {
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
-                href={`https://wa.me/260574161927?text=${encodeURIComponent("Hi Axxess! 👋 I'd like to know more about your plans.")}`}
+                href={`https://wa.me/${cfg.whatsappNumber}?text=${encodeURIComponent("Hi Axxess! 👋 I'd like to know more about your plans.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full border px-8 py-3.5 text-sm font-semibold transition-all hover:border-white/30 hover:text-white"

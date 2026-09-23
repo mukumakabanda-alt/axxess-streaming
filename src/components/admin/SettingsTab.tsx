@@ -7,7 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Users, Newspaper, Info } from "lucide-react";
+import { Loader2, Users, Newspaper, Info, Phone, Wallet } from "lucide-react";
+import { rowsToConfig, setSiteConfig, loadSiteConfig } from "@/lib/siteConfig";
+import { normalizePhone } from "@/lib/whatsapp";
 
 // Every key here is read live by the public site — nothing obsolete.
 // whatsapp_group_link -> src/routes/contact.tsx ("Join the community")
@@ -16,6 +18,11 @@ import { Loader2, Users, Newspaper, Info } from "lucide-react";
 // news_cache_minutes -> src/routes/news.tsx (how long a fetched news batch is cached before refetching)
 const KEYS = [
   "whatsapp_group_link",
+  "whatsapp_number",
+  "mtn_payment_number",
+  "mtn_payment_name",
+  "airtel_payment_number",
+  "airtel_payment_name",
   "news_banner_enabled",
   "news_banner_message",
   "news_hero_enabled",
@@ -24,6 +31,11 @@ const KEYS = [
 
 const DEFAULTS: Record<string, string> = {
   whatsapp_group_link: "",
+  whatsapp_number: "260574161927",
+  mtn_payment_number: "0765101494",
+  mtn_payment_name: "Stanley Kabanda",
+  airtel_payment_number: "0574161927",
+  airtel_payment_name: "Ngoma Audrian",
   news_banner_enabled: "true",
   news_banner_message: "🎬 Everything you're reading about — watch it. Netflix K70 · Prime K60",
   news_hero_enabled: "true",
@@ -52,12 +64,20 @@ export function SettingsTab() {
   const saveAll = async () => {
     setSaving(true);
     try {
+      const toSave: Record<string, string> = {
+        ...values,
+        whatsapp_number: normalizePhone(values.whatsapp_number ?? ""),
+      };
       for (const k of KEYS) {
         const { error } = await supabase
           .from("site_settings")
-          .upsert({ key: k, value: values[k] ?? "", updated_at: new Date().toISOString() });
+          .upsert({ key: k, value: toSave[k] ?? "", updated_at: new Date().toISOString() });
         if (error) throw error;
       }
+      setValues(toSave);
+      // Push the new values to every screen immediately, no reload needed.
+      setSiteConfig(rowsToConfig(KEYS.map((k) => ({ key: k, value: toSave[k] ?? "" }))));
+      void loadSiteConfig(true);
       toast.success("Settings saved — live on the site now");
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't save settings");
@@ -99,14 +119,73 @@ export function SettingsTab() {
             placeholder="https://chat.whatsapp.com/..."
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
-            Shown on the Contact page's "Join the community" button.
+            Used by the "Join the community" button on the Contact page and by the pop-up invite
+            that appears on the site.
           </p>
         </div>
         <div className="mt-4 flex gap-2 rounded-xl p-3" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
           <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "#C9A84C" }} />
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-            Your support number and payment numbers live in code (<code className="text-[11px]">src/lib/whatsapp.ts</code>), not here — changing them needs a code edit, not a settings edit. Say the word if you want those made editable from this screen too.
+            Everything on this page updates the whole site the moment you save — the same link and
+            numbers are used everywhere, no code edits needed.
           </p>
+        </div>
+      </div>
+
+
+      {/* WhatsApp number */}
+      <div className="rounded-2xl border border-border gradient-card p-6">
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/12 text-primary">
+            <Phone className="h-4 w-4" />
+          </span>
+          <h3 className="font-display text-base font-bold">WhatsApp number</h3>
+        </div>
+        <div className="mt-4">
+          <Label>Support / orders number</Label>
+          <Input
+            value={values.whatsapp_number}
+            onChange={(e) => set("whatsapp_number", e.target.value)}
+            placeholder="0574161927"
+          />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Used by every WhatsApp button and link on the site — chat button, footer, contact page,
+            checkout confirmation, rewards, reservations, news and renewals. You can type it as
+            0574161927 or +260574161927; we save it in the right format.
+          </p>
+        </div>
+      </div>
+
+      {/* Mobile money */}
+      <div className="rounded-2xl border border-border gradient-card p-6">
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/12 text-primary">
+            <Wallet className="h-4 w-4" />
+          </span>
+          <h3 className="font-display text-base font-bold">Mobile money</h3>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Shown on the payment screen at checkout. MTN customers see the MTN details; Airtel and
+          Zamtel customers see the Airtel details.
+        </p>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label>MTN number</Label>
+            <Input value={values.mtn_payment_number} onChange={(e) => set("mtn_payment_number", e.target.value)} placeholder="0765101494" />
+          </div>
+          <div>
+            <Label>MTN account name</Label>
+            <Input value={values.mtn_payment_name} onChange={(e) => set("mtn_payment_name", e.target.value)} placeholder="Full name" />
+          </div>
+          <div>
+            <Label>Airtel number</Label>
+            <Input value={values.airtel_payment_number} onChange={(e) => set("airtel_payment_number", e.target.value)} placeholder="0574161927" />
+          </div>
+          <div>
+            <Label>Airtel account name</Label>
+            <Input value={values.airtel_payment_name} onChange={(e) => set("airtel_payment_name", e.target.value)} placeholder="Full name" />
+          </div>
         </div>
       </div>
 

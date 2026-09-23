@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site/SiteShell";
 import { useEffect, useState, useCallback } from "react";
@@ -67,7 +68,7 @@ const NEWSDATA_KEY = (import.meta as any).env?.VITE_NEWSDATA_KEY ?? "pub_528ce14
 const TMDB_KEY = (import.meta as any).env?.VITE_TMDB_KEY ?? "a88d5ae60c54ee1720dd60feda898521";
 const PREFS_KEY = "axx_news_prefs_v4";
 const CACHE_KEY = "axx_news_cache_v6";
-const WA = "260574161927";
+
 
 const DEFAULT_SETTINGS: NewsSettings = {
   bannerEnabled: true,
@@ -634,6 +635,7 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare, feat
   onView: (id: string) => void; onShare: (a: Article) => void;
   featured?: boolean;
 }) {
+  const cfg = useSiteConfig();
   const [expanded, setExpanded]     = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
 
@@ -837,7 +839,7 @@ function ArticleCard({ article, prefs, onLike, onBookmark, onView, onShare, feat
 
             {/* WhatsApp order shortcut */}
             <a
-              href={`https://wa.me/${WA}?text=${encodeURIComponent(`Hi Axxess! I just read about ${article.headline.slice(0, 50)} and I want to subscribe. Can you help me?`)}`}
+              href={`https://wa.me/${cfg.whatsappNumber}?text=${encodeURIComponent(`Hi Axxess! I just read about ${article.headline.slice(0, 50)} and I want to subscribe. Can you help me?`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"

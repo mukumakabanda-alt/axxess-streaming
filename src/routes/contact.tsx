@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site/SiteShell";
 import { Phone, MessageCircle, Users, HelpCircle } from "lucide-react";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { WHATSAPP_PRIMARY, waLink } from "@/lib/whatsapp";
+import { waLink } from "@/lib/whatsapp";
+import { useSiteConfig } from "@/lib/siteConfig";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -20,16 +19,8 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
-  const [groupLink, setGroupLink] = useState("");
-
-  useEffect(() => {
-    supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "whatsapp_group_link")
-      .maybeSingle()
-      .then(({ data }) => setGroupLink(data?.value ?? ""));
-  }, []);
+  const cfg = useSiteConfig();
+  const groupLink = cfg.whatsappGroupLink;
 
   const formatPhone = (p: string) =>
     `+${p.slice(0, 3)} ${p.slice(3, 5)} ${p.slice(5, 8)} ${p.slice(8)}`;
@@ -55,13 +46,13 @@ function ContactPage() {
               </span>
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Talk to us</p>
-                <a href={`tel:+${WHATSAPP_PRIMARY}`} className="font-display text-xl font-bold">
-                  {formatPhone(WHATSAPP_PRIMARY)}
+                <a href={`tel:+${cfg.whatsappNumber}`} className="font-display text-xl font-bold">
+                  {formatPhone(cfg.whatsappNumber)}
                 </a>
               </div>
             </div>
             <a
-              href={waLink(WHATSAPP_PRIMARY, "Hi Axxess Streaming!")}
+              href={waLink(cfg.whatsappNumber, "Hi Axxess Streaming!")}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-black"

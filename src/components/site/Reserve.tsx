@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ const schema = z.object({
 
 /* ─── Reserve component ──────────────────────────────────────────────────── */
 export function Reserve() {
+  const cfg = useSiteConfig();
   const formRef    = useRef<HTMLFormElement>(null);
   const nameRef    = useRef<HTMLInputElement>(null);
 
@@ -123,7 +125,7 @@ export function Reserve() {
     const waMessage = encodeURIComponent(
       `Hi Axxess! I just reserved my ${confirmed.serviceName} slot.\n\nName: ${confirmed.name}\nWhatsApp: ${confirmed.phone}\n\nPlease confirm my place on the list. 🙏`
     );
-    const waLink = `https://wa.me/260574161927?text=${waMessage}`;
+    const waLink = `https://wa.me/${cfg.whatsappNumber}?text=${waMessage}`;
 
     return (
       <section className="min-h-[80vh] flex items-center justify-center px-4 py-16 sm:px-6">

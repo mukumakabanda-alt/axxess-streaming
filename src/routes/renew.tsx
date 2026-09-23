@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,7 +17,7 @@ import {
   getUser, rememberCustomer, getRememberedPhone, firstName,
 } from "@/lib/customer";
 import {
-  normalizePhone, WHATSAPP_PRIMARY, waLink,
+  normalizePhone, waLink,
 } from "@/lib/whatsapp";
 import {
   loginOneSignalUser, setOneSignalTags, promptPushPermission,
@@ -57,6 +58,7 @@ function urgencyColour(days: number) {
 }
 
 function RenewPage() {
+  const cfg = useSiteConfig();
   // Read phone from URL param (?phone=260...) so push notification deep-links
   // and the RenewalBanner link both land with the field pre-filled
   const search   = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
@@ -262,7 +264,7 @@ function RenewPage() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   We couldn't find a subscription for that number. Double-check it's the one you used, or{" "}
                   <a
-                    href={waLink(WHATSAPP_PRIMARY, "Hi Axxess! I need help finding my subscription.")}
+                    href={waLink(cfg.whatsappNumber, "Hi Axxess! I need help finding my subscription.")}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline text-primary"
@@ -491,7 +493,7 @@ function RenewPage() {
                 <p className="text-center text-xs text-muted-foreground pt-1">
                   Prefer to renew manually?{" "}
                   <a
-                    href={waLink(WHATSAPP_PRIMARY, `Hi Axxess! I'd like to renew my subscription for ${subs[0]?.customer_name}.`)}
+                    href={waLink(cfg.whatsappNumber, `Hi Axxess! I'd like to renew my subscription for ${subs[0]?.customer_name}.`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline text-foreground"
