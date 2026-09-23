@@ -1,3 +1,4 @@
+import { useSiteConfig } from "@/lib/siteConfig";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,6 +58,7 @@ function urgencyColour(days: number) {
 }
 
 function RenewPage() {
+  const cfg = useSiteConfig();
   // Read phone from URL param (?phone=260...) so push notification deep-links
   // and the RenewalBanner link both land with the field pre-filled
   const search   = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
