@@ -84,10 +84,12 @@ export function CheckoutFlow({
   }, [service]);
 
   const network = useMemo(() => detectNetwork(phone), [phone]);
-  const payInfo =
-    network === "mtn"    ? PAY_DETAILS.mtn    :
-    network === "airtel" ? PAY_DETAILS.airtel :
-    network === "zamtel" ? PAY_DETAILS.airtel : null;
+  const payInfo = useMemo(() => {
+    if (network === "mtn") return { ...PAY_STYLE.mtn, number: cfg.mtnNumber, name: cfg.mtnName };
+    if (network === "airtel" || network === "zamtel")
+      return { ...PAY_STYLE.airtel, number: cfg.airtelNumber, name: cfg.airtelName };
+    return null;
+  }, [network, cfg]);
   const isRerouted = network === "zamtel";
 
   if (!service) return null;
