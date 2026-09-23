@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, MessageCircle, Copy, Check, Zap, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { rememberCustomer, rememberRenewalDate, getRememberedName, getRememberedPhone } from "@/lib/customer";
-import { WHATSAPP_PRIMARY, normalizePhone, detectNetwork, type Network } from "@/lib/whatsapp";
+import { normalizePhone, detectNetwork, type Network } from "@/lib/whatsapp";
+import { useSiteConfig } from "@/lib/siteConfig";
 import { loginOneSignalUser, setOneSignalTags } from "@/lib/onesignal";
 import { toast } from "sonner";
 
@@ -41,6 +42,7 @@ export function CheckoutFlow({
    */
   quickRenew?: boolean;
 }) {
+  const cfg = useSiteConfig();
   const [step,       setStep]       = useState<Step>("details");
   const [name,       setName]       = useState(getRememberedName());
   const [phone,      setPhone]      = useState(getRememberedPhone());
@@ -193,7 +195,7 @@ export function CheckoutFlow({
       `Please confirm my payment and send me my profile/login details. Thank you! 🙏` +
       upsellLine;
 
-    window.open(`https://wa.me/${WHATSAPP_PRIMARY}?text=${encodeURIComponent(msg)}`, "_blank");
+    window.open(`https://wa.me/${cfg.whatsappNumber}?text=${encodeURIComponent(msg)}`, "_blank");
 
     // Fire the checkout-pay-step event so the WA community popup knows
     // we're at peak engagement and can show itself
