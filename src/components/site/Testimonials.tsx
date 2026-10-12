@@ -290,7 +290,7 @@ export function Testimonials() {
                 </span>
               </h3>
               <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
-                Netflix K70 · Prime K60 · Both for K140 · Activated in 15 mins
+                Netflix K70 · Prime K60 · Both for K120 · Activated in 15 mins
               </p>
             </div>
             <div className="flex flex-col gap-3 w-full sm:w-auto">

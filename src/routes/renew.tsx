@@ -443,7 +443,7 @@ function RenewPage() {
                       </p>
                     </div>
                     <p className="text-sm font-semibold text-foreground mb-3">
-                      You're only on one platform. Want both Netflix + Prime for K140/mo?
+                      You're only on one platform. Want both Netflix + Prime for K120/mo?
                     </p>
                     <div className="space-y-2">
                       {upsellServices(subs).map((s) => (
