@@ -48,6 +48,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          renewal_date: string | null
           status: string
           updated_at: string
         }
@@ -57,6 +58,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          renewal_date?: string | null
           status?: string
           updated_at?: string
         }
@@ -66,6 +68,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          renewal_date?: string | null
           status?: string
           updated_at?: string
         }
@@ -306,6 +309,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          renewal_date: string | null
           status: string
           updated_at: string
         }
@@ -315,6 +319,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          renewal_date?: string | null
           status?: string
           updated_at?: string
         }
@@ -324,6 +329,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          renewal_date?: string | null
           status?: string
           updated_at?: string
         }
@@ -792,6 +798,7 @@ export type Database = {
         Returns: number
       }
       claim_first_admin: { Args: never; Returns: boolean }
+      cleanup_old_customer_data: { Args: never; Returns: undefined }
       get_customer_points: {
         Args: { _phone: string }
         Returns: {
