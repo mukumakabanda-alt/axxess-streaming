@@ -12,8 +12,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { EditAccountDialog, RenewalChip, RenewalReminders } from "./AccountExtras";
 import {
-  Plus, Trash2, Eye, EyeOff, RotateCcw, UserPlus,
+  Plus, Trash2, Pencil, Eye, EyeOff, RotateCcw, UserPlus,
   ChevronLeft, AlertTriangle, ShieldCheck, KeyRound, Loader2,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ type Account = {
   account_password: string;
   status: string;
   notes: string | null;
+  renewal_date: string | null;
 };
 
 type Profile = {
@@ -49,6 +51,7 @@ export function PrimeVideoAccountsTab() {
   const [editProfile,setEditProfile]= useState<Profile | null>(null);
   const [pinModal,   setPinModal]   = useState<Profile | null>(null);
   const [newPin,     setNewPin]     = useState("");
+  const [editAccount, setEditAccount] = useState<Account | null>(null);
 
   const load = async () => {
     const [{ data: a }, { data: p }] = await Promise.all([
@@ -198,6 +201,8 @@ export function PrimeVideoAccountsTab() {
         ))}
       </div>
 
+      <RenewalReminders accounts={accounts} platform="Prime Video" />
+
       {/* Vulnerable banner */}
       {totals.vulnerable > 0 && (
         <div
@@ -260,7 +265,11 @@ export function PrimeVideoAccountsTab() {
                       </span>
                     )}
                   </div>
+                  <div className="mt-2"><RenewalChip date={a.renewal_date} /></div>
                   <div className="mt-3 flex justify-end gap-1">
+                    <button onClick={() => setEditAccount(a)} className="rounded-md p-1.5 hover:bg-muted" title="Edit account">
+                      <Pencil className="h-4 w-4" />
+                    </button>
                     <button onClick={() => quickAssign(a.id)} className="rounded-md p-1.5 hover:bg-muted" title="Quick assign">
                       <UserPlus className="h-4 w-4" />
                     </button>
@@ -418,6 +427,8 @@ export function PrimeVideoAccountsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditAccountDialog account={editAccount} table="prime_accounts" onClose={() => setEditAccount(null)} onSaved={load} />
 
       {/* PIN confirmation dialog */}
       <Dialog open={!!pinModal} onOpenChange={o => { if (!o) { setPinModal(null); setNewPin(""); } }}>

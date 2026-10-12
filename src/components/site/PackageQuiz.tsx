@@ -63,7 +63,7 @@ function recommend(a: Record<string, string>): Rec {
     key: "bundle", name: "All Access",
     tagline: "Netflix + Prime Video. One price. Zero compromise.",
     reason: "With your taste and your crowd, you'd be switching apps constantly. Get both for less than either at full price.",
-    emoji: "✨", price: 140, realPrice: 314,
+    emoji: "✨", price: 120, realPrice: 314,
   };
   if (a.vibe === "originals" || a.watching === "couple") return {
     key: "prime", name: "Prime Video",

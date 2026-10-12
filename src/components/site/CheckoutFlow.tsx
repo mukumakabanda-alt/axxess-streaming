@@ -183,8 +183,8 @@ export function CheckoutFlow({
     const upsellLine = isAllAccess
       ? ""
       : isNetflix
-      ? "\n\nP.S. — I'd also like to know about upgrading to All Access (Netflix + Prime Video for K140). Please let me know when you confirm my order."
-      : "\n\nP.S. — I'd also like to know about upgrading to All Access (both Netflix + Prime for K140). Please mention it when you confirm.";
+      ? "\n\nP.S. — I'd also like to know about upgrading to All Access (Netflix + Prime Video for K120). Please let me know when you confirm my order."
+      : "\n\nP.S. — I'd also like to know about upgrading to All Access (both Netflix + Prime for K120). Please mention it when you confirm.";
 
     const msg =
       `Hi Axxess! 👋 I've just sent payment.\n\n` +
@@ -331,7 +331,7 @@ export function CheckoutFlow({
                   <div className="rounded-xl p-3 flex items-start gap-3" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
                     <Zap className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: "#C9A84C" }} />
                     <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
-                      <span className="font-bold" style={{ color: "#C9A84C" }}>Upgrade tip:</span> Get Netflix + Prime Video together for just K140/mo.{" "}
+                      <span className="font-bold" style={{ color: "#C9A84C" }}>Upgrade tip:</span> Get Netflix + Prime Video together for just K120/mo.{" "}
                       <button type="button" onClick={onClose} className="underline" style={{ color: "#C9A84C" }}>
                         See All Access
                       </button>
@@ -456,7 +456,7 @@ export function CheckoutFlow({
                   <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#E5192A" }}>💡 While you wait</p>
                   <p className="text-sm font-semibold text-white mb-0.5">Love what you ordered?</p>
                   <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-                    Next time consider All Access — Netflix + Prime Video for K140/mo. Your Axxess agent will tell you more.
+                    Next time consider All Access — Netflix + Prime Video for K120/mo. Your Axxess agent will tell you more.
                   </p>
                 </div>
               )}
