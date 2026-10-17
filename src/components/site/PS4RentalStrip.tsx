@@ -160,7 +160,8 @@ export function PS4RentalStrip() {
               Not in Kitwe? Streaming works anywhere in Zambia ↑
             </a>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </section>
   );
