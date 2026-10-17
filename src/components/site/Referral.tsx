@@ -28,7 +28,7 @@ export function Referral() {
   const referralLink = code ? `${origin}/?ref=${code}` : "";
 
   // The message shared — human, warm, Zambian
-  const shareMessage = `Hey! 👋 Get Netflix or Prime Video in Zambia — K70/mo, no card needed, activated in 15 mins via WhatsApp.\n\nSign up through my link and we both benefit: ${referralLink}`;
+  const shareMessage = `Hey! 👋 Get Netflix or Prime Video in Zambia — K90/mo, no card needed, activated in 15 mins via WhatsApp.\n\nSign up through my link and we both benefit: ${referralLink}`;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

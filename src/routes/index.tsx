@@ -5,6 +5,7 @@ import { Hero3D } from "@/components/site/Hero3D";
 import { RenewalBanner } from "@/components/site/RenewalBanner";
 
 const Pricing      = lazy(() => import("@/components/site/Pricing").then(m => ({ default: m.Pricing })));
+const PS4RentalStrip = lazy(() => import("@/components/site/PS4RentalStrip").then(m => ({ default: m.PS4RentalStrip })));
 const PackageQuiz  = lazy(() => import("@/components/site/PackageQuiz").then(m => ({ default: m.PackageQuiz })));
 const HowItWorks   = lazy(() => import("@/components/site/HowItWorks").then(m => ({ default: m.HowItWorks })));
 const Testimonials = lazy(() => import("@/components/site/Testimonials").then(m => ({ default: m.Testimonials })));
@@ -65,6 +66,7 @@ function HomePage() {
       <RenewalBanner />
       <Hero3D />
       <DeferredSection minHeight={640}><Pricing /></DeferredSection>
+      <DeferredSection minHeight={200}><PS4RentalStrip /></DeferredSection>
       <DeferredSection minHeight={480}><PackageQuiz /></DeferredSection>
       <DeferredSection minHeight={480}><HowItWorks /></DeferredSection>
       <DeferredSection minHeight={420}><Testimonials /></DeferredSection>
