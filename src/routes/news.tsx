@@ -72,7 +72,7 @@ const CACHE_KEY = "axx_news_cache_v6";
 
 const DEFAULT_SETTINGS: NewsSettings = {
   bannerEnabled: true,
-  bannerMessage: "🎬 Everything you're reading about — watch it. Netflix K70 · Prime K60",
+  bannerMessage: "🎬 Everything you're reading about — watch it. Netflix K90 · Prime K60",
   heroEnabled: true,
   cacheMinutes: 45,
 };
@@ -139,7 +139,7 @@ async function fetchTMDB(id: number, type: "movie" | "tv") {
 
 /* ─── Editorial helpers ──────────────────────────────────────────────────── */
 const ZAMBIAN_ANGLES: Record<string, string> = {
-  netflix:   "Netflix Zambia is real — no more borrowing your cousin's login. Axxess has you sorted at K70/month.",
+  netflix:   "Netflix Zambia is real — no more borrowing your cousin's login. Axxess has you sorted at K90/month.",
   prime:     "Prime Video hits different when you're watching from your couch in Lusaka. K60/month via Axxess.",
   dstv:      "DStv has been in Zambian living rooms longer than some of us have been alive. Reserve your slot.",
   streaming: "Zambians are out here watching on mobile data like absolute champions. Axxess keeps it affordable.",
@@ -147,7 +147,7 @@ const ZAMBIAN_ANGLES: Record<string, string> = {
 };
 
 const CTAS = [
-  { label: "Watch on Netflix — K70/mo",    url: "/#plans" },
+  { label: "Watch on Netflix — K90/mo",    url: "/#plans" },
   { label: "Watch on Prime Video — K60/mo", url: "/#plans" },
   { label: "Get All Access — K120/mo",      url: "/#plans" },
   { label: "Reserve Your Slot →",           url: "/reserve" },
@@ -216,12 +216,12 @@ function craftBody(title: string, desc: string, zambianAngle: string): string {
 }
 
 const OPINIONS = [
-  "If this doesn't make you open Netflix right now, I don't know what will. K70/month via Axxess. No excuses.",
+  "If this doesn't make you open Netflix right now, I don't know what will. K90/month via Axxess. No excuses.",
   "This is exactly the content Zambians deserve access to. The price used to be the barrier. Axxess fixed that.",
-  "Elite content deserves elite access. Axxess — K70 Netflix, K60 Prime, K120 both.",
+  "Elite content deserves elite access. Axxess — K90 Netflix, K60 Prime, K120 both.",
   "Hot take: if you're not watching this, your entertainment taste needs a serious upgrade.",
   "Zambia has always had taste. Now we need the access. That's what Axxess is for.",
-  "This is better than anything on free-to-air TV. Worth every ngwee of that K70.",
+  "This is better than anything on free-to-air TV. Worth every ngwee of that K90.",
   "The show is a 10/10. Your streaming access should match. Axxess sorts you out.",
 ];
 
@@ -240,23 +240,23 @@ const STATIC_ARTICLES: Article[] = [
     id: "stranger-things-5",
     headline: "Stranger Things Season 5 Is The End And Netflix Is Not Playing",
     hook: "The Duffer Brothers confirmed this is it. No spin-offs. No reboots. Hawkins dies with this season and we are emotionally unprepared. 😭",
-    body: "Netflix dropped the official teaser for Stranger Things Season 5 and the internet collectively stopped breathing.\n\nEpisodes will be the longest in the show's history — some reportedly over an hour. No filler. No budget cuts. This is their goodbye gift to one of the most culturally defining shows of the streaming era.\n\n🇿🇲 *Zambian angle:* Zambians have been watching Stranger Things since Season 1 on borrowed passwords and sketchy streams. Now watch the FINAL season properly — K70/month for Netflix via Axxess. No more borrowing.",
+    body: "Netflix dropped the official teaser for Stranger Things Season 5 and the internet collectively stopped breathing.\n\nEpisodes will be the longest in the show's history — some reportedly over an hour. No filler. No budget cuts. This is their goodbye gift to one of the most culturally defining shows of the streaming era.\n\n🇿🇲 *Zambian angle:* Zambians have been watching Stranger Things since Season 1 on borrowed passwords and sketchy streams. Now watch the FINAL season properly — K90/month for Netflix via Axxess. No more borrowing.",
     opinion: "My controversial take: Will Byers was the most important character the entire time and nobody talked about it. Season 5 will prove me right.",
     category: "hot",
     emoji: "🔮",
-    shareText: "Stranger Things Season 5 is the FINAL season 😭🔮 No spin-offs, no reboots — just pure finality. Watch on Netflix via Axxess — K70/month",
+    shareText: "Stranger Things Season 5 is the FINAL season 😭🔮 No spin-offs, no reboots — just pure finality. Watch on Netflix via Axxess — K90/month",
     tmdbId: 66732,
     tmdbType: "tv",
     accentColor: "#E5192A",
     stats: [
       { label: "Season 4 views",    value: "1.35B hours" },
       { label: "Countries trending", value: "93" },
-      { label: "Via Axxess",        value: "K70/month" },
+      { label: "Via Axxess",        value: "K90/month" },
     ],
     readTime: 3,
     controversial: true,
     timestamp: new Date().toISOString(),
-    cta: { label: "Get Netflix — K70/mo", url: "/#plans" },
+    cta: { label: "Get Netflix — K90/mo", url: "/#plans" },
   },
   {
     id: "the-boys-s5",
@@ -288,19 +288,19 @@ const STATIC_ARTICLES: Article[] = [
     opinion: "Squid Game Season 2 ended like a Zambian exam — you thought you were done and then there was a whole second page. Hot take: the games were never the point. The people running them always were.",
     category: "hot",
     emoji: "🦑",
-    shareText: "Squid Game Season 3 is in post-production 🦑 After THAT ending?? We are absolutely NOT ready 😭 Netflix via Axxess — K70/month",
+    shareText: "Squid Game Season 3 is in post-production 🦑 After THAT ending?? We are absolutely NOT ready 😭 Netflix via Axxess — K90/month",
     tmdbId: 93405,
     tmdbType: "tv",
     accentColor: "#E5192A",
     stats: [
       { label: "S2 week 1 viewers", value: "68M households" },
       { label: "Countries top 10",  value: "93" },
-      { label: "Via Axxess",        value: "K70/month" },
+      { label: "Via Axxess",        value: "K90/month" },
     ],
     readTime: 2,
     controversial: true,
     timestamp: new Date().toISOString(),
-    cta: { label: "Watch on Netflix — K70/mo", url: "/#plans" },
+    cta: { label: "Watch on Netflix — K90/mo", url: "/#plans" },
   },
   {
     id: "fallout-s2",
@@ -328,11 +328,11 @@ const STATIC_ARTICLES: Article[] = [
     id: "zambia-streaming",
     headline: "Zambia's Streaming Consumption Grew 67% In 2024 — And These Numbers Are Wild",
     hook: "A new report confirmed Zambians spent 67% more time streaming in 2024. The streaming revolution didn't come — it already happened. Are you in it? 🇿🇲",
-    body: "Mobile data usage for video streaming in Zambia grew 67% in 2024. 78% of that streaming happens on a smartphone.\n\nPeople watch on minibuses, during lunch, at the saloon, in the office. Streaming has become Zambia's new radio.\n\nThe biggest barrier remains cost — official subscriptions are priced in dollars. Axxess exists to fix that: Netflix K70, Prime K60, both for K120.",
+    body: "Mobile data usage for video streaming in Zambia grew 67% in 2024. 78% of that streaming happens on a smartphone.\n\nPeople watch on minibuses, during lunch, at the saloon, in the office. Streaming has become Zambia's new radio.\n\nThe biggest barrier remains cost — official subscriptions are priced in dollars. Axxess exists to fix that: Netflix K90, Prime K60, both for K120.",
     opinion: "The data says Zambia is ready. The question is just whether you're watching on a dodgy stream or a proper account. Get a proper account. You deserve better quality.",
     category: "zambia",
     emoji: "🇿🇲",
-    shareText: "Zambia's streaming grew 67% in 2024 🇿🇲 We are officially a streaming nation. Axxess keeps it affordable — Netflix K70, Prime K60 🔥",
+    shareText: "Zambia's streaming grew 67% in 2024 🇿🇲 We are officially a streaming nation. Axxess keeps it affordable — Netflix K90, Prime K60 🔥",
     accentColor: "#198754",
     stats: [
       { label: "Streaming growth",    value: "+67%" },
@@ -342,24 +342,24 @@ const STATIC_ARTICLES: Article[] = [
     readTime: 2,
     controversial: false,
     timestamp: new Date().toISOString(),
-    cta: { label: "Join the movement — K70/mo", url: "/#plans" },
+    cta: { label: "Join the movement — K90/mo", url: "/#plans" },
   },
   {
     id: "wednesday-s2",
     headline: "Wednesday Season 2 Looks Darker, Weirder, And More Wednesday Than Season 1 Ever Was",
     hook: "Jenna Ortega looks like she's done being polite. The teaser shows her fully unleashed and honestly? We are HERE for it. 🖤",
-    body: "Wednesday Season 1: 1.2 billion hours viewed in its first month. The pressure on Season 2 is immense.\n\nFrom what Netflix has shown, Season 2 leans harder into supernatural horror, gives Wednesday a proper character arc, and introduces new Nevermore students who are clearly doomed.\n\n🇿🇲 *Zambian angle:* Wednesday Addams refusing to conform while everyone pressures her to be 'normal'? That's every brilliant Zambian student who was told to fit in. Wednesday is Zambian energy. Watch it for K70/month via Axxess.",
+    body: "Wednesday Season 1: 1.2 billion hours viewed in its first month. The pressure on Season 2 is immense.\n\nFrom what Netflix has shown, Season 2 leans harder into supernatural horror, gives Wednesday a proper character arc, and introduces new Nevermore students who are clearly doomed.\n\n🇿🇲 *Zambian angle:* Wednesday Addams refusing to conform while everyone pressures her to be 'normal'? That's every brilliant Zambian student who was told to fit in. Wednesday is Zambian energy. Watch it for K90/month via Axxess.",
     opinion: "Season 1 was holding back. Season 2 looks like they finally gave Jenna Ortega the full budget and said 'do what you want.' That's always when great TV happens.",
     category: "series",
     emoji: "🖤",
-    shareText: "Wednesday Season 2 looks absolutely UNHINGED 🖤 Jenna Ortega said no more playing nice. Netflix via Axxess — K70/month",
+    shareText: "Wednesday Season 2 looks absolutely UNHINGED 🖤 Jenna Ortega said no more playing nice. Netflix via Axxess — K90/month",
     tmdbId: 119051,
     tmdbType: "tv",
     accentColor: "#7C3AED",
     stats: [
       { label: "S1 views (month 1)", value: "1.2B hours" },
       { label: "IMDb rating",        value: "8.1/10" },
-      { label: "Via Axxess",         value: "K70/month" },
+      { label: "Via Axxess",         value: "K90/month" },
     ],
     readTime: 2,
     controversial: false,
@@ -369,15 +369,15 @@ const STATIC_ARTICLES: Article[] = [
   {
     id: "all-access-case",
     headline: "K120 For Both Netflix AND Prime Video Is Actually The Smartest Financial Decision You Can Make",
-    hook: "You're spending K70 on Netflix. Your friend is spending K60 on Prime. You're both missing half the shows. There's a smarter way and it costs K10 less than paying separately. Do the maths. 🎯",
+    hook: "You're spending K90 on Netflix. Your friend is spending K60 on Prime. You're both missing half the shows. There's a smarter way and it costs K10 less than paying separately. Do the maths. 🎯",
     body: "Netflix: Stranger Things, Squid Game, Wednesday, Outer Banks, Baby Reindeer.\nPrime Video: The Boys, Fallout, The Grand Tour, Citadel.\nYou need both.\n\nAxxess All Access = K120/month. Less than one Shoprite grocery run. Less than two tanks of petrol. Less than one night out.\n\nActivated in 15 minutes via WhatsApp. No card. No contract. No stress.",
     opinion: "Choosing between Netflix and Prime in 2025 is like choosing between lunch and dinner. You need both. K120 a month. Stop playing games with yourself.",
     category: "axxess",
     emoji: "🎯",
-    shareText: "Netflix K70 + Prime K60 = K130 separately. OR K120 for BOTH via Axxess All Access 🤯 The maths literally don't miss",
+    shareText: "Netflix K90 + Prime K60 = K130 separately. OR K120 for BOTH via Axxess All Access 🤯 The maths literally don't miss",
     accentColor: "#C9A84C",
     stats: [
-      { label: "Netflix only",   value: "K70/month" },
+      { label: "Netflix only",   value: "K90/month" },
       { label: "Prime only",     value: "K60/month" },
       { label: "All Access",     value: "K120/month" },
     ],
@@ -390,21 +390,21 @@ const STATIC_ARTICLES: Article[] = [
     id: "dstv-vs-streaming",
     headline: "Netflix vs DStv In Zambia — The Honest Breakdown Nobody Else Will Give You",
     hook: "Zambia has been loyal to DStv for 30 years. Netflix arrived and chaos followed. Here's the real truth about both — and why you probably need both. 📺",
-    body: "DStv: live football, local African content, familiar interface, been in our homes since before some of us were born.\n\nNetflix + Prime: better originals, on-demand, no rain signal disruption, more affordable via Axxess.\n\nThe honest answer is: most Zambian households will end up with both. DStv for live sports. Netflix/Prime for everything else. Axxess makes the streaming side affordable — K70, K60, or K120 for both.",
+    body: "DStv: live football, local African content, familiar interface, been in our homes since before some of us were born.\n\nNetflix + Prime: better originals, on-demand, no rain signal disruption, more affordable via Axxess.\n\nThe honest answer is: most Zambian households will end up with both. DStv for live sports. Netflix/Prime for everything else. Axxess makes the streaming side affordable — K90, K60, or K120 for both.",
     opinion: "DStv and Netflix are not competitors — they're complements. Any household with both is simply winning at entertainment. Hot take: SuperSport alone justifies DStv. Everything else? Go streaming.",
     category: "zambia",
     emoji: "📺",
-    shareText: "Netflix vs DStv in Zambia 🇿🇲 Honest breakdown: they're actually complements. And Axxess makes streaming affordable — K70 Netflix, K60 Prime",
+    shareText: "Netflix vs DStv in Zambia 🇿🇲 Honest breakdown: they're actually complements. And Axxess makes streaming affordable — K90 Netflix, K60 Prime",
     accentColor: "#198754",
     stats: [
       { label: "DStv in Zambia",   value: "30+ years" },
-      { label: "Netflix via Axxess", value: "K70/month" },
+      { label: "Netflix via Axxess", value: "K90/month" },
       { label: "Both platforms",    value: "K120/month" },
     ],
     readTime: 3,
     controversial: true,
     timestamp: new Date().toISOString(),
-    cta: { label: "Get streaming sorted — K70/mo", url: "/#plans" },
+    cta: { label: "Get streaming sorted — K90/mo", url: "/#plans" },
   },
 ];
 
@@ -498,7 +498,7 @@ async function fetchLiveNews(): Promise<Article[]> {
           accentColor,
           stats: [
             ...(rating ? [{ label: "TMDB Rating", value: `${rating.toFixed(1)}/10` }] : []),
-            { label: "Netflix via Axxess", value: "K70/month" },
+            { label: "Netflix via Axxess", value: "K90/month" },
             { label: "Prime via Axxess",   value: "K60/month" },
           ],
           readTime:      Math.floor(Math.random() * 2) + 2,

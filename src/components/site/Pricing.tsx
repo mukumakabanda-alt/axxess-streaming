@@ -7,14 +7,14 @@ import { getRememberedPhone, rememberCustomer } from "@/lib/customer";
 import { normalizePhone } from "@/lib/whatsapp";
 
 /* ─── Real direct prices in ZMW ─────────────────────────────────────────────
-   Netflix:    $9.99 USD × K18.38 = K185/mo
-   Prime:      $5.99 USD × K18.38 = K110/mo
-   Both:       K185 + K110       = K295/mo
+   Netflix:    K220/mo direct
+   Prime:      K131/mo direct
+   Both:       K220 + K131 = K351/mo
 ────────────────────────────────────────────────────────────────────────────── */
 const DIRECT_PRICES: Record<string, { zmw: number; label: string }> = {
-  netflix: { zmw: 185, label: "netflix.com direct" },
-  prime:   { zmw: 110, label: "amazon.com direct" },
-  bundle:  { zmw: 295, label: "both direct" },
+  netflix: { zmw: 220, label: "netflix.com direct" },
+  prime:   { zmw: 131, label: "amazon.com direct" },
+  bundle:  { zmw: 351, label: "both direct" },
 };
 
 function getDirectPrice(slug: string, name: string) {
