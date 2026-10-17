@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowRight, Gamepad2, MapPin, X } from "lucide-react";
 import { useSiteConfig } from "@/lib/siteConfig";
 
@@ -79,8 +80,8 @@ export function PS4RentalStrip() {
         </div>
       </div>
 
-      {/* Bottom sheet */}
-      {open && (
+      {/* Bottom sheet — portaled to <body> so ancestor transforms can't trap it */}
+      {open && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
