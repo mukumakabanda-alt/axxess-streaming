@@ -37,7 +37,7 @@ const DEFAULTS: Record<string, string> = {
   airtel_payment_number: "0574161927",
   airtel_payment_name: "Ngoma Audrian",
   news_banner_enabled: "true",
-  news_banner_message: "🎬 Everything you're reading about — watch it. Netflix K70 · Prime K60",
+  news_banner_message: "🎬 Everything you're reading about — watch it. Netflix K90 · Prime K60",
   news_hero_enabled: "true",
   news_cache_minutes: "45",
 };

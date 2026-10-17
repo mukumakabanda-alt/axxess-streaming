@@ -44,7 +44,7 @@ const QUESTIONS: Question[] = [
     headline: "What feels right on price?",
     sub: "All prices in Zambian Kwacha.",
     options: [
-      { emoji: "💚", label: "Keep it light",      sub: "Around K60–K70/mo", value: "light"   },
+      { emoji: "💚", label: "Keep it light",      sub: "Around K60–K90/mo", value: "light"   },
       { emoji: "💛", label: "Best value wins",    sub: "Around K100/mo",    value: "value"   },
       { emoji: "👑", label: "Give me everything", sub: "Max content",       value: "premium" },
     ],
