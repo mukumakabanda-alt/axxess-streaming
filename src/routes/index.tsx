@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { SiteShell } from "@/components/site/SiteShell";
 import { Hero3D } from "@/components/site/Hero3D";
-import { RenewalBanner } from "@/components/site/RenewalBanner";
 
 const Pricing      = lazy(() => import("@/components/site/Pricing").then(m => ({ default: m.Pricing })));
 const PackageQuiz  = lazy(() => import("@/components/site/PackageQuiz").then(m => ({ default: m.PackageQuiz })));
@@ -64,7 +63,6 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   return (
     <SiteShell>
-      <RenewalBanner />
       <Hero3D />
       <DeferredSection minHeight={640}><Pricing /></DeferredSection>
       <DeferredSection minHeight={480}><PackageQuiz /></DeferredSection>
