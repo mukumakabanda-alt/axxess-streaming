@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConsoleRentalsRouteImport } from './routes/console-rentals'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as RenewRouteImport } from './routes/renew'
@@ -23,6 +24,11 @@ import { Route as AdminSetupRouteImport } from './routes/admin.setup'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleRentalsRoute = ConsoleRentalsRouteImport.update({
+  id: '/console-rentals',
+  path: '/console-rentals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -73,6 +79,7 @@ const AdminSetupRoute = AdminSetupRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/console-rentals': typeof ConsoleRentalsRoute
   '/contact': typeof ContactRoute
   '/news': typeof NewsRoute
   '/renew': typeof RenewRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/console-rentals': typeof ConsoleRentalsRoute
   '/contact': typeof ContactRoute
   '/news': typeof NewsRoute
   '/renew': typeof RenewRoute
@@ -98,6 +106,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/console-rentals': typeof ConsoleRentalsRoute
   '/contact': typeof ContactRoute
   '/news': typeof NewsRoute
   '/renew': typeof RenewRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/console-rentals'
     | '/contact'
     | '/news'
     | '/renew'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/console-rentals'
     | '/contact'
     | '/news'
     | '/renew'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/console-rentals'
     | '/contact'
     | '/news'
     | '/renew'
@@ -149,6 +161,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConsoleRentalsRoute: typeof ConsoleRentalsRoute
   ContactRoute: typeof ContactRoute
   NewsRoute: typeof NewsRoute
   RenewRoute: typeof RenewRoute
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console-rentals': {
+      id: '/console-rentals'
+      path: '/console-rentals'
+      fullPath: '/console-rentals'
+      preLoaderRoute: typeof ConsoleRentalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -237,6 +257,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConsoleRentalsRoute: ConsoleRentalsRoute,
   ContactRoute: ContactRoute,
   NewsRoute: NewsRoute,
   RenewRoute: RenewRoute,

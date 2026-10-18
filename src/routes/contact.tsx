@@ -12,6 +12,8 @@ export const Route = createFileRoute("/contact")({
       { property: "og:title", content: "Contact & Support — Axxess Streaming" },
       { property: "og:description", content: "We're here to help — chat on WhatsApp anytime." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/contact" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "canonical", href: "https://axxess-streaming.lovable.app/contact" }],
   }),

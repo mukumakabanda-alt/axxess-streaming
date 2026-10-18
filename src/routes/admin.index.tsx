@@ -24,6 +24,11 @@ export const Route = createFileRoute("/admin/")(({
     meta: [
       { title: "Axxess Admin" },
       { name: "robots", content: "noindex, nofollow" },
+      { name: "description", content: "Manage Axxess orders, subscriptions and streaming accounts." },
+      { property: "og:title", content: "Axxess Admin" },
+      { property: "og:description", content: "Manage Axxess orders, subscriptions and streaming accounts." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AdminPage,

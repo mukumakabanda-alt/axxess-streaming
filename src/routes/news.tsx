@@ -17,6 +17,8 @@ export const Route = createFileRoute("/news")({
       { property: "og:title", content: "Axxess News — We don't do boring" },
       { property: "og:description", content: "Hot takes on Netflix, Prime Video & everything trending in Zambia. Read at your own risk." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/news" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "canonical", href: "https://axxess-streaming.lovable.app/news" }],
   }),

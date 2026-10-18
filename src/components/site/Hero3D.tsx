@@ -1,181 +1,10 @@
-import { useEffect, useRef, useState, useCallback, memo } from "react";
-import { motion, type Variants, useMotionValue, useSpring } from "framer-motion";
+import { useEffect, useRef, useState, memo } from "react";
+import { motion, type Variants, useReducedMotion } from "framer-motion";
+import { Link } from "@tanstack/react-router";
+import { Gamepad2, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  TYPES                                                                      */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-type ShowItem = {
-  title:    string;
-  platform: "netflix" | "prime";
-  poster:   string;
-  rating?:  string;
-};
-
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  STATIC FALLBACK                                                            */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-const STATIC_FALLBACK: ShowItem[] = [
-  { title: "Stranger Things",  platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/49WJfeN0moxb9IPfGn8AIqMGskD.jpg", rating: "8.7" },
-  { title: "The Boys",         platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/stTEycfG9928HYGEISBFaG1ngjM.jpg", rating: "8.7" },
-  { title: "Wednesday",        platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/9PFonBhy4cQy7Jz20NpMygczOkv.jpg", rating: "8.1" },
-  { title: "Fallout",          platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/5YZbUmjbMa3ClvSW1Wj3D6XGkVA.jpg", rating: "8.5" },
-  { title: "Squid Game",       platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/dDlEmu3EZ0Pgg93K2SVNLCjCSvE.jpg", rating: "8.0" },
-  { title: "Citadel",          platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/7YPdUs60C9qQQQfOFCgxpnF07D9.jpg", rating: "6.8" },
-  { title: "Outer Banks",      platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/6UQnDUoSBBCt5I4KgKxEAJjqJRR.jpg", rating: "7.6" },
-  { title: "Reacher",          platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/pnXLFiDTwOAHDdZwuMCtEBknFhF.jpg", rating: "8.0" },
-  { title: "Invincible",       platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/yDWJYRAwMNKa8j2KqM1j3gMRFBl.jpg", rating: "8.7" },
-];
-
-const P_STYLE: Record<string, { color: string; label: string; glow: string }> = {
-  netflix: { color: "#E5192A", label: "Netflix",     glow: "rgba(229,25,42,0.35)" },
-  prime:   { color: "#00A8E1", label: "Prime Video", glow: "rgba(0,168,225,0.35)" },
-};
-
-async function fetchTrendingShows(): Promise<ShowItem[]> {
-  const key = (import.meta as any).env?.VITE_TMDB_KEY;
-  if (!key) return STATIC_FALLBACK;
-  try {
-    const res = await fetch(
-      `https://api.themoviedb.org/3/trending/tv/day?api_key=${key}&language=en-US`,
-    );
-    if (!res.ok) return STATIC_FALLBACK;
-    const data = await res.json();
-    const out: ShowItem[] = [];
-    for (const show of data.results ?? []) {
-      if (out.length >= 9) break;
-      if (!show.poster_path) continue;
-      out.push({
-        title:    show.name ?? show.original_name ?? "Trending Now",
-        platform: out.length % 2 === 0 ? "netflix" : "prime",
-        poster:   `https://image.tmdb.org/t/p/w185${show.poster_path}`,
-        rating:   show.vote_average ? show.vote_average.toFixed(1) : undefined,
-      });
-    }
-    return out.length >= 3 ? out : STATIC_FALLBACK;
-  } catch {
-    return STATIC_FALLBACK;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  SHOW SCROLLER                                                              */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-function ShowScroller() {
-  const [shows,   setShows]   = useState<ShowItem[]>(STATIC_FALLBACK);
-  const [idx,     setIdx]     = useState(0);
-  const [visible, setVisible] = useState(true);
-  const [imgOk,   setImgOk]   = useState(true);
-
-  useEffect(() => {
-    fetchTrendingShows().then((s) => { setShows(s); setIdx(0); });
-  }, []);
-
-  useEffect(() => {
-    const iv = setInterval(() => {
-      setVisible(false);
-      setImgOk(false);
-      setTimeout(() => {
-        setIdx((i) => (i + 1) % shows.length);
-        setVisible(true);
-      }, 380);
-    }, 4000);
-    return () => clearInterval(iv);
-  }, [shows.length]);
-
-  const show  = shows[idx];
-  const style = P_STYLE[show.platform] ?? P_STYLE.netflix;
-
-  return (
-    <button
-      onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}
-      aria-label={`${show.title} on ${style.label} — view plans`}
-      className="group relative mx-auto flex items-center gap-0 overflow-hidden rounded-full transition-all duration-300"
-      style={{
-        background:     "rgba(255,255,255,0.04)",
-        border:         `1px solid ${style.color}30`,
-        backdropFilter: "blur(24px)",
-        padding:        0,
-        height:         44,
-        maxWidth:       "calc(100vw - 48px)",
-        boxShadow:      `0 0 20px -6px ${style.glow}`,
-        transition:     "box-shadow 0.4s ease, border-color 0.4s ease",
-      }}
-    >
-      {/* Poster circle */}
-      <span
-        className="relative flex-shrink-0"
-        style={{
-          width: 44, height: 44,
-          borderRadius: "50%",
-          overflow: "hidden",
-          background: "rgba(255,255,255,0.06)",
-        }}
-      >
-        <img
-          src={show.poster}
-          alt={show.title}
-          onLoad={() => setImgOk(true)}
-          style={{
-            width: "100%", height: "100%",
-            objectFit: "cover",
-            opacity:   imgOk && visible ? 1 : 0,
-            transition: "opacity 0.36s ease",
-          }}
-        />
-        <span aria-hidden style={{
-          position: "absolute", inset: 0,
-          borderRadius: "50%",
-          border: `2px solid ${style.color}`,
-          pointerEvents: "none",
-        }} />
-      </span>
-
-      {/* Label + title + rating */}
-      <span className="flex items-center gap-2 pr-4" style={{ paddingLeft: 12, overflow: "hidden" }}>
-        <span style={{
-          fontSize: 9, fontWeight: 800,
-          textTransform: "uppercase", letterSpacing: "0.15em",
-          color: style.color, flexShrink: 0,
-        }}>
-          {style.label}
-        </span>
-        <span aria-hidden style={{ width: 1, height: 10, background: "rgba(255,255,255,0.10)", flexShrink: 0 }} />
-        <span style={{
-          fontSize: 13, fontWeight: 600, color: "#fff",
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          maxWidth: "28vw",
-          opacity:   visible ? 1 : 0,
-          transform: visible ? "translateY(0)" : "translateY(6px)",
-          transition: "opacity 0.32s ease, transform 0.32s ease",
-        }}>
-          {show.title}
-        </span>
-        {show.rating && (
-          <>
-            <span aria-hidden style={{ width: 1, height: 10, background: "rgba(255,255,255,0.10)", flexShrink: 0 }} />
-            <span style={{
-              fontSize: 10, fontWeight: 700,
-              color: "#F5C518", flexShrink: 0,
-              opacity: visible ? 1 : 0,
-              transition: "opacity 0.32s ease",
-            }}>
-              ★ {show.rating}
-            </span>
-          </>
-        )}
-        <span className="transition-transform duration-200 group-hover:translate-x-1"
-          style={{ fontSize: 11, color: style.color, flexShrink: 0 }}>
-          →
-        </span>
-      </span>
-    </button>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  PORTAL GLOW — the glowing door/gateway at scene centre                    */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 const PortalGlow = memo(function PortalGlow() {
   return (
     <div
@@ -357,14 +186,14 @@ function HeroCanvas() {
       camera.position.set(0, 0, 8);
 
       const renderer = new THREE.WebGLRenderer({
-        alpha: true, antialias: effectiveTier === "full",
-        powerPreference: "high-performance",
+        alpha: true, antialias: false,
+        powerPreference: "default",
       });
       // Cap DPR at 1.5 — a 3x-DPR phone renders 9x the pixels of a 1x
       // display, which is what makes the hero feel "laggy" on mobile
       // even when the JS work is cheap. 1.5 is visually indistinguishable
       // from 2/3 on this scene (mostly additive glows and grain).
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, effectiveTier === "low" ? 1 : 1.25));
       renderer.setSize(W(), H());
       renderer.setClearColor(0x000000, 0);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -374,7 +203,8 @@ function HeroCanvas() {
       /* Sprite texture */
       const sc   = document.createElement("canvas");
       sc.width   = sc.height = 64;
-      const sctx = sc.getContext("2d")!;
+      const sctx = sc.getContext("2d");
+      if (!sctx) { renderer.dispose(); renderer.domElement.remove(); return; }
       const sg   = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
       sg.addColorStop(0,   "rgba(255,255,255,1)");
       sg.addColorStop(0.4, "rgba(255,255,255,0.4)");
@@ -391,7 +221,7 @@ function HeroCanvas() {
       const cWhite   = new THREE.Color(0xffffff);
 
       /* Outer field */
-      const PCOUNT    = effectiveTier === "low" ? 600 : effectiveTier === "mid" ? 1400 : 2400;
+      const PCOUNT    = effectiveTier === "low" ? 360 : effectiveTier === "mid" ? 800 : 1200;
       const positions = new Float32Array(PCOUNT * 3);
       const colors    = new Float32Array(PCOUNT * 3);
       const sizes     = new Float32Array(PCOUNT);
@@ -426,7 +256,7 @@ function HeroCanvas() {
       scene.add(points);
 
       /* Core cluster */
-      const CORE = effectiveTier === "low" ? 80 : effectiveTier === "mid" ? 220 : 380;
+      const CORE = effectiveTier === "low" ? 40 : effectiveTier === "mid" ? 100 : 160;
       const cPos = new Float32Array(CORE * 3);
       const cCol = new Float32Array(CORE * 3);
       for (let i = 0; i < CORE; i++) {
@@ -451,32 +281,6 @@ function HeroCanvas() {
       });
       const core = new THREE.Points(coreGeom, coreMat);
       scene.add(core);
-
-      /* Nebula rings */
-      const rings: InstanceType<typeof THREE.Line>[] = [];
-      for (let r = 0; r < 3; r++) {
-        const ringPts = 220;
-        const rPos    = new Float32Array(ringPts * 3);
-        const radius2 = 2.2 + r * 1.6;
-        for (let i = 0; i < ringPts; i++) {
-          const a = (i / ringPts) * Math.PI * 2;
-          rPos[i * 3]     = radius2 * Math.cos(a);
-          rPos[i * 3 + 1] = (Math.random() - 0.5) * 0.25;
-          rPos[i * 3 + 2] = radius2 * Math.sin(a) * 0.3;
-        }
-        const rg = new THREE.BufferGeometry();
-        rg.setAttribute("position", new THREE.BufferAttribute(rPos, 3));
-        const rm = new THREE.LineBasicMaterial({
-          color:       r === 0 ? 0xe5192a : r === 1 ? 0xff5020 : 0xc9a84c,
-          transparent: true,
-          opacity:     r === 0 ? 0.18 : r === 1 ? 0.10 : 0.07,
-          blending:    THREE.AdditiveBlending,
-        });
-        const ring = new THREE.Line(rg, rm);
-        ring.rotation.x = Math.PI / 2 + r * 0.25;
-        scene.add(ring);
-        rings.push(ring);
-      }
 
       /* Listeners */
       const onMouse = (e: MouseEvent) => {
@@ -504,7 +308,12 @@ function HeroCanvas() {
       const clock = new THREE.Clock();
       let raf = 0;
       let vis = true;
-      const onVis = () => (vis = document.visibilityState === "visible");
+      const resume = () => {
+        cancelAnimationFrame(raf);
+        clock.getDelta();
+        if (vis && inView) raf = requestAnimationFrame(tick);
+      };
+      const onVis = () => { vis = document.visibilityState === "visible"; resume(); };
       document.addEventListener("visibilitychange", onVis);
 
       // Previously the canvas kept rendering ~PCOUNT+CORE particles at full
@@ -513,14 +322,14 @@ function HeroCanvas() {
       // once the hero leaves the viewport, resume the instant it's back.
       let inView = true;
       const io = new IntersectionObserver(
-        ([entry]) => { inView = entry.isIntersecting; },
+        ([entry]) => { inView = entry.isIntersecting; resume(); },
         { threshold: 0 },
       );
       io.observe(mount);
 
       const tick = () => {
-        raf = requestAnimationFrame(tick);
         if (!vis || !inView) return;
+        raf = requestAnimationFrame(tick);
         const dt = Math.min(clock.getDelta(), 0.05);
         const t  = clock.elapsedTime;
 
@@ -535,12 +344,6 @@ function HeroCanvas() {
         points.rotation.x  = Math.sin(t * 0.12) * 0.06;
         core.rotation.y   -= dt * 0.11;
         core.rotation.z    = Math.sin(t * 0.16) * 0.05;
-
-        rings.forEach((ring, i) => {
-          ring.rotation.z += dt * (i === 0 ? 0.045 : i === 1 ? -0.032 : 0.018);
-          (ring.material as InstanceType<typeof THREE.LineBasicMaterial>).opacity =
-            (i === 0 ? 0.18 : i === 1 ? 0.10 : 0.07) + Math.sin(t * 0.6 + i) * 0.05;
-        });
 
         pMat.opacity    = 0.68 + Math.sin(t * 0.55) * 0.17;
         coreMat.opacity = 0.85 + Math.sin(t * 0.85 + 1) * 0.12;
@@ -565,15 +368,11 @@ function HeroCanvas() {
         pGeom.dispose();    pMat.dispose();
         coreGeom.dispose(); coreMat.dispose();
         sprite.dispose();
-        rings.forEach((r) => {
-          r.geometry.dispose();
-          (r.material as { dispose: () => void }).dispose();
-        });
         if (renderer.domElement.parentNode === mount)
           mount.removeChild(renderer.domElement);
       };
       (mount as any).__threeCleanup = cleanup;
-    });
+    }).catch(() => { /* Static portal remains available if WebGL cannot start. */ });
 
     return () => {
       cancelled = true;
@@ -584,67 +383,18 @@ function HeroCanvas() {
   return <div ref={mountRef} className="absolute inset-0" aria-hidden />;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  CURSOR SPOTLIGHT                                                           */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-// Diameter of the moving glow layer — matches the original "800px circle"
-// radius (radial-gradient's size arg is measured from centre), so the
-// visual falloff is identical to before.
-const SPOTLIGHT_SIZE = 1600;
-
-function CursorSpotlight() {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof window === "undefined") return;
-    let x = window.innerWidth / 2, y = window.innerHeight / 2;
-    let tx = x, ty = y;
-    const move = (e: MouseEvent) => { tx = e.clientX; ty = e.clientY; };
-    window.addEventListener("mousemove", move, { passive: true });
-    let raf = 0;
-    const loop = () => {
-      x += (tx - x) * 0.05;
-      y += (ty - y) * 0.05;
-      // The gradient itself is painted once (below, as a static background)
-      // and never touched again. Every frame here only updates `transform`,
-      // which the compositor can move on the GPU with no repaint at all —
-      // previously this rewrote a full-viewport `background` string 60x/sec.
-      el.style.transform = `translate3d(${x - SPOTLIGHT_SIZE / 2}px, ${y - SPOTLIGHT_SIZE / 2}px, 0)`;
-      raf = requestAnimationFrame(loop);
-    };
-    loop();
-    return () => { window.removeEventListener("mousemove", move); cancelAnimationFrame(raf); };
-  }, []);
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-      style={{ zIndex: 4, mixBlendMode: "screen" }}
-      aria-hidden
-    >
-      <div
-        ref={ref}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: SPOTLIGHT_SIZE,
-          height: SPOTLIGHT_SIZE,
-          background: "radial-gradient(circle at center, rgba(229,25,42,0.07), transparent 50%)",
-          transform: `translate3d(${SPOTLIGHT_SIZE / -2}px, ${SPOTLIGHT_SIZE / -2}px, 0)`,
-          willChange: "transform",
-        }}
-      />
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  HERO3D — MAIN EXPORT                                                       */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 export function Hero3D() {
   const [activeCount, setActiveCount] = useState<number | null>(null);
-  const [scrolled,    setScrolled]    = useState(false);
+  const reducedMotion = useReducedMotion();
   const [canvasReady, setCanvasReady] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    const observer = new IntersectionObserver(([entry]) => hero.classList.toggle("hero-paused", !entry.isIntersecting));
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -663,13 +413,12 @@ export function Hero3D() {
     const iv = setInterval(() => { if (!document.hidden) load(); }, 30_000);
     const onVisible = () => { if (!document.hidden) load(); };
     document.addEventListener("visibilitychange", onVisible);
-    const onScroll = () => setScrolled(window.scrollY > 80);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    const t = setTimeout(() => setCanvasReady(true), 0);
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    const skipCanvas = window.matchMedia("(prefers-reduced-motion: reduce)").matches || connection?.saveData || ["slow-2g", "2g"].includes(connection?.effectiveType ?? "");
+    const t = setTimeout(() => { if (!skipCanvas) setCanvasReady(true); }, 900);
     return () => {
       clearInterval(iv);
       document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("scroll", onScroll);
       clearTimeout(t);
     };
   }, []);
@@ -677,24 +426,25 @@ export function Hero3D() {
   /* Framer variants — cinematic, smooth pacing */
   const container: Variants = {
     hidden: {},
-    show: { transition: { staggerChildren: 0.30, delayChildren: 0.80 } },
+    show: { transition: { staggerChildren: 0.06, delayChildren: 0 } },
   };
   const fadeUp: Variants = {
-    hidden: { opacity: 0, y: 32 },
-    show: { opacity: 1, y: 0, transition: { duration: 1.4, ease: [0.16, 1, 0.3, 1] as any } },
+    hidden: { opacity: 1, y: 12 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as any } },
   };
   const headlineVariant: Variants = {
-    hidden: { opacity: 0, y: 64, filter: "blur(12px)" },
+    hidden: { opacity: 1, y: 16 },
     // Same signature curve as fadeUp — previously a slightly different,
     // unrelated bezier — so the whole entrance reads as one choreographed
     // motion rather than parts assembled from different easings.
-    show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1.8, ease: [0.16, 1, 0.3, 1] as any } },
+    show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as any } },
   };
 
   return (
     <section
+      ref={heroRef}
       className="relative w-full overflow-hidden"
-      style={{ height: "100svh", minHeight: 640, background: "#060606" }}
+      style={{ minHeight: "max(640px, calc(100svh - 120px))", background: "#060606" }}
     >
       {/* ── 3D particle canvas ── */}
       <div className="absolute inset-0" style={{ zIndex: 0 }}>
@@ -707,8 +457,6 @@ export function Hero3D() {
       {/* ── Silhouette figure ── */}
       <SilhouetteFigure />
 
-      {/* ── Cursor spotlight ── */}
-      <CursorSpotlight />
 
       {/* ── Film grain ── */}
       <div
@@ -745,9 +493,9 @@ export function Hero3D() {
       {/*  CONTENT                                                          */}
       {/* ══════════════════════════════════════════════════════════════════ */}
       <motion.div
-        className="absolute inset-0 flex flex-col items-center justify-end px-4 text-center sm:px-6"
-        style={{ zIndex: 10, paddingBottom: "clamp(72px, 10vh, 120px)" }}
-        initial="hidden"
+        className="relative flex min-h-[max(640px,calc(100svh-120px))] flex-col items-center justify-center px-4 py-16 text-center sm:px-6"
+        style={{ zIndex: 10 }}
+        initial={reducedMotion ? false : "hidden"}
         animate="show"
         variants={container}
       >
@@ -759,7 +507,7 @@ export function Hero3D() {
               className="inline-flex items-center gap-2.5 rounded-full px-5 py-2"
               style={{
                 background:     "rgba(255,255,255,0.04)",
-                backdropFilter: "blur(28px) saturate(180%)",
+                
                 border:         "1px solid rgba(255,255,255,0.07)",
               }}
             >
@@ -781,20 +529,14 @@ export function Hero3D() {
             </div>
           </motion.div>
 
-          {/* ── 2. Show scroller ── */}
-          <motion.div variants={fadeUp} className="mt-5 flex justify-center">
-            <ShowScroller />
-          </motion.div>
-
           {/* ── 3. HEADLINE ── */}
           <motion.h1
             variants={headlineVariant}
-            className="mt-7 font-display w-full"
+            className="mt-8 w-full font-display text-5xl sm:text-7xl lg:text-8xl"
             style={{
-              fontSize:      "clamp(48px, 7.8vw, 96px)",
               fontWeight:    900,
-              letterSpacing: "clamp(-1px, -0.025em, -3px)",
-              lineHeight:    0.93,
+              letterSpacing: 0,
+              lineHeight:    1.05,
               color:         "#FFFFFF",
             }}
           >
@@ -816,9 +558,8 @@ export function Hero3D() {
           {/* ── 4. Subheadline ── */}
           <motion.p
             variants={fadeUp}
-            className="mx-auto mt-6"
+            className="mx-auto mt-6 text-sm sm:text-base"
             style={{
-              fontSize: "clamp(14px, 1.3vw, 17px)",
               fontWeight: 400,
               color: "rgba(255,255,255,0.40)",
               maxWidth: 440,
@@ -831,70 +572,27 @@ export function Hero3D() {
             <span style={{ color: "rgba(255,255,255,0.72)", fontWeight: 500 }}>WhatsApp</span>. In 15 minutes.
           </motion.p>
 
-          {/* ── 5. Trust pills ── */}
-          <motion.div variants={fadeUp} className="mt-6 flex flex-wrap justify-center gap-2">
-            {["⚡ 15-min activation", "🔒 No card required", "✓ No contract"].map((t) => (
-              <span
-                key={t}
-                className="hero-trust-pill"
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 999, padding: "7px 16px",
-                  fontSize: 12, fontWeight: 500,
-                  color: "rgba(255,255,255,0.60)",
-                }}
-              >
-                {t}
-              </span>
-            ))}
-          </motion.div>
-
-          {/* ── 6. SINGLE CTA: See Plans ── */}
-          <motion.div variants={fadeUp} className="mt-8 flex justify-center">
-            <a
-              href="#plans"
-              onClick={(e) => {
+          <motion.div variants={fadeUp} className="mt-8 flex flex-col items-center">
+            <Button asChild className="hero-btn-primary h-auto">
+              <a href="#plans" onClick={(e) => {
                 e.preventDefault();
-                document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="hero-btn-primary"
-            >
-              <span style={{ position: "relative", zIndex: 1 }}>See Plans</span>
-              <span className="hero-btn-arrow" style={{ position: "relative", zIndex: 1 }}>→</span>
-            </a>
+                document.getElementById("plans")?.scrollIntoView({ behavior: reducedMotion ? "instant" : "smooth" });
+              }}>See Plans <ArrowRight /></a>
+            </Button>
+            <Button asChild variant="outline" className="mt-5 h-10 rounded-full border-primary/30 bg-card/70 px-5 text-xs text-foreground/80 hover:border-primary/60 hover:bg-card">
+              <Link to="/console-rentals"><Gamepad2 className="text-primary" /> Rent a console <ArrowRight className="size-3" /></Link>
+            </Button>
+            <p className="mt-2.5 text-[11px] text-muted-foreground">Kitwe only · PS4 rentals</p>
           </motion.div>
 
         </div>
       </motion.div>
 
-      {/* ── Scroll indicator ── */}
-      <div
-        className="pointer-events-none absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-        style={{
-          bottom: 28, zIndex: 10,
-          opacity: scrolled ? 0 : 1,
-          transition: "opacity 500ms",
-        }}
-      >
-        <span style={{
-          display: "block", width: 1, height: 48,
-          background: "rgba(255,255,255,0.14)",
-          transformOrigin: "top",
-          animation: "hero-scroll-line 2.2s ease-in-out infinite",
-        }} />
-        <span style={{
-          fontSize: 8, fontWeight: 800, letterSpacing: 3,
-          textTransform: "uppercase", color: "rgba(255,255,255,0.14)",
-        }}>
-          scroll
-        </span>
-      </div>
-
       {/* ══════════════════════════════════════════════════════════════════ */}
       {/*  SCOPED KEYFRAMES + STYLES                                        */}
       {/* ══════════════════════════════════════════════════════════════════ */}
       <style>{`
+        .hero-paused *, .hero-paused *::after { animation-play-state: paused !important; }
         :root {
           /* One signature easing curve for every one-shot / hover transition
              in this file, so entrances, hovers, and reveals all feel like

@@ -10,6 +10,11 @@ export const Route = createFileRoute("/admin/login")({
     meta: [
       { title: "Admin sign in — Axxess" },
       { name: "robots", content: "noindex, nofollow" },
+      { name: "description", content: "Sign in securely to manage Axxess Entertainment." },
+      { property: "og:title", content: "Admin sign in \u2014 Axxess" },
+      { property: "og:description", content: "Sign in securely to manage Axxess Entertainment." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AdminLoginPage,
