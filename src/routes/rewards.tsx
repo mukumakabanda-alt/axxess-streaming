@@ -11,6 +11,8 @@ export const Route = createFileRoute("/rewards")({
       { property: "og:title", content: "Axxess Rewards — Stream more, earn more" },
       { property: "og:description", content: "Earn points every time you subscribe or refer a friend. Unlock real rewards including a free month of streaming." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/rewards" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "canonical", href: "https://axxess-streaming.lovable.app/rewards" }],
   }),

@@ -44,8 +44,6 @@ export const Route = createRootRoute({
       { name: "theme-color", content: "#080808" },
       { name: "twitter:title", content: "Axxess Entertainment — The entertainment you deserve" },
       { name: "twitter:description", content: "Zambia's premium streaming platform. Netflix K90/mo, Prime Video K60/mo, All Access K120/mo. No card. Activated via WhatsApp in 15 minutes." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/e4WfRWxkaUWNJKmI7ycjBVHpJn92/social-images/social-1777484825822-file_000000001a5471f5a722b7ad191b3fda.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/e4WfRWxkaUWNJKmI7ycjBVHpJn92/social-images/social-1777484825822-file_000000001a5471f5a722b7ad191b3fda.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

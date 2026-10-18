@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, Gamepad2, MapPin } from "lucide-react";
 import { SiteShell } from "@/components/site/SiteShell";
 import { Button } from "@/components/ui/button";
 import { useSiteConfig } from "@/lib/siteConfig";
-import consoleImage from "@/assets/ps4-console.webp.asset.json";
+import consoleImage from "@/assets/ps4-detail.webp.asset.json";
 
 export const Route = createFileRoute("/console-rentals")({
   head: () => ({
