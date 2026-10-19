@@ -799,6 +799,7 @@ export type Database = {
       }
       claim_first_admin: { Args: never; Returns: boolean }
       cleanup_old_customer_data: { Args: never; Returns: undefined }
+      get_active_subscriber_count: { Args: never; Returns: number }
       get_customer_points: {
         Args: { _phone: string }
         Returns: {
