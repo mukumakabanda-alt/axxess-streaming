@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { Gamepad2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { getTrendingShows } from "@/lib/tmdb.functions";
 
 type ShowItem = {
   title:    string;
@@ -33,26 +34,10 @@ const P_STYLE: Record<string, { color: string; label: string; glow: string }> = 
 };
 
 async function fetchTrendingShows(): Promise<ShowItem[]> {
-  const key = (import.meta as any).env?.VITE_TMDB_KEY;
-  if (!key) return STATIC_FALLBACK;
   try {
-    const res = await fetch(
-      `https://api.themoviedb.org/3/trending/tv/day?api_key=${key}&language=en-US`,
-    );
-    if (!res.ok) return STATIC_FALLBACK;
-    const data = await res.json();
-    const out: ShowItem[] = [];
-    for (const show of data.results ?? []) {
-      if (out.length >= 9) break;
-      if (!show.poster_path) continue;
-      out.push({
-        title:    show.name ?? show.original_name ?? "Trending Now",
-        platform: out.length % 2 === 0 ? "netflix" : "prime",
-        poster:   `https://image.tmdb.org/t/p/w185${show.poster_path}`,
-        rating:   show.vote_average ? show.vote_average.toFixed(1) : undefined,
-      });
-    }
-    return out.length >= 3 ? out : STATIC_FALLBACK;
+    const list = await getTrendingShows();
+    if (list.length < 3) return STATIC_FALLBACK;
+    return list.map((x, n) => ({ ...x, platform: n % 2 === 0 ? "netflix" : "prime" }));
   } catch {
     return STATIC_FALLBACK;
   }
@@ -559,7 +544,7 @@ export function Hero3D() {
   const reducedMotion = useReducedMotion();
   const [canvasReady, setCanvasReady] = useState(false);
   const [showCount, setShowCount] = useState(true);
-  useEffect(() => { const t = setTimeout(() => setShowCount(false), 6000); return () => clearTimeout(t); }, []);
+  useEffect(() => { const t = setTimeout(() => setShowCount(false), 14000); return () => clearTimeout(t); }, []);
   const heroRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const hero = heroRef.current;
@@ -571,13 +556,8 @@ export function Hero3D() {
 
   useEffect(() => {
     const load = async () => {
-      const [{ count: o }, { count: s }] = await Promise.all([
-        supabase.from("orders").select("id", { count: "exact", head: true })
-          .eq("status", "completed").gt("expires_at", new Date().toISOString()),
-        supabase.from("subscriptions").select("id", { count: "exact", head: true })
-          .eq("is_active", true).gt("end_date", new Date().toISOString()),
-      ]);
-      setActiveCount(Math.max(o ?? 0, s ?? 0));
+      const { data } = await supabase.rpc("get_active_subscriber_count");
+      if (typeof data === "number") setActiveCount(data);
     };
     load();
     // Skip the network round-trip while the tab is backgrounded — this
