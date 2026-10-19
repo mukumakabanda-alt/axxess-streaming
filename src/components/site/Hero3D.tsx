@@ -1,9 +1,180 @@
 import { useEffect, useRef, useState, memo } from "react";
-import { motion, type Variants, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, type Variants, useReducedMotion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { Gamepad2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+
+type ShowItem = {
+  title:    string;
+  platform: "netflix" | "prime";
+  poster:   string;
+  rating?:  string;
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  STATIC FALLBACK                                                            */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+const STATIC_FALLBACK: ShowItem[] = [
+  { title: "Stranger Things",  platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/49WJfeN0moxb9IPfGn8AIqMGskD.jpg", rating: "8.7" },
+  { title: "The Boys",         platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/stTEycfG9928HYGEISBFaG1ngjM.jpg", rating: "8.7" },
+  { title: "Wednesday",        platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/9PFonBhy4cQy7Jz20NpMygczOkv.jpg", rating: "8.1" },
+  { title: "Fallout",          platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/5YZbUmjbMa3ClvSW1Wj3D6XGkVA.jpg", rating: "8.5" },
+  { title: "Squid Game",       platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/dDlEmu3EZ0Pgg93K2SVNLCjCSvE.jpg", rating: "8.0" },
+  { title: "Citadel",          platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/7YPdUs60C9qQQQfOFCgxpnF07D9.jpg", rating: "6.8" },
+  { title: "Outer Banks",      platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/6UQnDUoSBBCt5I4KgKxEAJjqJRR.jpg", rating: "7.6" },
+  { title: "Reacher",          platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/pnXLFiDTwOAHDdZwuMCtEBknFhF.jpg", rating: "8.0" },
+  { title: "Invincible",       platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/yDWJYRAwMNKa8j2KqM1j3gMRFBl.jpg", rating: "8.7" },
+];
+
+const P_STYLE: Record<string, { color: string; label: string; glow: string }> = {
+  netflix: { color: "#E5192A", label: "Netflix",     glow: "rgba(229,25,42,0.35)" },
+  prime:   { color: "#00A8E1", label: "Prime Video", glow: "rgba(0,168,225,0.35)" },
+};
+
+async function fetchTrendingShows(): Promise<ShowItem[]> {
+  const key = (import.meta as any).env?.VITE_TMDB_KEY;
+  if (!key) return STATIC_FALLBACK;
+  try {
+    const res = await fetch(
+      `https://api.themoviedb.org/3/trending/tv/day?api_key=${key}&language=en-US`,
+    );
+    if (!res.ok) return STATIC_FALLBACK;
+    const data = await res.json();
+    const out: ShowItem[] = [];
+    for (const show of data.results ?? []) {
+      if (out.length >= 9) break;
+      if (!show.poster_path) continue;
+      out.push({
+        title:    show.name ?? show.original_name ?? "Trending Now",
+        platform: out.length % 2 === 0 ? "netflix" : "prime",
+        poster:   `https://image.tmdb.org/t/p/w185${show.poster_path}`,
+        rating:   show.vote_average ? show.vote_average.toFixed(1) : undefined,
+      });
+    }
+    return out.length >= 3 ? out : STATIC_FALLBACK;
+  } catch {
+    return STATIC_FALLBACK;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  SHOW SCROLLER                                                              */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+function ShowScroller() {
+  const [shows,   setShows]   = useState<ShowItem[]>(STATIC_FALLBACK);
+  const [idx,     setIdx]     = useState(0);
+  const [visible, setVisible] = useState(true);
+  const [imgOk,   setImgOk]   = useState(true);
+
+  useEffect(() => {
+    fetchTrendingShows().then((s) => { setShows(s); setIdx(0); });
+  }, []);
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setVisible(false);
+      setImgOk(false);
+      setTimeout(() => {
+        setIdx((i) => (i + 1) % shows.length);
+        setVisible(true);
+      }, 380);
+    }, 4000);
+    return () => clearInterval(iv);
+  }, [shows.length]);
+
+  const show  = shows[idx];
+  const style = P_STYLE[show.platform] ?? P_STYLE.netflix;
+
+  return (
+    <button
+      onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}
+      aria-label={`${show.title} on ${style.label} — view plans`}
+      className="group relative mx-auto flex items-center gap-0 overflow-hidden rounded-full transition-all duration-300"
+      style={{
+        background:     "rgba(255,255,255,0.04)",
+        border:         `1px solid ${style.color}30`,
+        backdropFilter: "blur(24px)",
+        padding:        0,
+        height:         44,
+        maxWidth:       "calc(100vw - 48px)",
+        boxShadow:      `0 0 20px -6px ${style.glow}`,
+        transition:     "box-shadow 0.4s ease, border-color 0.4s ease",
+      }}
+    >
+      {/* Poster circle */}
+      <span
+        className="relative flex-shrink-0"
+        style={{
+          width: 44, height: 44,
+          borderRadius: "50%",
+          overflow: "hidden",
+          background: "rgba(255,255,255,0.06)",
+        }}
+      >
+        <img
+          src={show.poster}
+          alt={show.title}
+          onLoad={() => setImgOk(true)}
+          style={{
+            width: "100%", height: "100%",
+            objectFit: "cover",
+            opacity:   imgOk && visible ? 1 : 0,
+            transition: "opacity 0.36s ease",
+          }}
+        />
+        <span aria-hidden style={{
+          position: "absolute", inset: 0,
+          borderRadius: "50%",
+          border: `2px solid ${style.color}`,
+          pointerEvents: "none",
+        }} />
+      </span>
+
+      {/* Label + title + rating */}
+      <span className="flex items-center gap-2 pr-4" style={{ paddingLeft: 12, overflow: "hidden" }}>
+        <span style={{
+          fontSize: 9, fontWeight: 800,
+          textTransform: "uppercase", letterSpacing: "0.15em",
+          color: style.color, flexShrink: 0,
+        }}>
+          {style.label}
+        </span>
+        <span aria-hidden style={{ width: 1, height: 10, background: "rgba(255,255,255,0.10)", flexShrink: 0 }} />
+        <span style={{
+          fontSize: 13, fontWeight: 600, color: "#fff",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          maxWidth: "28vw",
+          opacity:   visible ? 1 : 0,
+          transform: visible ? "translateY(0)" : "translateY(6px)",
+          transition: "opacity 0.32s ease, transform 0.32s ease",
+        }}>
+          {show.title}
+        </span>
+        {show.rating && (
+          <>
+            <span aria-hidden style={{ width: 1, height: 10, background: "rgba(255,255,255,0.10)", flexShrink: 0 }} />
+            <span style={{
+              fontSize: 10, fontWeight: 700,
+              color: "#F5C518", flexShrink: 0,
+              opacity: visible ? 1 : 0,
+              transition: "opacity 0.32s ease",
+            }}>
+              ★ {show.rating}
+            </span>
+          </>
+        )}
+        <span className="transition-transform duration-200 group-hover:translate-x-1"
+          style={{ fontSize: 11, color: style.color, flexShrink: 0 }}>
+          →
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  PORTAL GLOW — the glowing door/gateway at scene centre                    */
 
 const PortalGlow = memo(function PortalGlow() {
   return (
@@ -387,6 +558,8 @@ export function Hero3D() {
   const [activeCount, setActiveCount] = useState<number | null>(null);
   const reducedMotion = useReducedMotion();
   const [canvasReady, setCanvasReady] = useState(false);
+  const [showCount, setShowCount] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setShowCount(false), 6000); return () => clearTimeout(t); }, []);
   const heroRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const hero = heroRef.current;
@@ -501,8 +674,21 @@ export function Hero3D() {
       >
         <div className="mx-auto w-full max-w-[900px]">
 
-          {/* ── 1. Live counter pill ── */}
+          {/* ── 1. Trending shows strip ── */}
           <motion.div variants={fadeUp} className="flex justify-center">
+            <ShowScroller />
+          </motion.div>
+
+          {/* ── 2. Live counter — greets, then fades away ── */}
+          <AnimatePresence initial={false}>
+            {showCount && (
+              <motion.div
+                key="count"
+                className="flex justify-center overflow-hidden"
+                initial={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
+              >
+                <div className="pt-4">
             <div
               className="inline-flex items-center gap-2.5 rounded-full px-5 py-2"
               style={{
@@ -527,7 +713,10 @@ export function Hero3D() {
                 {activeCount ?? "—"} live
               </span>
             </div>
-          </motion.div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* ── 3. HEADLINE ── */}
           <motion.h1
