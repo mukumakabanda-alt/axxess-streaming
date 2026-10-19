@@ -37,7 +37,7 @@ async function fetchTrendingShows(): Promise<ShowItem[]> {
   try {
     const list = await getTrendingShows();
     if (list.length < 3) return STATIC_FALLBACK;
-    return list.map((x, n) => ({ ...x, platform: n % 2 === 0 ? "netflix" : "prime" }));
+    return list;
   } catch {
     return STATIC_FALLBACK;
   }
