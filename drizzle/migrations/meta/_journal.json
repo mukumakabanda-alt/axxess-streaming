@@ -15,6 +15,13 @@
       "when": 1792439181560,
       "tag": "0001_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792524407917,
+      "tag": "0002_add_password_changed_at_to_accounts",
+      "breakpoints": true
     }
   ]
 }
