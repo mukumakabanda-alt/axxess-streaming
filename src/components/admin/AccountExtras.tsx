@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { BellRing, CalendarClock } from "lucide-react";
+import { BellRing, CalendarClock, KeyRound, ShieldAlert } from "lucide-react";
 
 export type EditableAccount = {
   id: string;
@@ -15,9 +15,13 @@ export type EditableAccount = {
   status: string;
   notes: string | null;
   renewal_date?: string | null;
+  password_changed_at?: string | null;
 };
 
 const REMIND_DAYS = 7;
+// After this many days with the same password, an account is flagged as
+// high vulnerability and should have its password rotated.
+export const PASSWORD_MAX_AGE_DAYS = 90;
 
 export function daysUntil(date: string | null | undefined): number | null {
   if (!date) return null;
@@ -35,6 +39,55 @@ export function RenewalChip({ date }: { date?: string | null }) {
     <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${urgent ? "text-orange-400" : "text-muted-foreground"}`}>
       <CalendarClock className="h-3 w-3" /> {text} · {date}
     </span>
+  );
+}
+
+export function passwordAgeDays(changedAt: string | null | undefined): number | null {
+  if (!changedAt) return null;
+  const then = new Date(changedAt).getTime();
+  if (Number.isNaN(then)) return null;
+  return Math.max(0, Math.floor((Date.now() - then) / 86400000));
+}
+
+export function PasswordAgeChip({ changedAt }: { changedAt?: string | null }) {
+  const days = passwordAgeDays(changedAt);
+  if (days === null) return <span className="text-[11px] text-muted-foreground">Password age unknown</span>;
+  const overdue = days >= PASSWORD_MAX_AGE_DAYS;
+  const soon = !overdue && days >= PASSWORD_MAX_AGE_DAYS - 14;
+  const color = overdue ? "text-red-400" : soon ? "text-orange-400" : "text-muted-foreground";
+  const text = overdue
+    ? `Password ${days}d old — vulnerability high, change it`
+    : `Password changed ${days}d ago`;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${color}`}>
+      <KeyRound className="h-3 w-3" /> {text}
+    </span>
+  );
+}
+
+export function PasswordRotationReminders({ accounts, platform }: { accounts: EditableAccount[]; platform: string }) {
+  const overdue = accounts
+    .map(a => ({ a, days: passwordAgeDays(a.password_changed_at) }))
+    .filter((x): x is { a: EditableAccount; days: number } => x.days !== null && x.days >= PASSWORD_MAX_AGE_DAYS)
+    .sort((x, y) => y.days - x.days);
+  if (overdue.length === 0) return null;
+  return (
+    <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
+      <p className="flex items-center gap-2 text-sm font-bold text-red-400">
+        <ShieldAlert className="h-4 w-4" /> {overdue.length} {platform} {overdue.length === 1 ? "account password is" : "account passwords are"} overdue — vulnerability high
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        These passwords are {PASSWORD_MAX_AGE_DAYS}+ days old. Change the password on {platform}, then save the new one here — the clock restarts automatically.
+      </p>
+      <ul className="mt-2 space-y-1 text-xs">
+        {overdue.map(({ a, days }) => (
+          <li key={a.id} className="flex justify-between gap-2">
+            <span className="truncate font-mono">{a.account_email}</span>
+            <span className="shrink-0 font-semibold text-red-400">{days}d old</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -79,12 +132,16 @@ export function EditAccountDialog({
     if (!form) return;
     if (!form.account_email.trim() || !form.account_password.trim()) return toast.error("Email and password required");
     setSaving(true);
+    const newPassword = form.account_password.trim();
+    const passwordChanged = newPassword !== (account?.account_password ?? "");
     const { error } = await supabase.from(table).update({
       account_email: form.account_email.trim(),
-      account_password: form.account_password.trim(),
+      account_password: newPassword,
       status: form.status,
       notes: form.notes?.trim() || null,
       renewal_date: form.renewal_date || null,
+      // Restart the vulnerability clock only when the password actually changed.
+      ...(passwordChanged ? { password_changed_at: new Date().toISOString() } : {}),
     }).eq("id", form.id);
     setSaving(false);
     if (error) return toast.error(error.message);

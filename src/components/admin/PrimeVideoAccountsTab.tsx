@@ -12,7 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { EditAccountDialog, RenewalChip, RenewalReminders } from "./AccountExtras";
+import { EditAccountDialog, RenewalChip, RenewalReminders, PasswordAgeChip, PasswordRotationReminders } from "./AccountExtras";
 import {
   Plus, Trash2, Pencil, Eye, EyeOff, RotateCcw, UserPlus,
   ChevronLeft, AlertTriangle, ShieldCheck, KeyRound, Loader2,
@@ -25,6 +25,7 @@ type Account = {
   status: string;
   notes: string | null;
   renewal_date: string | null;
+  password_changed_at: string | null;
 };
 
 type Profile = {
@@ -202,6 +203,7 @@ export function PrimeVideoAccountsTab() {
       </div>
 
       <RenewalReminders accounts={accounts} platform="Prime Video" />
+      <PasswordRotationReminders accounts={accounts} platform="Prime Video" />
 
       {/* Vulnerable banner */}
       {totals.vulnerable > 0 && (
@@ -265,7 +267,10 @@ export function PrimeVideoAccountsTab() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-2"><RenewalChip date={a.renewal_date} /></div>
+                  <div className="mt-2 flex flex-col gap-1">
+                    <RenewalChip date={a.renewal_date} />
+                    <PasswordAgeChip changedAt={a.password_changed_at} />
+                  </div>
                   <div className="mt-3 flex justify-end gap-1">
                     <button onClick={() => setEditAccount(a)} className="rounded-md p-1.5 hover:bg-muted" title="Edit account">
                       <Pencil className="h-4 w-4" />
