@@ -8,9 +8,9 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact & Support — Axxess Streaming" },
-      { name: "description", content: "Get fast support from the Axxess Streaming team. Call us, chat on WhatsApp, or join the customer community." },
+      { name: "description", content: "Get fast support from the Axxess Streaming team. Call us, chat on WhatsApp, or join the customer community. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:title", content: "Contact & Support — Axxess Streaming" },
-      { property: "og:description", content: "We're here to help — chat on WhatsApp anytime." },
+      { property: "og:description", content: "We're here to help — chat on WhatsApp anytime. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/contact" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const cfg = useSiteConfig();
-  const groupLink = cfg.whatsappGroupLink;
+  const groupLink = "https://chat.whatsapp.com/LWhwyD6Bw9M0PRJdR1c9Tg";
 
   const formatPhone = (p: string) =>
     `+${p.slice(0, 3)} ${p.slice(3, 5)} ${p.slice(5, 8)} ${p.slice(8)}`;
@@ -79,7 +79,7 @@ function ContactPage() {
               </div>
             </div>
             <a
-              href={groupLink || "#"}
+              href={groupLink}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary-cta mt-5 w-full"

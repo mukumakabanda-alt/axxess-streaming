@@ -13,9 +13,9 @@ export const Route = createFileRoute("/news")({
   head: () => ({
     meta: [
       { title: "Axxess News — Hot Takes, Drops & Zambian Tea ☕" },
-      { name: "description", content: "The most entertaining streaming news page in Zambia. Netflix, Prime Video, DStv. Real tea. Zero boring." },
+      { name: "description", content: "The most entertaining streaming news page in Zambia. Netflix, Prime Video, DStv. Real tea. Zero boring. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:title", content: "Axxess News — We don't do boring" },
-      { property: "og:description", content: "Hot takes on Netflix, Prime Video & everything trending in Zambia. Read at your own risk." },
+      { property: "og:description", content: "Hot takes on Netflix, Prime Video & everything trending in Zambia. Read at your own risk. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/news" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -151,7 +151,7 @@ const ZAMBIAN_ANGLES: Record<string, string> = {
 const CTAS = [
   { label: "Watch on Netflix — K90/mo",    url: "/#plans" },
   { label: "Watch on Prime Video — K60/mo", url: "/#plans" },
-  { label: "Get All Access — K120/mo",      url: "/#plans" },
+  { label: "Get All Access — K140/mo",      url: "/#plans" },
   { label: "Reserve Your Slot →",           url: "/reserve" },
 ];
 
@@ -220,7 +220,7 @@ function craftBody(title: string, desc: string, zambianAngle: string): string {
 const OPINIONS = [
   "If this doesn't make you open Netflix right now, I don't know what will. K90/month via Axxess. No excuses.",
   "This is exactly the content Zambians deserve access to. The price used to be the barrier. Axxess fixed that.",
-  "Elite content deserves elite access. Axxess — K90 Netflix, K60 Prime, K120 both.",
+  "Elite content deserves elite access. Axxess — K90 Netflix, K60 Prime, K140 both.",
   "Hot take: if you're not watching this, your entertainment taste needs a serious upgrade.",
   "Zambia has always had taste. Now we need the access. That's what Axxess is for.",
   "This is better than anything on free-to-air TV. Worth every ngwee of that K90.",
@@ -330,7 +330,7 @@ const STATIC_ARTICLES: Article[] = [
     id: "zambia-streaming",
     headline: "Zambia's Streaming Consumption Grew 67% In 2024 — And These Numbers Are Wild",
     hook: "A new report confirmed Zambians spent 67% more time streaming in 2024. The streaming revolution didn't come — it already happened. Are you in it? 🇿🇲",
-    body: "Mobile data usage for video streaming in Zambia grew 67% in 2024. 78% of that streaming happens on a smartphone.\n\nPeople watch on minibuses, during lunch, at the saloon, in the office. Streaming has become Zambia's new radio.\n\nThe biggest barrier remains cost — official subscriptions are priced in dollars. Axxess exists to fix that: Netflix K90, Prime K60, both for K120.",
+    body: "Mobile data usage for video streaming in Zambia grew 67% in 2024. 78% of that streaming happens on a smartphone.\n\nPeople watch on minibuses, during lunch, at the saloon, in the office. Streaming has become Zambia's new radio.\n\nThe biggest barrier remains cost — official subscriptions are priced in dollars. Axxess exists to fix that: Netflix K90, Prime K60, both for K140.",
     opinion: "The data says Zambia is ready. The question is just whether you're watching on a dodgy stream or a proper account. Get a proper account. You deserve better quality.",
     category: "zambia",
     emoji: "🇿🇲",
@@ -339,7 +339,7 @@ const STATIC_ARTICLES: Article[] = [
     stats: [
       { label: "Streaming growth",    value: "+67%" },
       { label: "Mobile viewing share", value: "78%" },
-      { label: "Both platforms",       value: "K120/month" },
+      { label: "Both platforms",       value: "K140/month" },
     ],
     readTime: 2,
     controversial: false,
@@ -370,29 +370,29 @@ const STATIC_ARTICLES: Article[] = [
   },
   {
     id: "all-access-case",
-    headline: "K120 For Both Netflix AND Prime Video Is Actually The Smartest Financial Decision You Can Make",
+    headline: "K140 For Both Netflix AND Prime Video Is Actually The Smartest Financial Decision You Can Make",
     hook: "You're spending K90 on Netflix. Your friend is spending K60 on Prime. You're both missing half the shows. There's a smarter way and it costs K10 less than paying separately. Do the maths. 🎯",
-    body: "Netflix: Stranger Things, Squid Game, Wednesday, Outer Banks, Baby Reindeer.\nPrime Video: The Boys, Fallout, The Grand Tour, Citadel.\nYou need both.\n\nAxxess All Access = K120/month. Less than one Shoprite grocery run. Less than two tanks of petrol. Less than one night out.\n\nActivated in 15 minutes via WhatsApp. No card. No contract. No stress.",
-    opinion: "Choosing between Netflix and Prime in 2025 is like choosing between lunch and dinner. You need both. K120 a month. Stop playing games with yourself.",
+    body: "Netflix: Stranger Things, Squid Game, Wednesday, Outer Banks, Baby Reindeer.\nPrime Video: The Boys, Fallout, The Grand Tour, Citadel.\nYou need both.\n\nAxxess All Access = K140/month. Less than one Shoprite grocery run. Less than two tanks of petrol. Less than one night out.\n\nActivated in 15 minutes via WhatsApp. No card. No contract. No stress.",
+    opinion: "Choosing between Netflix and Prime in 2025 is like choosing between lunch and dinner. You need both. K140 a month. Stop playing games with yourself.",
     category: "axxess",
     emoji: "🎯",
-    shareText: "Netflix K90 + Prime K60 = K130 separately. OR K120 for BOTH via Axxess All Access 🤯 The maths literally don't miss",
+    shareText: "Netflix K90 + Prime K60 = K150 separately. OR K140 for BOTH via Axxess All Access 🤯 The maths literally don't miss",
     accentColor: "#C9A84C",
     stats: [
       { label: "Netflix only",   value: "K90/month" },
       { label: "Prime only",     value: "K60/month" },
-      { label: "All Access",     value: "K120/month" },
+      { label: "All Access",     value: "K140/month" },
     ],
     readTime: 2,
     controversial: false,
     timestamp: new Date().toISOString(),
-    cta: { label: "Get All Access — K120/mo", url: "/#plans" },
+    cta: { label: "Get All Access — K140/mo", url: "/#plans" },
   },
   {
     id: "dstv-vs-streaming",
     headline: "Netflix vs DStv In Zambia — The Honest Breakdown Nobody Else Will Give You",
     hook: "Zambia has been loyal to DStv for 30 years. Netflix arrived and chaos followed. Here's the real truth about both — and why you probably need both. 📺",
-    body: "DStv: live football, local African content, familiar interface, been in our homes since before some of us were born.\n\nNetflix + Prime: better originals, on-demand, no rain signal disruption, more affordable via Axxess.\n\nThe honest answer is: most Zambian households will end up with both. DStv for live sports. Netflix/Prime for everything else. Axxess makes the streaming side affordable — K90, K60, or K120 for both.",
+    body: "DStv: live football, local African content, familiar interface, been in our homes since before some of us were born.\n\nNetflix + Prime: better originals, on-demand, no rain signal disruption, more affordable via Axxess.\n\nThe honest answer is: most Zambian households will end up with both. DStv for live sports. Netflix/Prime for everything else. Axxess makes the streaming side affordable — K90, K60, or K140 for both.",
     opinion: "DStv and Netflix are not competitors — they're complements. Any household with both is simply winning at entertainment. Hot take: SuperSport alone justifies DStv. Everything else? Go streaming.",
     category: "zambia",
     emoji: "📺",
@@ -401,7 +401,7 @@ const STATIC_ARTICLES: Article[] = [
     stats: [
       { label: "DStv in Zambia",   value: "30+ years" },
       { label: "Netflix via Axxess", value: "K90/month" },
-      { label: "Both platforms",    value: "K120/month" },
+      { label: "Both platforms",    value: "K140/month" },
     ],
     readTime: 3,
     controversial: true,

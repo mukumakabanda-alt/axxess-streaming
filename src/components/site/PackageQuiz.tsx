@@ -63,7 +63,7 @@ function recommend(a: Record<string, string>): Rec {
     key: "bundle", name: "All Access",
     tagline: "Netflix + Prime Video. One price. Zero compromise.",
     reason: "With your taste and your crowd, you'd be switching apps constantly. Get both for less than either at full price.",
-    emoji: "✨", price: 120, realPrice: 314,
+    emoji: "✨", price: 140, realPrice: 314,
   };
   if (a.vibe === "originals" || a.watching === "couple") return {
     key: "prime", name: "Prime Video",
@@ -75,7 +75,7 @@ function recommend(a: Record<string, string>): Rec {
     key: "netflix", name: "Netflix",
     tagline: "The world's #1 streaming service.",
     reason: "Netflix is still king for series, films, and daily binge-worthy content. You'll never run out of things to watch.",
-    emoji: "🎬", price: 70, realPrice: 157,
+    emoji: "🎬", price: 90, realPrice: 157,
   };
 }
 
@@ -138,13 +138,13 @@ export function PackageQuiz() {
         const fallback: Service = {
           id:            rec.key,
           name:          rec.name,
-          price_kwacha:  rec.price ?? 70,
+          price_kwacha:  rec.price ?? 90,
         };
         setCheckoutService(fallback);
       }
     } catch {
       // Same fallback on error
-      setCheckoutService({ id: rec.key, name: rec.name, price_kwacha: rec.price ?? 70 });
+      setCheckoutService({ id: rec.key, name: rec.name, price_kwacha: rec.price ?? 90 });
     }
   };
 

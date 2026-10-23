@@ -7,9 +7,9 @@ export const Route = createFileRoute("/rewards")({
   head: () => ({
     meta: [
       { title: "Rewards — Earn Points & Unlock Real Perks | Axxess" },
-      { name: "description", content: "Every subscription earns you points. Unlock bonus days, discounts and a free month. Zambia's most rewarding streaming platform." },
+      { name: "description", content: "Every subscription earns you points. Unlock bonus days, discounts and a free month. Zambia's most rewarding streaming platform. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:title", content: "Axxess Rewards — Stream more, earn more" },
-      { property: "og:description", content: "Earn points every time you subscribe or refer a friend. Unlock real rewards including a free month of streaming." },
+      { property: "og:description", content: "Earn points every time you subscribe or refer a friend. Unlock real rewards including a free month of streaming. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/rewards" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

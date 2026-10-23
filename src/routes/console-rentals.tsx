@@ -9,9 +9,9 @@ export const Route = createFileRoute("/console-rentals")({
   head: () => ({
     meta: [
       { title: "PS4 Console Rentals in Kitwe — Axxess" },
-      { name: "description", content: "Rent a PS4 in Kitwe from K80 for 24 hours. Includes a controller, FIFA 17, Tomb Raider and free Netflix + Prime Video during your rental." },
+      { name: "description", content: "Rent a PS4 in Kitwe from K80 for 24 hours. Includes a controller, FIFA 17, Tomb Raider and free Netflix + Prime Video during your rental. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:title", content: "PS4 Console Rentals in Kitwe — Axxess" },
-      { property: "og:description", content: "Game night. Movie night. One rental. PS4 rentals from K80, with Netflix + Prime Video included. Kitwe only." },
+      { property: "og:description", content: "Game night. Movie night. One rental. PS4 rentals from K80, with Netflix + Prime Video included. Kitwe only. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/console-rentals" },
