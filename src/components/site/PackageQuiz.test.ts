@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { describe, test } from "node:test";
+import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 
@@ -18,12 +19,12 @@ const recommend = new Function(`${outputText}; return recommend;`)() as (
 
 describe("Monthly streaming prices", () => {
   test("Netflix costs K90", () => {
-    expect(recommend({ vibe: "series", watching: "solo", budget: "light" }).price).toBe(90);
+    assert.equal(recommend({ vibe: "series", watching: "solo", budget: "light" }).price, 90);
   });
   test("Prime Video costs K60", () => {
-    expect(recommend({ vibe: "originals", watching: "solo", budget: "light" }).price).toBe(60);
+    assert.equal(recommend({ vibe: "originals", watching: "solo", budget: "light" }).price, 60);
   });
   test("Both platforms cost K140", () => {
-    expect(recommend({ vibe: "trending", watching: "solo", budget: "premium" }).price).toBe(140);
+    assert.equal(recommend({ vibe: "trending", watching: "solo", budget: "premium" }).price, 140);
   });
 });
