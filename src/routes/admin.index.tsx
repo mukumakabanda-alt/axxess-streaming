@@ -24,9 +24,9 @@ export const Route = createFileRoute("/admin/")(({
     meta: [
       { title: "Axxess Admin" },
       { name: "robots", content: "noindex, nofollow" },
-      { name: "description", content: "Manage Axxess orders, subscriptions and streaming accounts." },
+      { name: "description", content: "Manage Axxess orders, subscriptions and streaming accounts. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:title", content: "Axxess Admin" },
-      { property: "og:description", content: "Manage Axxess orders, subscriptions and streaming accounts." },
+      { property: "og:description", content: "Manage Axxess orders, subscriptions and streaming accounts. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

@@ -8,9 +8,9 @@ export const Route = createFileRoute("/admin/setup")({
     meta: [
       { title: "Admin setup — Axxess" },
       { name: "robots", content: "noindex, nofollow" },
-      { name: "description", content: "Set up the first Axxess administrator account." },
+      { name: "description", content: "Set up the first Axxess administrator account. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:title", content: "Admin setup \u2014 Axxess" },
-      { property: "og:description", content: "Set up the first Axxess administrator account." },
+      { property: "og:description", content: "Set up the first Axxess administrator account. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

@@ -48,9 +48,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Axxess Entertainment — Netflix & Prime in Zambia" },
-      { name: "description", content: "Zambia's premium streaming platform. Netflix K70/mo, Prime Video K60/mo, All Access K120/mo. No card needed. Activated via WhatsApp in 15 minutes." },
+      { name: "description", content: "Zambia's premium streaming platform. Netflix K90/mo, Prime Video K60/mo, Both K140/mo. No card needed. Activated via WhatsApp in 15 minutes." },
       { property: "og:title", content: "Axxess Entertainment — Netflix & Prime in Zambia" },
-      { property: "og:description", content: "Netflix K70/mo. Prime Video K60/mo. All Access K120/mo. No card. WhatsApp activation in 15 minutes. Zambia's #1 streaming deal." },
+      { property: "og:description", content: "Netflix K90/mo, Prime Video K60/mo, Both K140/mo. No card. WhatsApp activation in 15 minutes. Zambia's #1 streaming deal." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
