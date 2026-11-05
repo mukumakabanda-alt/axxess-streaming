@@ -128,7 +128,7 @@ export function Referral() {
               </form>
             ) : (
               <div className="rounded-2xl p-6 sm:p-8" style={{ background: "rgba(229,25,42,0.06)", border: "1px solid rgba(229,25,42,0.25)", boxShadow: "0 0 40px -16px rgba(229,25,42,0.35)" }}>
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground text-center mb-4">Your referral link</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground text-center mb-4">Your code: <span className="font-mono text-primary">{code}</span> · share the community link</p>
 
                 {/* Link pill */}
                 <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
