@@ -9,9 +9,9 @@ export const Route = createFileRoute("/console-rentals")({
   head: () => ({
     meta: [
       { title: "PS4 Console Rentals in Kitwe — Axxess" },
-      { name: "description", content: "Rent a PS4 in Kitwe from K80 for 24 hours. Includes a controller, FIFA 17, Tomb Raider and free Netflix + Prime Video during your rental. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { name: "description", content: "Rent a PS4 in Kitwe from K120 for 24 hours. Includes a controller, God of War, FC 27, Need for Speed Heat, GTA 5, Call of Duty MW3 and free Netflix + Prime Video during your rental. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:title", content: "PS4 Console Rentals in Kitwe — Axxess" },
-      { property: "og:description", content: "Game night. Movie night. One rental. PS4 rentals from K80, with Netflix + Prime Video included. Kitwe only. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { property: "og:description", content: "Game night. Movie night. One rental. PS4 rentals from K120, with Netflix + Prime Video included. Kitwe only. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/console-rentals" },
@@ -24,9 +24,9 @@ export const Route = createFileRoute("/console-rentals")({
 function ConsoleRentalsPage() {
   const cfg = useSiteConfig();
   const tiers = [
-    { duration: "24 hrs", label: "24 hours", price: 80 },
-    { duration: "3 days", label: "3 days", price: 250 },
-    { duration: "7 days", label: "7 days", price: 400 },
+    { duration: "24 hrs", label: "24 hours", price: 120 },
+    { duration: "3 days", label: "3 days", price: 350 },
+    { duration: "7 days", label: "7 days", price: 700 },
   ];
   return (
     <SiteShell>
@@ -41,7 +41,7 @@ function ConsoleRentalsPage() {
 
         <div className="mt-10 border-b border-border pb-8">
           <h2 className="flex items-center gap-2 text-xl font-semibold"><Gamepad2 className="size-5 text-primary" /> Your rental includes</h2>
-          <p className="mt-4 leading-7 text-muted-foreground">PS4 Standard, one controller and two games: FIFA 17 + Tomb Raider.</p>
+          <p className="mt-4 leading-7 text-muted-foreground">PS4 Standard, one controller and five games: God of War, FC 27, Need for Speed Heat, GTA 5 and Call of Duty: Modern Warfare 3.</p>
           <p className="mt-3 font-medium text-foreground">Netflix + Prime Video, free for the whole rental.</p>
         </div>
 
