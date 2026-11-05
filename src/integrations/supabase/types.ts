@@ -852,6 +852,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      sync_profile_assignments: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Gift, Copy, Check, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useSiteConfig } from "@/lib/siteConfig";
 import { rememberCustomer, getRememberedName, getRememberedPhone } from "@/lib/customer";
 
 const schema = z.object({
@@ -22,13 +23,11 @@ export function Referral() {
   const [copied,     setCopied]     = useState(false);
   const [shared,     setShared]     = useState(false);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://axxess-streaming.lovable.app";
+  const cfg = useSiteConfig();
+  // Referrals share the WhatsApp community link; the friend mentions the code when ordering.
+  const referralLink = code ? (cfg.whatsappGroupLink || "https://chat.whatsapp.com/LWhwyD6Bw9M0PRJdR1c9Tg") : "";
 
-  // ✅ FIX: referralLink now includes ?ref=CODE so referrals are tracked
-  const referralLink = code ? `${origin}/?ref=${code}` : "";
-
-  // The message shared — human, warm, Zambian
-  const shareMessage = `Hey! 👋 Get Netflix or Prime Video in Zambia — K90/mo, no card needed, activated in 15 mins via WhatsApp.\n\nSign up through my link and we both benefit: ${referralLink}`;
+  const shareMessage = `Hey! 👋 Get Netflix or Prime Video in Zambia — K90/mo, no card needed, activated in 15 mins via WhatsApp.\n\nJoin the Axxess WhatsApp community: ${referralLink}\nMention my code *${code}* when you order so we both benefit.`;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -129,7 +128,7 @@ export function Referral() {
               </form>
             ) : (
               <div className="rounded-2xl p-6 sm:p-8" style={{ background: "rgba(229,25,42,0.06)", border: "1px solid rgba(229,25,42,0.25)", boxShadow: "0 0 40px -16px rgba(229,25,42,0.35)" }}>
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground text-center mb-4">Your referral link</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground text-center mb-4">Your code: <span className="font-mono text-primary">{code}</span> · share the community link</p>
 
                 {/* Link pill */}
                 <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
