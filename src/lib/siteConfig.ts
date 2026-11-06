@@ -121,3 +121,8 @@ export function paymentDetails(network: Network, cfg: SiteConfig) {
   }
   return null;
 }
+
+/** Current config snapshot (call after awaiting loadSiteConfig()). */
+export function getSiteConfig(): SiteConfig {
+  return snapshot;
+}
