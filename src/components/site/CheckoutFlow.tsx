@@ -157,6 +157,7 @@ export function CheckoutFlow({
       price_snapshot:         orderTotal,
       duration_days:          durationDays,
       expires_at:             expiresIso,
+      referral_code:          (() => { try { return localStorage.getItem("axx_ref_code"); } catch { return null; } })(),
     });
 
     setSubmitting(false);

@@ -24,10 +24,12 @@ export function Referral() {
   const [shared,     setShared]     = useState(false);
 
   const cfg = useSiteConfig();
-  // Referrals share the WhatsApp community link; the friend mentions the code when ordering.
-  const referralLink = code ? (cfg.whatsappGroupLink || "https://chat.whatsapp.com/LWhwyD6Bw9M0PRJdR1c9Tg") : "";
+  // Each person gets their own link (/join/CODE). It saves their code on the
+  // friend's phone, counts the visit, then opens the WhatsApp community.
+  void cfg;
+  const referralLink = code ? `https://axxess-streaming.lovable.app/join/${code}` : "";
 
-  const shareMessage = `Hey! 👋 Get Netflix or Prime Video in Zambia — K90/mo, no card needed, activated in 15 mins via WhatsApp.\n\nJoin the Axxess WhatsApp community: ${referralLink}\nMention my code *${code}* when you order so we both benefit.`;
+  const shareMessage = `Hey! 👋 Get Netflix or Prime Video in Zambia — K90/mo, no card needed, activated in 15 mins via WhatsApp.\n\nJoin the Axxess WhatsApp community with my personal link: ${referralLink}\nWhen you subscribe, mention my code *${code}*.`;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,7 +46,7 @@ export function Referral() {
     if (error) { toast.error("Could not generate link. Try again."); return; }
     rememberCustomer(parsed.data.owner_name, parsed.data.owner_phone);
     setCode(newCode);
-    toast.success("Your referral link is ready! Share it and earn +10 points per signup.");
+    toast.success("Your referral link is ready! It's yours alone — share it!");
   };
 
   const copy = () => {
@@ -86,7 +88,7 @@ export function Referral() {
               <div>
                 <h2 className="font-display text-2xl font-bold sm:text-3xl">Refer a friend</h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Earn <span className="font-semibold text-primary">+10 points</span> for every friend who joins via your link.
+                  Earn <span className="font-semibold text-primary">+10 points</span> for every friend who <span className="font-semibold text-foreground">subscribes</span> through your link.
                 </p>
               </div>
             </div>
@@ -94,9 +96,9 @@ export function Referral() {
             {/* How it works */}
             <div className="grid grid-cols-3 gap-3 mb-8">
               {[
-                { step: "01", label: "Generate your unique link" },
-                { step: "02", label: "Share it on WhatsApp or socials" },
-                { step: "03", label: "Friend joins → you earn +10 pts" },
+                { step: "01", label: "Get your own personal link — nobody else has it" },
+                { step: "02", label: "Friend taps it and joins our WhatsApp community" },
+                { step: "03", label: "Friend pays & subscribes → you get +10 pts" },
               ].map(({ step, label }) => (
                 <div key={step} className="rounded-2xl p-4 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
                   <span className="font-display text-2xl font-black" style={{ WebkitTextFillColor: "transparent", WebkitBackgroundClip: "text", backgroundClip: "text", backgroundImage: "linear-gradient(135deg, #E5192A, #C9A84C)", display: "inline-block" }}>
@@ -106,6 +108,10 @@ export function Referral() {
                 </div>
               ))}
             </div>
+
+            <p className="mb-8 rounded-2xl px-4 py-3 text-center text-sm" style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)", color: "rgba(255,255,255,0.8)" }}>
+              ⚠️ A referral only counts once your friend <strong className="text-foreground">subscribes successfully</strong>. Just joining the group doesn't count.
+            </p>
 
             {!code ? (
               <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
@@ -128,7 +134,7 @@ export function Referral() {
               </form>
             ) : (
               <div className="rounded-2xl p-6 sm:p-8" style={{ background: "rgba(229,25,42,0.06)", border: "1px solid rgba(229,25,42,0.25)", boxShadow: "0 0 40px -16px rgba(229,25,42,0.35)" }}>
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground text-center mb-4">Your code: <span className="font-mono text-primary">{code}</span> · share the community link</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground text-center mb-4">Your code: <span className="font-mono text-primary">{code}</span> · this link is yours alone</p>
 
                 {/* Link pill */}
                 <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -152,8 +158,7 @@ export function Referral() {
                     {shared ? <><Check className="h-4 w-4" /> Shared!</> : <><Share2 className="h-4 w-4" /> Share Link</>}
                   </button>
 
-                  {/* ✅ FIX: WhatsApp share now includes ?ref=CODE in the URL */}
-                  <a
+                                    <a
                     href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -168,7 +173,7 @@ export function Referral() {
                 </div>
 
                 <p className="mt-4 text-center text-xs text-muted-foreground">
-                  Every friend who joins through your link earns you <span className="text-primary font-semibold">+10 points</span> toward rewards.
+                  When a friend who used your link <span className="text-foreground font-semibold">subscribes</span>, you get <span className="text-primary font-semibold">+10 points</span>. Joining alone doesn't count.
                 </p>
               </div>
             )}
