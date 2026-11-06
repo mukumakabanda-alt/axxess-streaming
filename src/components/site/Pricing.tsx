@@ -19,6 +19,7 @@ const DIRECT_PRICES: Record<string, { zmw: number; label: string }> = {
 
 function getDirectPrice(slug: string, name: string) {
   const s = (slug + " " + name).toLowerCase();
+  if (s.includes("lite"))    return null; // 15-day pass — no fair monthly comparison
   if (s.includes("netflix")) return DIRECT_PRICES.netflix;
   if (s.includes("prime"))   return DIRECT_PRICES.prime;
   if (s.includes("all") || s.includes("bundle") || s.includes("access")) return DIRECT_PRICES.bundle;
@@ -30,6 +31,7 @@ type Service = {
   name:          string;
   slug:          string;
   price_kwacha:  number;
+  billing_period?: string | null;
   description:   string | null;
   features:      string[];
   accent_color:  string | null;
@@ -177,6 +179,9 @@ export function Pricing() {
           <p className="text-base max-w-md" style={{ color: "rgba(255,255,255,0.4)", lineHeight: 1.7 }}>
             No card. No contract. Activated via WhatsApp in 15 minutes.
           </p>
+          <p className="mt-3 text-sm max-w-md" style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+            Netflix, your way: <strong className="text-white">Lite</strong> K40 for 15 days, shared with one other person — or <strong className="text-white">Personal</strong> K90 for 30 days, your own profile.
+          </p>
         </div>
 
         {/* Plan cards */}
@@ -185,7 +190,7 @@ export function Pricing() {
             <Loader2 className="h-6 w-6 animate-spin" style={{ color: "rgba(255,255,255,0.3)" }} />
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {services.map(s => {
               const accentHex  = resolveAccentHex(s.accent_color);
               const light      = isLightAccent(accentHex);
@@ -251,7 +256,7 @@ export function Pricing() {
                         {Number(s.price_kwacha)}
                       </span>
                     </div>
-                    <span className="mb-1.5 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>/mo</span>
+                    <span className="mb-1.5 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{/15/.test(s.billing_period ?? "") ? "/15 days" : "/mo"}</span>
                   </div>
 
                   {/* Savings */}

@@ -13,9 +13,9 @@ export const Route = createFileRoute("/news")({
   head: () => ({
     meta: [
       { title: "Axxess News — Hot Takes, Drops & Zambian Tea ☕" },
-      { name: "description", content: "The most entertaining streaming news page in Zambia. Netflix, Prime Video, DStv. Real tea. Zero boring. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { name: "description", content: "The most entertaining streaming news page in Zambia. Netflix, Prime Video, DStv. Real tea. Zero boring. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:title", content: "Axxess News — We don't do boring" },
-      { property: "og:description", content: "Hot takes on Netflix, Prime Video & everything trending in Zambia. Read at your own risk. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { property: "og:description", content: "Hot takes on Netflix, Prime Video & everything trending in Zambia. Read at your own risk. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/news" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
