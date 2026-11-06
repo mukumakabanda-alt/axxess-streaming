@@ -8,9 +8,9 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact & Support — Axxess Streaming" },
-      { name: "description", content: "Get fast support from the Axxess Streaming team. Call us, chat on WhatsApp, or join the customer community. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { name: "description", content: "Get fast support from the Axxess Streaming team. Call us, chat on WhatsApp, or join the customer community. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:title", content: "Contact & Support — Axxess Streaming" },
-      { property: "og:description", content: "We're here to help — chat on WhatsApp anytime. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { property: "og:description", content: "We're here to help — chat on WhatsApp anytime. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/contact" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

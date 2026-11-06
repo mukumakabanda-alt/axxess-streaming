@@ -72,7 +72,7 @@ function recommend(a: Record<string, string>): Rec {
     emoji: "⚡", price: 60, realPrice: 157,
   };
   return {
-    key: "netflix", name: "Netflix",
+    key: "netflix", name: "Netflix Personal",
     tagline: "The world's #1 streaming service.",
     reason: "Netflix is still king for series, films, and daily binge-worthy content. You'll never run out of things to watch.",
     emoji: "🎬", price: 90, realPrice: 157,

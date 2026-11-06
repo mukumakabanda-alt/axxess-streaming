@@ -28,10 +28,10 @@ export const Route = createFileRoute("/renew")({
   head: () => ({
     meta: [
       { title: "Renew — Axxess Streaming" },
-      { name: "description", content: "Renew your Axxess subscription in under 60 seconds. No need to message us first. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { name: "description", content: "Renew your Axxess subscription in under 60 seconds. No need to message us first. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/renew" },
       { property: "og:title", content: "Renew \u2014 Axxess Streaming" },
-      { property: "og:description", content: "Renew your Axxess streaming subscription. Netflix K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { property: "og:description", content: "Renew your Axxess streaming subscription. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
