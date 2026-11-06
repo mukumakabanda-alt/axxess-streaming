@@ -125,7 +125,11 @@ export function PointsRewards() {
   const ptsToNext = nextTier ? nextTier.points - points : 0;
 
   const claimMsg = (tier: typeof REWARD_TIERS[0]) =>
-    `Hi Axxess! 👋 I've reached ${tier.points} points and unlocked: ${tier.reward}. My number is ${phone}. Please apply my reward to my next order. Thank you!`;
+    `Claim rewards 🎁\n\nNumber: ${phone}\nPoints: ${points}\nReward: ${tier.label} — ${tier.reward}`;
+  const unlockedTiers = REWARD_TIERS.filter((t) => points >= t.points);
+  const claimAllMsg =
+    `Claim rewards 🎁\n\nNumber: ${phone}\nPoints: ${points}\nRewards unlocked:\n` +
+    unlockedTiers.map((t) => `• ${t.label} — ${t.reward}`).join("\n");
 
   return (
     <section id="rewards" className="px-4 py-16 sm:px-6" style={{ background: "#080808" }}>
@@ -158,6 +162,19 @@ export function PointsRewards() {
               <span className="text-[10px] leading-tight" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</span>
             </div>
           ))}
+        </div>
+
+        {/* ── How it works ── */}
+        <div className="mb-8 rounded-3xl p-5 sm:p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <p className="mb-4 text-xs font-bold uppercase tracking-widest" style={{ color: "#C9A84C" }}>How it works</p>
+          <ol className="space-y-3 text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>
+            <li><strong className="text-white">1. Earn.</strong> You get points when you subscribe, and when a friend you referred <strong className="text-white">subscribes successfully</strong>.</li>
+            <li><strong className="text-white">2. Unlock.</strong> Reach a points level below and that reward is yours.</li>
+            <li><strong className="text-white">3. Claim.</strong> Enter your number, tap <strong className="text-white">Claim</strong> — a WhatsApp message is sent to Axxess and we add it.</li>
+          </ol>
+          <p className="mt-4 rounded-xl px-3 py-2 text-xs" style={{ background: "rgba(229,25,42,0.08)", border: "1px solid rgba(229,25,42,0.25)", color: "rgba(255,255,255,0.8)" }}>
+            🔒 Rewards are only paid out while you have an <strong className="text-white">active subscription</strong>.
+          </p>
         </div>
 
         {/* ── Main card ── */}
@@ -366,21 +383,34 @@ export function PointsRewards() {
                 })}
               </div>
 
+              {unlockedTiers.length > 0 && (
+                <div className="px-6 pb-6 text-center">
+                  <a
+                    href={`https://wa.me/${cfg.whatsappNumber}?text=${encodeURIComponent(claimAllMsg)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white transition-all hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #E5192A, #c01020)", boxShadow: "0 0 28px -8px rgba(229,25,42,0.6)" }}
+                  >
+                    <MessageCircle className="h-4 w-4" /> Claim my rewards ({unlockedTiers.length})
+                  </a>
+                  <p className="mt-2 text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>Paid out only while your subscription is active.</p>
+                </div>
+              )}
+
               {/* Bottom CTA — keep earning */}
               <div className="px-6 pb-8">
                 <div className="rounded-2xl p-5 text-center" style={{ background: "linear-gradient(135deg, rgba(229,25,42,0.08), rgba(201,168,76,0.05))", border: "1px solid rgba(229,25,42,0.15)" }}>
                   <p className="text-sm font-bold text-white mb-1">Want more points faster?</p>
                   <p className="text-xs mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
-                    Refer a friend (+10 pts) or renew early (+5 pts). Every point counts.
+                    Refer a friend (+10 pts once they subscribe) or renew early (+5 pts).
                   </p>
                   <a
-                    href={`https://wa.me/${cfg.whatsappNumber}?text=${encodeURIComponent("Hi Axxess! I want to refer a friend and earn points. How does it work?")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="#referral"
                     className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90"
                     style={{ background: "#25D366", boxShadow: "0 0 24px -8px rgba(37,211,102,0.6)" }}
                   >
-                    <MessageCircle className="h-4 w-4" /> Refer a friend on WhatsApp
+                    <Users className="h-4 w-4" /> Get my referral link
                   </a>
                 </div>
               </div>
