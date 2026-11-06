@@ -95,6 +95,9 @@ export function CheckoutFlow({
   const isRerouted = network === "zamtel";
 
   if (!service) return null;
+  // Netflix Lite is a single 15-day pass; every other plan is monthly.
+  const isLite      = /lite/i.test(service.name);
+  if (isLite && months !== 1) setMonths(1);
   const totalPrice  = Number(service.price_kwacha) * months;
   const isAllAccess = /all.?access|bundle/i.test(service.name);
   const isNetflix   = /netflix/i.test(service.name);
@@ -122,7 +125,7 @@ export function CheckoutFlow({
     }
 
     const normalizedPhone = normalizePhone(orderPhone);
-    const durationDays    = 30 * orderMonths;
+    const durationDays    = (/lite/i.test(orderService.name) ? 15 : 30) * orderMonths;
     const expiresAt       = new Date();
     expiresAt.setDate(expiresAt.getDate() + durationDays);
     const expiresIso      = expiresAt.toISOString();
@@ -242,7 +245,7 @@ export function CheckoutFlow({
                 <p className="mt-1 font-display text-3xl font-bold">
                   K{totalPrice}
                   <span className="text-sm font-normal text-muted-foreground">
-                    {months > 1 ? ` / ${months} months` : "/month"}
+                    {isLite ? " / 15 days" : months > 1 ? ` / ${months} months` : "/month"}
                   </span>
                 </p>
                 {months > 1 && (
@@ -300,7 +303,7 @@ export function CheckoutFlow({
                 </div>
 
                 {/* Duration */}
-                <div>
+                {!isLite && <div>
                   <Label>Duration</Label>
                   <div className="mt-1.5 grid grid-cols-4 gap-1.5">
                     {[1, 2, 3, 6].map((m) => {
@@ -324,7 +327,7 @@ export function CheckoutFlow({
                     })}
                   </div>
                   <p className="mt-1.5 text-[11px] text-muted-foreground">Pay once, enjoy longer. No need to renew every month.</p>
-                </div>
+                </div>}
 
                 {/* Upsell nudge */}
                 {!isAllAccess && (
