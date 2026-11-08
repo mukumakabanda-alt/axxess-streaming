@@ -5,6 +5,9 @@ import { CheckoutFlow } from "./CheckoutFlow";
 import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 import { getRememberedPhone, rememberCustomer } from "@/lib/customer";
 import { normalizePhone } from "@/lib/whatsapp";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { groupPricingServices, isNetflixPlan, isNetflixLite, selectedNetflixPlan, type PricingService } from "@/lib/plan-groups";
 
 /* ─── Real direct prices in ZMW ─────────────────────────────────────────────
    Netflix:    K220/mo direct
@@ -26,18 +29,7 @@ function getDirectPrice(slug: string, name: string) {
   return null;
 }
 
-type Service = {
-  id:            string;
-  name:          string;
-  slug:          string;
-  price_kwacha:  number;
-  billing_period?: string | null;
-  description:   string | null;
-  features:      string[];
-  accent_color:  string | null;
-  badge:         string | null;
-  is_full:       boolean | null;
-};
+type Service = PricingService;
 
 export function Pricing() {
   const [services,    setServices]    = useState<Service[] | null>(null);
@@ -49,6 +41,8 @@ export function Pricing() {
   const [quickRenew,  setQuickRenew]  = useState(false);
   // Guards against double-clicking "Get Access" while the lookup is running
   const [checkingId,  setCheckingId]  = useState<string | null>(null);
+  const [netflixChoice, setNetflixChoice] = useState<string | null>(null);
+  const planGroups = groupPricingServices(services ?? []);
 
   useEffect(() => {
     supabase
@@ -179,9 +173,6 @@ export function Pricing() {
           <p className="text-base max-w-md" style={{ color: "rgba(255,255,255,0.4)", lineHeight: 1.7 }}>
             No card. No contract. Activated via WhatsApp in 15 minutes.
           </p>
-          <p className="mt-3 text-sm max-w-md" style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-            Netflix, your way: <strong className="text-white">Lite</strong> K40 for 15 days, shared with one other person — or <strong className="text-white">Personal</strong> K90 for 30 days, your own profile.
-          </p>
         </div>
 
         {/* Plan cards */}
@@ -190,8 +181,13 @@ export function Pricing() {
             <Loader2 className="h-6 w-6 animate-spin" style={{ color: "rgba(255,255,255,0.3)" }} />
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {services.map(s => {
+          <div className={`grid gap-4 sm:grid-cols-2 ${planGroups.length <= 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
+            {planGroups.map(options => {
+              const first = options[0];
+              if (!first) return null;
+              const isNetflix = isNetflixPlan(first);
+              const s = isNetflix ? selectedNetflixPlan(options, netflixChoice) : first;
+              if (!s) return null;
               const accentHex  = resolveAccentHex(s.accent_color);
               const light      = isLightAccent(accentHex);
               const btnColor   = light ? "#000" : "#fff";
@@ -205,7 +201,7 @@ export function Pricing() {
 
               return (
                 <div
-                  key={s.id}
+                  key={isNetflix ? "netflix" : s.id}
                   onMouseMove={e => {
                     if (isFull) return;
                     const el = e.currentTarget as HTMLDivElement;
@@ -243,8 +239,21 @@ export function Pricing() {
                     </span>
                   ) : null}
 
-                  <h3 className="font-display text-lg font-bold text-white mb-1">{s.name}</h3>
-                  {s.description && (
+                  <h3 className="font-display text-lg font-bold text-white mb-1">{isNetflix ? "Netflix" : s.name}</h3>
+                  {isNetflix ? (
+                    <div className="mb-4">
+                      <p className="mb-3 text-xs text-muted-foreground">Two ways to watch.</p>
+                      <ToggleGroup type="single" value={s.id} onValueChange={value => { if (value) setNetflixChoice(value); }} aria-label="Netflix plan" className="grid w-full grid-cols-2 gap-1 rounded-lg bg-muted/50 p-1">
+                        {options.map(option => (
+                          <ToggleGroupItem key={option.id} value={option.id} aria-label={`Netflix ${isNetflixLite(option) ? "Lite" : "Personal"}, K${Number(option.price_kwacha)}`} className="h-14 min-w-0 flex-col gap-0.5 rounded-md px-1 text-foreground data-[state=on]:bg-primary/15 data-[state=on]:text-primary data-[state=on]:ring-1 data-[state=on]:ring-primary/40">
+                            <span className="text-sm font-semibold">{isNetflixLite(option) ? "Lite" : "Personal"}</span>
+                            <span className="text-xs">K{Number(option.price_kwacha)} <span className="text-muted-foreground">/ {isNetflixLite(option) ? "15 days" : "30 days"}</span></span>
+                          </ToggleGroupItem>
+                        ))}
+                      </ToggleGroup>
+                      <p className="mt-3 min-h-10 text-xs leading-5 text-muted-foreground">{isNetflixLite(s) ? "15 days. A profile shared with one other person." : "30 days. Your own personal profile."}</p>
+                    </div>
+                  ) : s.description && (
                     <p className="text-xs mb-4 line-clamp-2" style={{ color: "rgba(255,255,255,0.4)" }}>{s.description}</p>
                   )}
 
@@ -300,10 +309,10 @@ export function Pricing() {
                       Reserve a slot <ArrowRight className="h-3.5 w-3.5" />
                     </a>
                   ) : (
-                    <button
+                    <Button
                       onClick={() => handleGetAccess(s)}
                       disabled={isChecking}
-                      className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
                       style={{ background: accentHex, color: btnColor, boxShadow: `0 0 28px -6px ${accentHex}60` }}
                     >
                       {isChecking ? (
@@ -315,7 +324,7 @@ export function Pricing() {
                           Get Access <ArrowRight className="h-3.5 w-3.5" />
                         </>
                       )}
-                    </button>
+                    </Button>
                   )}
 
                   {/* Social proof */}
