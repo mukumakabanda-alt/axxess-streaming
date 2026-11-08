@@ -64,12 +64,12 @@ export function RentalGames() {
         <CarouselContent>
           {games.map((game, index) => (
             <CarouselItem key={game.title} aria-label={`${index + 1} of ${games.length}: ${game.title}`}>
-              <img src={game.image} alt={`${game.title} — included with your PS4 rental`} width={768} height={1366} loading="lazy" decoding="async" className="h-[min(480px,calc(100svh-260px))] min-h-40 w-full rounded-lg bg-card object-contain" />
+              <img src={game.image} alt={`${game.title} — included with your PS4 rental`} width={768} height={1366} loading="lazy" decoding="async" className="h-[min(480px,calc(100svh-300px))] min-h-40 w-full rounded-lg bg-card object-contain" />
             </CarouselItem>
           ))}
         </CarouselContent>
       </Carousel>
-      <div className="mt-4 flex min-h-14 items-center justify-between gap-2">
+      <div className="mt-4 flex min-h-14 flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] tabular-nums text-muted-foreground">{String(current + 1).padStart(2, "0")} / 05</p>
           <p className="min-h-10 text-sm font-medium leading-5">{games[current]?.title}</p>
