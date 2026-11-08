@@ -75,9 +75,9 @@ export function RentalGames() {
           <p className="min-h-10 text-sm font-medium leading-5">{games[current]?.title}</p>
         </div>
         <div className="flex shrink-0 gap-1">
-          <Button variant="ghost" size="icon" aria-label="Previous game" title="Previous game" onClick={() => { setPaused(true); api?.scrollPrev(); }}><ArrowLeft /></Button>
-          {!reducedMotion && <Button variant="ghost" size="icon" aria-label={paused ? "Play game slideshow" : "Pause game slideshow"} title={paused ? "Play slideshow" : "Pause slideshow"} onClick={() => setPaused(value => !value)}>{paused ? <Play /> : <Pause />}</Button>}
-          <Button variant="ghost" size="icon" aria-label="Next game" title="Next game" onClick={() => { setPaused(true); api?.scrollNext(); }}><ArrowRight /></Button>
+          <Button variant="ghost" size="icon" disabled={!api} aria-label="Previous game" title="Previous game" onClick={() => { setPaused(true); api?.scrollPrev(); }}><ArrowLeft /></Button>
+          {!reducedMotion && <Button variant="ghost" size="icon" disabled={!api} aria-label={paused ? "Play game slideshow" : "Pause game slideshow"} title={paused ? "Play slideshow" : "Pause slideshow"} onClick={() => setPaused(value => !value)}>{paused ? <Play /> : <Pause />}</Button>}
+          <Button variant="ghost" size="icon" disabled={!api} aria-label="Next game" title="Next game" onClick={() => { setPaused(true); api?.scrollNext(); }}><ArrowRight /></Button>
         </div>
       </div>
     </div>
