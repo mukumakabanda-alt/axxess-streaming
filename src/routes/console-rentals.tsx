@@ -4,6 +4,7 @@ import { SiteShell } from "@/components/site/SiteShell";
 import { Button } from "@/components/ui/button";
 import { useSiteConfig } from "@/lib/siteConfig";
 import consoleImage from "@/assets/ps4-detail.webp.asset.json";
+import { RentalGames } from "@/components/site/RentalGames";
 
 export const Route = createFileRoute("/console-rentals")({
   head: () => ({
@@ -37,11 +38,14 @@ function ConsoleRentalsPage() {
         <div className="flex items-center gap-2 text-xs font-semibold uppercase text-primary"><MapPin className="size-3.5" /> Kitwe only</div>
         <h1 className="mt-4 text-4xl font-bold sm:text-5xl">PS4 rentals</h1>
         <p className="mt-4 text-lg text-muted-foreground">Game night. Movie night. One rental.</p>
-        <img src={consoleImage.url} alt="Black PlayStation 4 console and controller from the Axxess rental poster" width={680} height={584} className="mt-8 aspect-[680/584] w-full max-w-sm rounded-lg object-cover" />
+        <div className="mt-8 grid items-center gap-8 sm:grid-cols-2">
+          <img src={consoleImage.url} alt="Black PlayStation 4 console and controller from the Axxess rental poster" width={680} height={584} className="mx-auto aspect-[680/584] w-full max-w-sm rounded-lg object-cover" />
+          <RentalGames />
+        </div>
 
         <div className="mt-10 border-b border-border pb-8">
           <h2 className="flex items-center gap-2 text-xl font-semibold"><Gamepad2 className="size-5 text-primary" /> Your rental includes</h2>
-          <p className="mt-4 leading-7 text-muted-foreground">PS4 Standard, one controller and five games: God of War, FC 27, Need for Speed Heat, GTA 5 and Call of Duty: Modern Warfare 3.</p>
+          <p className="mt-4 leading-7 text-muted-foreground">PS4 Standard, one controller and all five games shown above.</p>
           <p className="mt-3 font-medium text-foreground">Netflix + Prime Video, free for the whole rental.</p>
         </div>
 
