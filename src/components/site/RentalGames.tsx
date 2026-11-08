@@ -64,7 +64,7 @@ export function RentalGames() {
         <CarouselContent>
           {games.map((game, index) => (
             <CarouselItem key={game.title} aria-label={`${index + 1} of ${games.length}: ${game.title}`}>
-              <img src={game.image} alt={`${game.title} — included with your PS4 rental`} width={768} height={1366} loading="lazy" decoding="async" className="aspect-[9/16] w-full rounded-lg bg-card object-contain" />
+              <img src={game.image} alt={`${game.title} — included with your PS4 rental`} width={768} height={1366} loading="lazy" decoding="async" className="h-[min(480px,calc(100svh-260px))] min-h-40 w-full rounded-lg bg-card object-contain" />
             </CarouselItem>
           ))}
         </CarouselContent>
