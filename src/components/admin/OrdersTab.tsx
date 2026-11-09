@@ -13,6 +13,7 @@ import { normalizePhone } from "@/lib/whatsapp";
 import {
   classifyService, needsNetflixProfile, needsPrimeProfile, serviceTypeLabel,
   type ServiceType,
+  isNetflixLite, canTakeNetflixProfile,
 } from "@/lib/serviceType";
 
 type Order = {
