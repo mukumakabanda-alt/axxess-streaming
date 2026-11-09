@@ -29,6 +29,13 @@
       "when": 1793900497504,
       "tag": "0003_auto_profile_release",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794249396530,
+      "tag": "0004_netflix_lite_half_profiles",
+      "breakpoints": true
     }
   ]
 }
