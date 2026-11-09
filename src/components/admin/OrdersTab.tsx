@@ -60,15 +60,18 @@ const STATUSES = ["pending", "approved", "completed", "rejected"] as const;
 // A row of selectable/vulnerable profile buttons, shared between the
 // Netflix and Prime Video sections of the assign-profile dialog below.
 function ProfilePickerList({
-  title, options, selected, onSelect, onVulnerableClick,
+  title, options, selected, onSelect, onVulnerableClick, lite = false,
 }: {
   title: string;
+  lite?: boolean;
   options: (ProfileRow & { accountEmail: string })[];
   selected: string | null;
   onSelect: (id: string) => void;
   onVulnerableClick: (label: string) => void;
 }) {
-  const available  = options.filter((p) => p.status === "available" && !p.is_vulnerable);
+  const available  = options
+    .filter((p) => canTakeNetflixProfile(p, lite))
+    .sort((a, b) => (a.status === "half" ? 0 : 1) - (b.status === "half" ? 0 : 1));
   const vulnerable = options.filter((p) => p.is_vulnerable);
 
   return (
@@ -93,7 +96,7 @@ function ProfilePickerList({
                 : "border-border hover:bg-muted"
             }`}
           >
-            {p.profile_name} · {p.accountEmail}
+            {p.status === "half" && "½ shared · "}{p.profile_name} · {p.accountEmail}
           </button>
         ))}
         {vulnerable.map((p) => (
@@ -178,6 +181,7 @@ export function OrdersTab() {
   // Orders tab — whether Netflix/Prime is full before he even opens the
   // assign dialog on a specific order.
   const netflixAvailable  = netflixProfiles.filter((p) => p.status === "available" && !p.is_vulnerable).length;
+  const netflixHalf       = netflixProfiles.filter((p) => p.status === "half" && !p.is_vulnerable).length;
   const netflixVulnerable = netflixProfiles.filter((p) => p.is_vulnerable).length;
   const primeAvailable    = primeProfiles.filter((p) => p.status === "available" && !p.is_vulnerable).length;
   const primeVulnerable   = primeProfiles.filter((p) => p.is_vulnerable).length;
@@ -354,7 +358,9 @@ export function OrdersTab() {
       .eq("customer_phone", o.customer_phone)
       .eq("is_active", true);
     const existing = ((activeSubsRaw ?? []) as any[])
-      .find((s) => classifyService(s.service_name) === serviceType) ?? null;
+      .find((s) => classifyService(s.service_name) === serviceType
+        // Lite and Personal never share a profile, so switching plan needs a new one
+        && (serviceType !== "netflix" || isNetflixLite(s.service_name) === isNetflixLite(o.service_name_snapshot))) ?? null;
 
     const needNetflix = needsNetflixProfile(serviceType) && !existing?.netflix_profile_id;
     const needPrime   = needsPrimeProfile(serviceType) && !existing?.prime_profile_id;
@@ -391,12 +397,8 @@ export function OrdersTab() {
     if (needNetflix && !netflixProfileId) return toast.error("Pick a Netflix profile first");
     if (needPrime && !primeProfileId)     return toast.error("Pick a Prime Video profile first");
 
-    if (netflixProfileId) {
-      const { error } = await supabase.from("netflix_profiles")
-        .update({ status: "active", assigned_customer: o.customer_name })
-        .eq("id", netflixProfileId);
-      if (error) return toast.error(`Netflix profile not assigned: ${error.message}`);
-    }
+    // Netflix profile status (half / full) is set by the database from the
+    // linked subscriptions, so Lite customers pair up correctly.
     if (primeProfileId) {
       const { error } = await supabase.from("prime_profiles")
         .update({ status: "active", assigned_customer: o.customer_name })
@@ -457,6 +459,7 @@ export function OrdersTab() {
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="rounded-full bg-muted px-3 py-1">
           Netflix: <b className="text-green-400">{netflixAvailable}</b> available
+          {netflixHalf > 0 && <span className="text-blue-400"> · {netflixHalf} half (1 Lite spot)</span>}
           {netflixVulnerable > 0 && <span className="text-orange-400"> · {netflixVulnerable} vulnerable</span>}
         </span>
         <span className="rounded-full bg-muted px-3 py-1">
@@ -588,6 +591,7 @@ export function OrdersTab() {
                   <ProfilePickerList
                     title="Netflix profile"
                     options={netflixOptions}
+                    lite={isNetflixLite(assignDialog.order.service_name_snapshot)}
                     selected={assignDialog.netflixProfileId}
                     onSelect={(id) => setAssignDialog({ ...assignDialog, netflixProfileId: id })}
                     onVulnerableClick={(label) => clickVulnerable(label, "Netflix")}

@@ -365,8 +365,9 @@ export function NetflixAccountsTab() {
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
                       p.status === "available" ? "bg-green-500/20 text-green-400" :
                       p.status === "locked"    ? "bg-red-500/20 text-red-400" :
+                      p.status === "half"      ? "bg-yellow-500/20 text-yellow-400" :
                       "bg-blue-500/20 text-blue-400"
-                    }`}>{p.status}</span>
+                    }`}>{p.status === "half" ? "½ Lite · 1 spot left" : p.status === "active" && p.assigned_customer?.includes(" & ") ? "Full · 2 Lite" : p.status}</span>
                   )}
                 </div>
 

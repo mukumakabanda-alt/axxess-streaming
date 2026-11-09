@@ -19,6 +19,20 @@ export function classifyService(name: string | null | undefined): ServiceType {
   return "other";
 }
 
+// Netflix Lite is shared: two Lite customers fill one profile ("half" each).
+// Personal fills a profile alone and never mixes with Lite.
+export function isNetflixLite(name: string | null | undefined): boolean {
+  return /lite/i.test(name || "");
+}
+
+export function canTakeNetflixProfile(
+  p: { status: string; is_vulnerable: boolean },
+  lite: boolean,
+): boolean {
+  if (p.is_vulnerable) return false;
+  return p.status === "available" || (lite && p.status === "half");
+}
+
 export function needsNetflixProfile(type: ServiceType): boolean {
   return type === "netflix" || type === "all-access";
 }
