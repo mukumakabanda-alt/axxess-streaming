@@ -120,7 +120,7 @@ export function NetflixAccountsTab() {
   const totals = useMemo(() => ({
     total:      accounts.length,
     active:     accounts.filter(a => a.status === "active").length,
-    assigned:   profiles.filter(p => p.status === "active" || p.status === "locked").length,
+    assigned:   profiles.filter(p => p.status === "active" || p.status === "locked" || p.status === "half").length,
     available:  profiles.filter(p => p.status === "available" && !p.is_vulnerable).length,
     vulnerable: profiles.filter(p => p.is_vulnerable).length,
   }), [accounts, profiles]);
@@ -365,8 +365,9 @@ export function NetflixAccountsTab() {
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
                       p.status === "available" ? "bg-green-500/20 text-green-400" :
                       p.status === "locked"    ? "bg-red-500/20 text-red-400" :
+                      p.status === "half"      ? "bg-yellow-500/20 text-yellow-400" :
                       "bg-blue-500/20 text-blue-400"
-                    }`}>{p.status}</span>
+                    }`}>{p.status === "half" ? "½ Lite · 1 spot left" : p.status === "active" && p.assigned_customer?.includes(" & ") ? "Full · 2 Lite" : p.status}</span>
                   )}
                 </div>
 
