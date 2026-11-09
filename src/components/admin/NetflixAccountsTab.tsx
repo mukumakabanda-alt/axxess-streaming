@@ -120,7 +120,7 @@ export function NetflixAccountsTab() {
   const totals = useMemo(() => ({
     total:      accounts.length,
     active:     accounts.filter(a => a.status === "active").length,
-    assigned:   profiles.filter(p => p.status === "active" || p.status === "locked").length,
+    assigned:   profiles.filter(p => p.status === "active" || p.status === "locked" || p.status === "half").length,
     available:  profiles.filter(p => p.status === "available" && !p.is_vulnerable).length,
     vulnerable: profiles.filter(p => p.is_vulnerable).length,
   }), [accounts, profiles]);
