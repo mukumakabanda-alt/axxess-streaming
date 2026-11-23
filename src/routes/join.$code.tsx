@@ -10,9 +10,9 @@ export const Route = createFileRoute("/join/$code")({
   head: () => ({
     meta: [
       { title: "You're invited to Axxess Entertainment" },
-      { name: "description", content: "A friend invited you to the Axxess WhatsApp community. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { name: "description", content: "A friend invited you to the Axxess WhatsApp community. Netflix Lite K40/15 days, Netflix Personal K90/mo." },
       { property: "og:title", content: "You're invited to Axxess Entertainment" },
-      { property: "og:description", content: "Join the Axxess WhatsApp community — Netflix from K40, Prime Video K60/mo. No card needed." },
+      { property: "og:description", content: "Join the Axxess WhatsApp community — Netflix from K40. No card needed." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },

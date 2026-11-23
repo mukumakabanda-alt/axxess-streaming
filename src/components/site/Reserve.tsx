@@ -17,15 +17,11 @@ type Svc = { id: string; name: string; slug: string; is_full: boolean; price_kwa
 
 const PACKAGE_META: Record<string, { color: string; glow: string; label: string }> = {
   netflix:    { color: "#E5192A", glow: "rgba(229,25,42,0.45)",   label: "Netflix"     },
-  prime:      { color: "#00A8E1", glow: "rgba(0,168,225,0.45)",   label: "Prime Video" },
-  "all-access":{ color: "#C9A84C", glow: "rgba(201,168,76,0.45)", label: "All Access"  },
 };
 
 function pkgMeta(slug: string, name: string) {
   const s = slug + " " + name.toLowerCase();
   if (s.includes("netflix"))            return PACKAGE_META["netflix"];
-  if (s.includes("prime"))              return PACKAGE_META["prime"];
-  if (s.includes("all") || s.includes("bundle")) return PACKAGE_META["all-access"];
   return { color: "#E5192A", glow: "rgba(229,25,42,0.45)", label: name };
 }
 

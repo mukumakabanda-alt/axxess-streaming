@@ -29,7 +29,7 @@ export function Referral() {
   void cfg;
   const referralLink = code ? `https://axxess-streaming.lovable.app/join/${code}` : "";
 
-  const shareMessage = `Hey! 👋 Get Netflix or Prime Video in Zambia — K90/mo, no card needed, activated in 15 mins via WhatsApp.\n\nJoin the Axxess WhatsApp community with my personal link: ${referralLink}\nWhen you subscribe, mention my code *${code}*.`;
+  const shareMessage = `Hey! 👋 Get Netflix in Zambia — from K40, no card needed, activated in 15 mins via WhatsApp.\n\nJoin the Axxess WhatsApp community with my personal link: ${referralLink}\nWhen you subscribe, mention my code *${code}*.`;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

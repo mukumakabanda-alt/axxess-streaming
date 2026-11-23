@@ -13,9 +13,9 @@ export const Route = createFileRoute("/news")({
   head: () => ({
     meta: [
       { title: "Axxess News — Hot Takes, Drops & Zambian Tea ☕" },
-      { name: "description", content: "The most entertaining streaming news page in Zambia. Netflix, Prime Video, DStv. Real tea. Zero boring. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { name: "description", content: "The most entertaining streaming news page in Zambia. Netflix and DStv. Real tea. Zero boring. Netflix Lite K40/15 days, Netflix Personal K90/mo." },
       { property: "og:title", content: "Axxess News — We don't do boring" },
-      { property: "og:description", content: "Hot takes on Netflix, Prime Video & everything trending in Zambia. Read at your own risk. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { property: "og:description", content: "Hot takes on Netflix & everything trending in Zambia. Read at your own risk. Netflix Lite K40/15 days, Netflix Personal K90/mo." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/news" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -74,7 +74,7 @@ const CACHE_KEY = "axx_news_cache_v6";
 
 const DEFAULT_SETTINGS: NewsSettings = {
   bannerEnabled: true,
-  bannerMessage: "🎬 Everything you're reading about — watch it. Netflix K90 · Prime K60",
+  bannerMessage: "🎬 Everything you're reading about — watch it. Netflix from K40 · Personal K90",
   heroEnabled: true,
   cacheMinutes: 45,
 };
@@ -92,14 +92,10 @@ const CATEGORIES = [
 /* ─── TMDB show map ──────────────────────────────────────────────────────── */
 const TMDB_SHOWS: Record<string, { id: number; type: "movie" | "tv"; accent: string }> = {
   "stranger things":       { id: 66732,  type: "tv",    accent: "#E5192A" },
-  "the boys":              { id: 76479,  type: "tv",    accent: "#1a9de1" },
   "squid game":            { id: 93405,  type: "tv",    accent: "#E5192A" },
   "wednesday":             { id: 119051, type: "tv",    accent: "#7C3AED" },
-  "fallout":               { id: 106379, type: "tv",    accent: "#C9A84C" },
-  "citadel":               { id: 126108, type: "tv",    accent: "#0EA5E9" },
   "outer banks":           { id: 79744,  type: "tv",    accent: "#C9A84C" },
   "baby reindeer":         { id: 224136, type: "tv",    accent: "#EC4899" },
-  "the grand tour":        { id: 61621,  type: "tv",    accent: "#FF6B35" },
   "reginald the vampire":  { id: 136153, type: "tv",    accent: "#E5192A" },
   "the night agent":       { id: 201243, type: "tv",    accent: "#0EA5E9" },
   "black mirror":          { id: 42009,  type: "tv",    accent: "#888" },
@@ -142,7 +138,6 @@ async function fetchTMDB(id: number, type: "movie" | "tv") {
 /* ─── Editorial helpers ──────────────────────────────────────────────────── */
 const ZAMBIAN_ANGLES: Record<string, string> = {
   netflix:   "Netflix Zambia is real — no more borrowing your cousin's login. Axxess has you sorted at K90/month.",
-  prime:     "Prime Video hits different when you're watching from your couch in Lusaka. K60/month via Axxess.",
   dstv:      "DStv has been in Zambian living rooms longer than some of us have been alive. Reserve your slot.",
   streaming: "Zambians are out here watching on mobile data like absolute champions. Axxess keeps it affordable.",
   default:   "Zambia is streaming. The real question is — are you paying the right price? Axxess has the answer.",
@@ -150,15 +145,13 @@ const ZAMBIAN_ANGLES: Record<string, string> = {
 
 const CTAS = [
   { label: "Watch on Netflix — K90/mo",    url: "/#plans" },
-  { label: "Watch on Prime Video — K60/mo", url: "/#plans" },
-  { label: "Get All Access — K140/mo",      url: "/#plans" },
+  { label: "Try Netflix Lite — K40/15 days", url: "/#plans" },
   { label: "Reserve Your Slot →",           url: "/reserve" },
 ];
 
 function getZambianAngle(text: string) {
   const t = text.toLowerCase();
   if (t.includes("netflix")) return ZAMBIAN_ANGLES.netflix;
-  if (t.includes("prime"))   return ZAMBIAN_ANGLES.prime;
   if (t.includes("dstv"))    return ZAMBIAN_ANGLES.dstv;
   if (t.includes("stream"))  return ZAMBIAN_ANGLES.streaming;
   return ZAMBIAN_ANGLES.default;
@@ -166,9 +159,7 @@ function getZambianAngle(text: string) {
 
 function getCTA(text: string) {
   const t = text.toLowerCase();
-  if (t.includes("prime"))                                return CTAS[1];
-  if (t.includes("all access") || t.includes("bundle"))  return CTAS[2];
-  if (t.includes("dstv") || t.includes("reserve"))       return CTAS[3];
+  if (t.includes("dstv") || t.includes("reserve"))       return CTAS[2];
   return CTAS[0];
 }
 
@@ -220,7 +211,7 @@ function craftBody(title: string, desc: string, zambianAngle: string): string {
 const OPINIONS = [
   "If this doesn't make you open Netflix right now, I don't know what will. K90/month via Axxess. No excuses.",
   "This is exactly the content Zambians deserve access to. The price used to be the barrier. Axxess fixed that.",
-  "Elite content deserves elite access. Axxess — K90 Netflix, K60 Prime, K140 both.",
+  "Elite content deserves elite access. Axxess — Netflix Lite K40, Netflix Personal K90.",
   "Hot take: if you're not watching this, your entertainment taste needs a serious upgrade.",
   "Zambia has always had taste. Now we need the access. That's what Axxess is for.",
   "This is better than anything on free-to-air TV. Worth every ngwee of that K90.",
@@ -261,28 +252,6 @@ const STATIC_ARTICLES: Article[] = [
     cta: { label: "Get Netflix — K90/mo", url: "/#plans" },
   },
   {
-    id: "the-boys-s5",
-    headline: "The Boys S5: Someone Finally Beats Homelander — And It Looks Unhinged",
-    hook: "Set photos leaked. Jensen Ackles is back. The showrunner said someone makes Homelander 'look like a golden retriever.' In a show where he literally nuked a crowd. We need to talk. 💥",
-    body: "The Boys Season 5 is in production and it looks like the most chaotic season yet.\n\nShowrunner Eric Kripke hinted at a new villain who makes Homelander look tame. The entire cast described the finale as 'emotionally devastating.'\n\n🇿🇲 *Zambian angle:* The Boys is basically a documentary about powerful people with zero accountability. Zambians understand this energy on a spiritual level. Prime Video — K60/month via Axxess.",
-    opinion: "Homelander is just a Zambian politician with laser eyes and a cape. The Boys is not entertainment — it's political education. Hot take: Billy Butcher was always the real villain.",
-    category: "series",
-    emoji: "💥",
-    shareText: "The Boys Season 5 is filming and someone FINALLY beats Homelander 💥 Prime Video via Axxess — K60/month",
-    tmdbId: 76479,
-    tmdbType: "tv",
-    accentColor: "#1a9de1",
-    stats: [
-      { label: "Season 4 viewers",  value: "65M households" },
-      { label: "Prime subscribers", value: "200M+" },
-      { label: "Via Axxess",        value: "K60/month" },
-    ],
-    readTime: 3,
-    controversial: true,
-    timestamp: new Date().toISOString(),
-    cta: { label: "Get Prime Video — K60/mo", url: "/#plans" },
-  },
-  {
     id: "squid-game-3",
     headline: "Squid Game Season 3 Is In Post-Production. After THAT Ending. We Are Not Ready.",
     hook: "Netflix confirmed it. Already in post. Based on how Season 2 ended, this is either going to be the greatest finale in streaming history — or the most devastating. 🦑",
@@ -305,41 +274,19 @@ const STATIC_ARTICLES: Article[] = [
     cta: { label: "Watch on Netflix — K90/mo", url: "/#plans" },
   },
   {
-    id: "fallout-s2",
-    headline: "Fallout Season 2 Is Coming And Prime Video Is Betting Everything On It",
-    hook: "Amazon greenlit Fallout S2 faster than any show in Prime history. They know what they have. The question is whether they can top Season 1 — which was genuinely perfect television. ☢️",
-    body: "Fallout Season 1 was the surprise hit of 2024. A video game adaptation — historically the worst genre on TV — became must-watch for people who had never touched a controller.\n\nWalton Goggins as The Ghoul was one of the best TV performances of 2024. The man ate every scene and asked for seconds.\n\n🇿🇲 *Zambian angle:* A post-apocalyptic wasteland where corporations control everything and regular people suffer? Zambians understand this cinematic universe on a deeply personal level. Prime Video — K60/month via Axxess.",
-    opinion: "Fallout Season 1 is better than 90% of superhero content from the last decade. That's not a take — that's a fact. If you haven't watched it, fix that before Season 2 drops.",
-    category: "series",
-    emoji: "☢️",
-    shareText: "Fallout Season 2 is confirmed and in production ☢️ Season 1 was ELITE. Prime Video via Axxess — K60/month",
-    tmdbId: 106379,
-    tmdbType: "tv",
-    accentColor: "#C9A84C",
-    stats: [
-      { label: "S1 viewers (week 1)", value: "65M" },
-      { label: "IMDb rating",         value: "8.5/10" },
-      { label: "Via Axxess",          value: "K60/month" },
-    ],
-    readTime: 3,
-    controversial: false,
-    timestamp: new Date().toISOString(),
-    cta: { label: "Watch Fallout on Prime — K60/mo", url: "/#plans" },
-  },
-  {
     id: "zambia-streaming",
     headline: "Zambia's Streaming Consumption Grew 67% In 2024 — And These Numbers Are Wild",
     hook: "A new report confirmed Zambians spent 67% more time streaming in 2024. The streaming revolution didn't come — it already happened. Are you in it? 🇿🇲",
-    body: "Mobile data usage for video streaming in Zambia grew 67% in 2024. 78% of that streaming happens on a smartphone.\n\nPeople watch on minibuses, during lunch, at the saloon, in the office. Streaming has become Zambia's new radio.\n\nThe biggest barrier remains cost — official subscriptions are priced in dollars. Axxess exists to fix that: Netflix K90, Prime K60, both for K140.",
+    body: "Mobile data usage for video streaming in Zambia grew 67% in 2024. 78% of that streaming happens on a smartphone.\n\nPeople watch on minibuses, during lunch, at the saloon, in the office. Streaming has become Zambia's new radio.\n\nThe biggest barrier remains cost — official subscriptions are priced in dollars. Axxess exists to fix that: Netflix from K40 for 15 days, or K90 for your own profile.",
     opinion: "The data says Zambia is ready. The question is just whether you're watching on a dodgy stream or a proper account. Get a proper account. You deserve better quality.",
     category: "zambia",
     emoji: "🇿🇲",
-    shareText: "Zambia's streaming grew 67% in 2024 🇿🇲 We are officially a streaming nation. Axxess keeps it affordable — Netflix K90, Prime K60 🔥",
+    shareText: "Zambia's streaming grew 67% in 2024 🇿🇲 We are officially a streaming nation. Axxess keeps it affordable — Netflix from K40 🔥",
     accentColor: "#198754",
     stats: [
       { label: "Streaming growth",    value: "+67%" },
       { label: "Mobile viewing share", value: "78%" },
-      { label: "Both platforms",       value: "K140/month" },
+      { label: "Netflix Lite",       value: "K40/15 days" },
     ],
     readTime: 2,
     controversial: false,
@@ -369,39 +316,19 @@ const STATIC_ARTICLES: Article[] = [
     cta: { label: "Watch Wednesday on Netflix", url: "/#plans" },
   },
   {
-    id: "all-access-case",
-    headline: "K140 For Both Netflix AND Prime Video Is Actually The Smartest Financial Decision You Can Make",
-    hook: "You're spending K90 on Netflix. Your friend is spending K60 on Prime. You're both missing half the shows. There's a smarter way and it costs K10 less than paying separately. Do the maths. 🎯",
-    body: "Netflix: Stranger Things, Squid Game, Wednesday, Outer Banks, Baby Reindeer.\nPrime Video: The Boys, Fallout, The Grand Tour, Citadel.\nYou need both.\n\nAxxess All Access = K140/month. Less than one Shoprite grocery run. Less than two tanks of petrol. Less than one night out.\n\nActivated in 15 minutes via WhatsApp. No card. No contract. No stress.",
-    opinion: "Choosing between Netflix and Prime in 2025 is like choosing between lunch and dinner. You need both. K140 a month. Stop playing games with yourself.",
-    category: "axxess",
-    emoji: "🎯",
-    shareText: "Netflix K90 + Prime K60 = K150 separately. OR K140 for BOTH via Axxess All Access 🤯 The maths literally don't miss",
-    accentColor: "#C9A84C",
-    stats: [
-      { label: "Netflix only",   value: "K90/month" },
-      { label: "Prime only",     value: "K60/month" },
-      { label: "All Access",     value: "K140/month" },
-    ],
-    readTime: 2,
-    controversial: false,
-    timestamp: new Date().toISOString(),
-    cta: { label: "Get All Access — K140/mo", url: "/#plans" },
-  },
-  {
     id: "dstv-vs-streaming",
     headline: "Netflix vs DStv In Zambia — The Honest Breakdown Nobody Else Will Give You",
     hook: "Zambia has been loyal to DStv for 30 years. Netflix arrived and chaos followed. Here's the real truth about both — and why you probably need both. 📺",
-    body: "DStv: live football, local African content, familiar interface, been in our homes since before some of us were born.\n\nNetflix + Prime: better originals, on-demand, no rain signal disruption, more affordable via Axxess.\n\nThe honest answer is: most Zambian households will end up with both. DStv for live sports. Netflix/Prime for everything else. Axxess makes the streaming side affordable — K90, K60, or K140 for both.",
+    body: "DStv: live football, local African content, familiar interface, been in our homes since before some of us were born.\n\nNetflix: better originals, on-demand, no rain signal disruption, more affordable via Axxess.\n\nThe honest answer is: most Zambian households will end up with both. DStv for live sports. Netflix for everything else. Axxess makes the streaming side affordable — K90, K60, or K140 for both.",
     opinion: "DStv and Netflix are not competitors — they're complements. Any household with both is simply winning at entertainment. Hot take: SuperSport alone justifies DStv. Everything else? Go streaming.",
     category: "zambia",
     emoji: "📺",
-    shareText: "Netflix vs DStv in Zambia 🇿🇲 Honest breakdown: they're actually complements. And Axxess makes streaming affordable — K90 Netflix, K60 Prime",
+    shareText: "Netflix vs DStv in Zambia 🇿🇲 Honest breakdown: they're actually complements. And Axxess makes streaming affordable — Netflix from K40",
     accentColor: "#198754",
     stats: [
       { label: "DStv in Zambia",   value: "30+ years" },
       { label: "Netflix via Axxess", value: "K90/month" },
-      { label: "Both platforms",    value: "K140/month" },
+      { label: "Netflix Lite",    value: "K40/15 days" },
     ],
     readTime: 3,
     controversial: true,
@@ -438,7 +365,7 @@ function slugify(s: string): string {
 /* ─── NewsData.io live fetch ──────────────────────────────────────────────── */
 async function fetchLiveNews(): Promise<Article[]> {
   try {
-    const queries = ["Netflix series 2025", "Amazon Prime Video show", "streaming entertainment 2025"];
+    const queries = ["Netflix series 2025", "streaming entertainment 2025"];
     const q = queries[Math.floor(Math.random() * queries.length)];
     const res = await fetch(
       `https://newsdata.io/api/1/news?apikey=${NEWSDATA_KEY}&q=${encodeURIComponent(q)}&language=en&category=entertainment&size=8`
@@ -501,7 +428,7 @@ async function fetchLiveNews(): Promise<Article[]> {
           stats: [
             ...(rating ? [{ label: "TMDB Rating", value: `${rating.toFixed(1)}/10` }] : []),
             { label: "Netflix via Axxess", value: "K90/month" },
-            { label: "Prime via Axxess",   value: "K60/month" },
+            { label: "Netflix Lite",       value: "K40/15 days" },
           ],
           readTime:      Math.floor(Math.random() * 2) + 2,
           controversial: Math.random() > 0.6,

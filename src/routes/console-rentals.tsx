@@ -10,9 +10,9 @@ export const Route = createFileRoute("/console-rentals")({
   head: () => ({
     meta: [
       { title: "PS4 Console Rentals in Kitwe — Axxess" },
-      { name: "description", content: "Rent a PS4 in Kitwe from K120 for 24 hours. Includes a controller, God of War, FC 27, Need for Speed Heat, GTA 5, Call of Duty MW3 and free Netflix + Prime Video during your rental. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { name: "description", content: "Rent a PS4 in Kitwe from K120 for 24 hours. Includes a controller, God of War, FC 27, Need for Speed Heat, GTA 5, Call of Duty MW3 and free Netflix during your rental. Netflix Lite K40/15 days, Netflix Personal K90/mo." },
       { property: "og:title", content: "PS4 Console Rentals in Kitwe — Axxess" },
-      { property: "og:description", content: "Game night. Movie night. One rental. PS4 rentals from K120, with Netflix + Prime Video included. Kitwe only. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { property: "og:description", content: "Game night. Movie night. One rental. PS4 rentals from K120, with Netflix included. Kitwe only. Netflix Lite K40/15 days, Netflix Personal K90/mo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/console-rentals" },
@@ -46,7 +46,7 @@ function ConsoleRentalsPage() {
         <div className="mt-10 border-b border-border pb-8">
           <h2 className="flex items-center gap-2 text-xl font-semibold"><Gamepad2 className="size-5 text-primary" /> Your rental includes</h2>
           <p className="mt-4 leading-7 text-muted-foreground">PS4 Standard, one controller and all five games shown above.</p>
-          <p className="mt-3 font-medium text-foreground">Netflix + Prime Video, free for the whole rental.</p>
+          <p className="mt-3 font-medium text-foreground">Netflix, free for the whole rental.</p>
         </div>
 
         <div className="py-8">

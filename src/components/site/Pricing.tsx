@@ -11,21 +11,15 @@ import { groupPricingServices, isNetflixPlan, isNetflixLite, selectedNetflixPlan
 
 /* ─── Real direct prices in ZMW ─────────────────────────────────────────────
    Netflix:    K220/mo direct
-   Prime:      K131/mo direct
-   Both:       K220 + K131 = K351/mo
 ────────────────────────────────────────────────────────────────────────────── */
 const DIRECT_PRICES: Record<string, { zmw: number; label: string }> = {
   netflix: { zmw: 220, label: "netflix.com direct" },
-  prime:   { zmw: 131, label: "amazon.com direct" },
-  bundle:  { zmw: 351, label: "both direct" },
 };
 
 function getDirectPrice(slug: string, name: string) {
   const s = (slug + " " + name).toLowerCase();
   if (s.includes("lite"))    return null; // 15-day pass — no fair monthly comparison
   if (s.includes("netflix")) return DIRECT_PRICES.netflix;
-  if (s.includes("prime"))   return DIRECT_PRICES.prime;
-  if (s.includes("all") || s.includes("bundle") || s.includes("access")) return DIRECT_PRICES.bundle;
   return null;
 }
 
@@ -74,7 +68,7 @@ export function Pricing() {
       });
   }, []);
 
-  // Live sync — reflects Netflix/Prime profile fullness (via services.is_full)
+  // Live sync — reflects Netflix profile fullness (via services.is_full)
   // the instant it changes, so a customer sitting on this page doesn't need
   // to refresh to see a plan flip to "Full" (or open back up).
   useEffect(() => {

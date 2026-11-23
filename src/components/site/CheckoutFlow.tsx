@@ -99,8 +99,6 @@ export function CheckoutFlow({
   const isLite      = /lite/i.test(service.name);
   if (isLite && months !== 1) setMonths(1);
   const totalPrice  = Number(service.price_kwacha) * months;
-  const isAllAccess = /all.?access|bundle/i.test(service.name);
-  const isNetflix   = /netflix/i.test(service.name);
 
   // Shared order-placement logic — called either by the "Continue" button
   // (first-time checkout) or automatically on open (quick renewal).
@@ -184,11 +182,7 @@ export function CheckoutFlow({
   };
 
   const openWhatsApp = () => {
-    const upsellLine = isAllAccess
-      ? ""
-      : isNetflix
-      ? "\n\nP.S. — I'd also like to know about upgrading to All Access (Netflix + Prime Video for K140). Please let me know when you confirm my order."
-      : "\n\nP.S. — I'd also like to know about upgrading to All Access (both Netflix + Prime for K140). Please mention it when you confirm.";
+
 
     const msg =
       `Hi Axxess! 👋 I've just sent payment.\n\n` +
@@ -197,7 +191,7 @@ export function CheckoutFlow({
       `*Amount Paid:* K${totalPrice}\n` +
       `*My Number:* ${phone.trim()}\n\n` +
       `Please confirm my payment and send me my profile/login details. Thank you! 🙏` +
-      upsellLine;
+      "";
 
     window.open(`https://wa.me/${cfg.whatsappNumber}?text=${encodeURIComponent(msg)}`, "_blank");
 
@@ -330,18 +324,6 @@ export function CheckoutFlow({
                   <p className="mt-1.5 text-[11px] text-muted-foreground">Pay once, enjoy longer. No need to renew every month.</p>
                 </div>}
 
-                {/* Upsell nudge */}
-                {!isAllAccess && (
-                  <div className="rounded-xl p-3 flex items-start gap-3" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
-                    <Zap className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: "#C9A84C" }} />
-                    <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
-                      <span className="font-bold" style={{ color: "#C9A84C" }}>Upgrade tip:</span> Get Netflix + Prime Video together for just K140/mo.{" "}
-                      <button type="button" onClick={onClose} className="underline" style={{ color: "#C9A84C" }}>
-                        See All Access
-                      </button>
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -436,7 +418,6 @@ export function CheckoutFlow({
                 <p>✓ Amount paid (K{totalPrice})</p>
                 <p>✓ Your WhatsApp number</p>
                 <p>✓ Request for login details</p>
-                {!isAllAccess && <p style={{ color: "#C9A84C" }}>✓ All Access upgrade enquiry</p>}
               </div>
 
               {/* Renewal bookmark — so they come back here next month */}
@@ -455,15 +436,6 @@ export function CheckoutFlow({
                 </a>
               </div>
 
-              {!isAllAccess && (
-                <div className="w-full rounded-2xl p-4 text-left" style={{ background: "linear-gradient(135deg, rgba(229,25,42,0.08), rgba(201,168,76,0.05))", border: "1px solid rgba(229,25,42,0.15)" }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#E5192A" }}>💡 While you wait</p>
-                  <p className="text-sm font-semibold text-white mb-0.5">Love what you ordered?</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-                    Next time consider All Access — Netflix + Prime Video for K140/mo. Your Axxess agent will tell you more.
-                  </p>
-                </div>
-              )}
             </div>
           )}
         </div>

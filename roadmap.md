@@ -6,4 +6,4 @@
 - [x] Verify rental booking links and desktop/mobile rendering.
 - [x] Combine Netflix into one plan card with Lite and Personal choices, preserving checkout and availability.
 - [x] Add the five uploaded game images to a one-at-a-time rental gallery.
-- [x] Verify both Netflix checkouts and the gallery on mobile and desktop.
+- [x] Verify both Netflix checkouts and the gallery on mobile and desktop.- [x] Remove Prime Video and All Access across the site; Netflix only.

@@ -17,14 +17,16 @@ const recommend = new Function(`${outputText}; return recommend;`)() as (
   answers: Record<string, string>,
 ) => { key: string; price: number | null };
 
-describe("Monthly streaming prices", () => {
-  test("Netflix costs K90", () => {
-    assert.equal(recommend({ vibe: "series", watching: "solo", budget: "light" }).price, 90);
+describe("Netflix-only quiz prices", () => {
+  test("Netflix Personal costs K90", () => {
+    assert.equal(recommend({ vibe: "series", watching: "solo", budget: "value" }).price, 90);
   });
-  test("Prime Video costs K60", () => {
-    assert.equal(recommend({ vibe: "originals", watching: "solo", budget: "light" }).price, 60);
+  test("Netflix Lite costs K40", () => {
+    assert.equal(recommend({ vibe: "series", watching: "solo", budget: "light" }).price, 40);
   });
-  test("Both platforms cost K140", () => {
-    assert.equal(recommend({ vibe: "trending", watching: "solo", budget: "premium" }).price, 140);
+  test("Prime Video is never recommended", () => {
+    for (const vibe of ["series", "originals", "trending"])
+      for (const budget of ["light", "value", "premium"])
+        assert.ok(["netflix", "lite"].includes(recommend({ vibe, watching: "couple", budget }).key));
   });
 });

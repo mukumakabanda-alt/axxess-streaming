@@ -184,8 +184,6 @@ export function OrdersTab() {
   const netflixAvailable  = netflixProfiles.filter((p) => p.status === "available" && !p.is_vulnerable).length;
   const netflixHalf       = netflixProfiles.filter((p) => p.status === "half" && !p.is_vulnerable).length;
   const netflixVulnerable = netflixProfiles.filter((p) => p.is_vulnerable).length;
-  const primeAvailable    = primeProfiles.filter((p) => p.status === "available" && !p.is_vulnerable).length;
-  const primeVulnerable   = primeProfiles.filter((p) => p.is_vulnerable).length;
 
   const netflixOptions = useMemo(
     () => netflixProfiles.map((p) => ({
@@ -462,10 +460,6 @@ export function OrdersTab() {
           Netflix: <b className="text-green-400">{netflixAvailable}</b> available
           {netflixHalf > 0 && <span className="text-blue-400"> · {netflixHalf} half (1 Lite spot)</span>}
           {netflixVulnerable > 0 && <span className="text-orange-400"> · {netflixVulnerable} vulnerable</span>}
-        </span>
-        <span className="rounded-full bg-muted px-3 py-1">
-          Prime Video: <b className="text-green-400">{primeAvailable}</b> available
-          {primeVulnerable > 0 && <span className="text-orange-400"> · {primeVulnerable} vulnerable</span>}
         </span>
         <span className="text-muted-foreground">Orders older than 90 days are cleaned up automatically.</span>
       </div>

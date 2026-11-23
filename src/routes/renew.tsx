@@ -28,10 +28,10 @@ export const Route = createFileRoute("/renew")({
   head: () => ({
     meta: [
       { title: "Renew — Axxess Streaming" },
-      { name: "description", content: "Renew your Axxess subscription in under 60 seconds. No need to message us first. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { name: "description", content: "Renew your Axxess subscription in under 60 seconds. No need to message us first. Netflix Lite K40/15 days, Netflix Personal K90/mo." },
       { property: "og:url", content: "https://axxess-streaming.lovable.app/renew" },
       { property: "og:title", content: "Renew \u2014 Axxess Streaming" },
-      { property: "og:description", content: "Renew your Axxess streaming subscription. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { property: "og:description", content: "Renew your Axxess streaming subscription. Netflix Lite K40/15 days, Netflix Personal K90/mo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -155,25 +155,15 @@ function RenewPage() {
   // Find the matching service for a subscription record so we can
   // open CheckoutFlow pre-configured for that exact plan
   const serviceForSub = (sub: SubRecord): Service | undefined => {
-    return services.find((s) =>
-      s.name.toLowerCase().includes(sub.service_name.toLowerCase().split(" ")[0])
-    );
+    const target = sub.service_name.toLowerCase();
+    return services.find((s) => target.startsWith(s.name.toLowerCase()))
+      ?? services.find((s) => s.name.toLowerCase().includes(target.split(" ")[0] ?? ""));
   };
 
-  // Services the customer does NOT currently have (for upsell)
+  // Netflix-only: offer the other Netflix plan (Lite <-> Personal) if they don't have it.
   const upsellServices = (currentSubs: SubRecord[]): Service[] => {
     const currentNames = currentSubs.map((s) => s.service_name.toLowerCase());
-    const hasNetflix   = currentNames.some((n) => n.includes("netflix"));
-    const hasPrime     = currentNames.some((n) => n.includes("prime"));
-    const hasAll       = currentNames.some((n) => n.includes("all") || n.includes("bundle"));
-    if (hasAll) return [];
-    return services.filter((s) => {
-      const n = s.name.toLowerCase();
-      if (n.includes("all") || n.includes("bundle")) return true;
-      if (!hasNetflix && n.includes("netflix"))       return true;
-      if (!hasPrime   && n.includes("prime"))         return true;
-      return false;
-    });
+    return services.filter((s) => !currentNames.some((n) => n.startsWith(s.name.toLowerCase())));
   };
 
   const user = getUser();
@@ -351,7 +341,7 @@ function RenewPage() {
                   const svc    = serviceForSub(sub);
                   const expired = dl < 0;
                   // Live truth, not a guess — svc.is_full is kept in sync
-                  // automatically from real Netflix/Prime profile inventory.
+                  // automatically from real Netflix profile inventory.
                   const full = !!svc?.is_full;
 
                   return (
@@ -443,11 +433,11 @@ function RenewPage() {
                     <div className="flex items-center gap-2 mb-3">
                       <Star className="h-4 w-4" style={{ color: "#C9A84C" }} />
                       <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "#C9A84C" }}>
-                        Add more for less
+                        Other Netflix plan
                       </p>
                     </div>
                     <p className="text-sm font-semibold text-foreground mb-3">
-                      You're only on one platform. Want both Netflix + Prime for K140/mo?
+                      Netflix has two plans: Lite (K40 for 15 days, shared) and Personal (K90 for 30 days, your own profile).
                     </p>
                     <div className="space-y-2">
                       {upsellServices(subs).map((s) => (

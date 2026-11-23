@@ -11,7 +11,7 @@ import { toast } from "sonner";
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 type Option   = { emoji: string; label: string; sub?: string; value: string };
 type Question = { id: string; headline: string; sub: string; options: Option[] };
-type RecKey   = "netflix" | "prime" | "bundle" | "reserve";
+type RecKey   = "netflix" | "lite" | "reserve";
 type Rec      = { key: RecKey; name: string; tagline: string; reason: string; emoji: string; price: number | null; realPrice: number | null };
 type Service  = { id: string; name: string; price_kwacha: number };
 
@@ -44,8 +44,8 @@ const QUESTIONS: Question[] = [
     headline: "What feels right on price?",
     sub: "All prices in Zambian Kwacha.",
     options: [
-      { emoji: "💚", label: "Keep it light",      sub: "Around K60–K90/mo", value: "light"   },
-      { emoji: "💛", label: "Best value wins",    sub: "Around K100/mo",    value: "value"   },
+      { emoji: "💚", label: "Keep it light",      sub: "K40 for 15 days", value: "light"   },
+      { emoji: "💛", label: "Best value wins",    sub: "K90 a month",       value: "value"   },
       { emoji: "👑", label: "Give me everything", sub: "Max content",       value: "premium" },
     ],
   },
@@ -59,17 +59,11 @@ function recommend(a: Record<string, string>): Rec {
     reason: "Live sports & local TV is your thing — DStv is the obvious match. We're adding it soon. Reserve now to be first in line.",
     emoji: "⚽", price: null, realPrice: null,
   };
-  if (a.budget === "premium" || a.budget === "value" || a.vibe === "trending" || a.watching === "family" || a.watching === "squad") return {
-    key: "bundle", name: "All Access",
-    tagline: "Netflix + Prime Video. One price. Zero compromise.",
-    reason: "With your taste and your crowd, you'd be switching apps constantly. Get both for less than either at full price.",
-    emoji: "✨", price: 140, realPrice: 314,
-  };
-  if (a.vibe === "originals" || a.watching === "couple") return {
-    key: "prime", name: "Prime Video",
-    tagline: "Amazon Prime Video — global hits.",
-    reason: "Prime Originals hit different. Great for two, easy on the wallet, packed with content you won't find anywhere else.",
-    emoji: "⚡", price: 60, realPrice: 157,
+  if (a.budget === "light") return {
+    key: "lite", name: "Netflix Lite",
+    tagline: "All of Netflix for 15 days.",
+    reason: "Want Netflix without spending much? Lite gives you 15 days on a profile shared with one other person.",
+    emoji: "💚", price: 40, realPrice: null,
   };
   return {
     key: "netflix", name: "Netflix Personal",
@@ -126,7 +120,7 @@ export function PackageQuiz() {
       const { data } = await supabase
         .from("services")
         .select("id, name, price_kwacha")
-        .ilike("name", `%${rec.key === "bundle" ? "all" : rec.name}%`)
+        .ilike("name", `%${rec.name}%`)
         .eq("is_active", true)
         .limit(1)
         .maybeSingle();

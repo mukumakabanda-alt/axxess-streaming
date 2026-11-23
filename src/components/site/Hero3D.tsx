@@ -8,7 +8,7 @@ import { getTrendingShows } from "@/lib/tmdb.functions";
 
 type ShowItem = {
   title:    string;
-  platform: "netflix" | "prime";
+  platform: "netflix";
   poster:   string;
   rating?:  string;
 };
@@ -18,19 +18,13 @@ type ShowItem = {
 /* ═══════════════════════════════════════════════════════════════════════════ */
 const STATIC_FALLBACK: ShowItem[] = [
   { title: "Stranger Things",  platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/49WJfeN0moxb9IPfGn8AIqMGskD.jpg", rating: "8.7" },
-  { title: "The Boys",         platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/stTEycfG9928HYGEISBFaG1ngjM.jpg", rating: "8.7" },
   { title: "Wednesday",        platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/9PFonBhy4cQy7Jz20NpMygczOkv.jpg", rating: "8.1" },
-  { title: "Fallout",          platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/5YZbUmjbMa3ClvSW1Wj3D6XGkVA.jpg", rating: "8.5" },
   { title: "Squid Game",       platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/dDlEmu3EZ0Pgg93K2SVNLCjCSvE.jpg", rating: "8.0" },
-  { title: "Citadel",          platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/7YPdUs60C9qQQQfOFCgxpnF07D9.jpg", rating: "6.8" },
   { title: "Outer Banks",      platform: "netflix", poster: "https://image.tmdb.org/t/p/w185/6UQnDUoSBBCt5I4KgKxEAJjqJRR.jpg", rating: "7.6" },
-  { title: "Reacher",          platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/pnXLFiDTwOAHDdZwuMCtEBknFhF.jpg", rating: "8.0" },
-  { title: "Invincible",       platform: "prime",   poster: "https://image.tmdb.org/t/p/w185/yDWJYRAwMNKa8j2KqM1j3gMRFBl.jpg", rating: "8.7" },
 ];
 
 const P_STYLE: Record<string, { color: string; label: string; glow: string }> = {
   netflix: { color: "#E5192A", label: "Netflix",     glow: "rgba(229,25,42,0.35)" },
-  prime:   { color: "#00A8E1", label: "Prime Video", glow: "rgba(0,168,225,0.35)" },
 };
 
 async function fetchTrendingShows(): Promise<ShowItem[]> {
@@ -736,7 +730,7 @@ export function Hero3D() {
             }}
           >
             <span style={{ color: "rgba(255,255,255,0.72)", fontWeight: 500 }}>Netflix</span>.{" "}
-            <span style={{ color: "rgba(255,255,255,0.72)", fontWeight: 500 }}>Prime Video</span>. Both.{" "}
+            <span style={{ color: "rgba(255,255,255,0.72)", fontWeight: 500 }}>From K40</span>.{" "}
             <span style={{ color: "rgba(255,255,255,0.72)", fontWeight: 500 }}>No card</span>. Via{" "}
             <span style={{ color: "rgba(255,255,255,0.72)", fontWeight: 500 }}>WhatsApp</span>. In 15 minutes.
           </motion.p>

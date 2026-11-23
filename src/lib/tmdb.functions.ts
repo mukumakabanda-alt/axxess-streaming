@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 
-export type TrendingShow = { title: string; poster: string; rating?: string; platform: "netflix" | "prime" };
+export type TrendingShow = { title: string; poster: string; rating?: string; platform: "netflix" };
 
 type TmdbShow = { name?: string; original_name?: string; poster_path?: string; vote_average?: number };
 
-// Popular shows actually on each service (TMDB watch providers: Netflix 8, Prime Video 9/119).
+// Popular shows actually on Netflix (TMDB watch provider 8).
 export const getTrendingShows = createServerFn({ method: "GET" }).handler(async (): Promise<TrendingShow[]> => {
   const key = process.env["TMDB_API_KEY"];
   if (!key) return [];
@@ -17,7 +17,7 @@ export const getTrendingShows = createServerFn({ method: "GET" }).handler(async 
       const data = (await res.json()) as { results?: TmdbShow[] };
       return (data.results ?? [])
         .filter((s) => s.poster_path)
-        .slice(0, 8)
+        .slice(0, 16)
         .map((s) => ({
           title: s.name ?? s.original_name ?? "Trending now",
           poster: `https://image.tmdb.org/t/p/w185${s.poster_path}`,
@@ -28,11 +28,6 @@ export const getTrendingShows = createServerFn({ method: "GET" }).handler(async 
       return [];
     }
   };
-  const [n, p] = await Promise.all([load("8", "netflix"), load("9|119", "prime")]);
-  const out: TrendingShow[] = [];
-  for (let i = 0; i < Math.max(n.length, p.length); i++) {
-    if (n[i]) out.push(n[i]);
-    if (p[i]) out.push(p[i]);
-  }
+  const out: TrendingShow[] = await load("8", "netflix");
   return out;
 });

@@ -12,11 +12,10 @@ import { ReferralsTab } from "@/components/admin/ReferralsTab";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 import { ReservationsTab } from "@/components/admin/ReservationsTab";
 import { NetflixAccountsTab } from "@/components/admin/NetflixAccountsTab";
-import { PrimeVideoAccountsTab } from "@/components/admin/PrimeVideoAccountsTab";
 import {
   LayoutDashboard, ShoppingCart, Users, Package,
   BookOpen, Megaphone, Share2, Settings, Calendar,
-  Tv, PlayCircle, ChevronRight, Menu, X, ExternalLink,
+  Tv, ChevronRight, Menu, X, ExternalLink,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")(({
@@ -24,9 +23,9 @@ export const Route = createFileRoute("/admin/")(({
     meta: [
       { title: "Axxess Admin" },
       { name: "robots", content: "noindex, nofollow" },
-      { name: "description", content: "Manage Axxess orders, subscriptions and streaming accounts. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { name: "description", content: "Manage Axxess orders, subscriptions and streaming accounts. Netflix Lite K40/15 days, Netflix Personal K90/mo." },
       { property: "og:title", content: "Axxess Admin" },
-      { property: "og:description", content: "Manage Axxess orders, subscriptions and streaming accounts. Netflix Lite K40/15 days, Netflix Personal K90/mo, Prime Video K60/mo, Both K140/mo." },
+      { property: "og:description", content: "Manage Axxess orders, subscriptions and streaming accounts. Netflix Lite K40/15 days, Netflix Personal K90/mo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -36,7 +35,7 @@ export const Route = createFileRoute("/admin/")(({
 
 type TabId =
   | "overview" | "orders" | "reservations" | "subs"
-  | "services" | "netflix" | "prime"
+  | "services" | "netflix"
   | "testimonials" | "updates" | "referrals" | "settings";
 
 const NAV: { id: TabId; label: string; icon: any; badge?: string }[] = [
@@ -46,7 +45,6 @@ const NAV: { id: TabId; label: string; icon: any; badge?: string }[] = [
   { id: "subs",         label: "Subscriptions", icon: Users },
   { id: "services",     label: "Services",      icon: Package },
   { id: "netflix",      label: "Netflix",       icon: Tv },
-  { id: "prime",        label: "Prime Video",   icon: PlayCircle },
   { id: "testimonials", label: "Testimonials",  icon: BookOpen },
   { id: "updates",      label: "News/Updates",  icon: Megaphone },
   { id: "referrals",    label: "Referrals",     icon: Share2 },
@@ -201,7 +199,6 @@ function AdminPage() {
           {active === "subs"         && <SubscriptionsTab />}
           {active === "services"     && <ServicesTab />}
           {active === "netflix"      && <NetflixAccountsTab />}
-          {active === "prime"        && <PrimeVideoAccountsTab />}
           {active === "testimonials" && <TestimonialsTab />}
           {active === "updates"      && <UpdatesTab />}
           {active === "referrals"    && <ReferralsTab />}
