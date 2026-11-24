@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useSiteConfig } from "@/lib/siteConfig";
 import consoleImage from "@/assets/ps4-detail.webp.asset.json";
 import { RentalGames } from "@/components/site/RentalGames";
+import { GameplayClips } from "@/components/site/GameplayClips";
 
 export const Route = createFileRoute("/console-rentals")({
   head: () => ({
@@ -49,6 +50,8 @@ function ConsoleRentalsPage() {
           <p className="mt-3 font-medium text-foreground">Netflix, free for the whole rental.</p>
         </div>
 
+        <GameplayClips />
+
         <div className="py-8">
           <h2 className="text-xl font-semibold">Choose your duration</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">Riverside · Parklands · Nkana East &amp; nearby areas.</p>
@@ -62,6 +65,11 @@ function ConsoleRentalsPage() {
               </Button>
             ))}
           </div>
+        </div>
+        <div className="mb-6 rounded-lg border border-border bg-card p-5">
+          <p className="font-medium">Already rented one?</p>
+          <p className="mt-1 text-sm text-muted-foreground">Watch the quick guide to activate your PS4.</p>
+          <Button asChild variant="outline" size="sm" className="mt-4"><Link to="/console-rentals/activate">How to activate <ArrowRight /></Link></Button>
         </div>
         <Button asChild variant="link" className="h-auto whitespace-normal px-0 text-left text-sm text-muted-foreground">
           <Link to="/" hash="plans">Not in Kitwe? Streaming works anywhere in Zambia <ArrowRight /></Link>

@@ -6,8 +6,7 @@ import { resolveAccentHex, isLightAccent } from "@/lib/accent-colors";
 import { getRememberedPhone, rememberCustomer } from "@/lib/customer";
 import { normalizePhone } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { groupPricingServices, isNetflixPlan, isNetflixLite, selectedNetflixPlan, type PricingService } from "@/lib/plan-groups";
+import { isNetflixPlan, isNetflixLite, type PricingService } from "@/lib/plan-groups";
 
 /* ─── Real direct prices in ZMW ─────────────────────────────────────────────
    Netflix:    K220/mo direct
@@ -35,8 +34,6 @@ export function Pricing() {
   const [quickRenew,  setQuickRenew]  = useState(false);
   // Guards against double-clicking "Get Access" while the lookup is running
   const [checkingId,  setCheckingId]  = useState<string | null>(null);
-  const [netflixChoice, setNetflixChoice] = useState<string | null>(null);
-  const planGroups = groupPricingServices(services ?? []);
 
   useEffect(() => {
     supabase
@@ -175,18 +172,16 @@ export function Pricing() {
             <Loader2 className="h-6 w-6 animate-spin" style={{ color: "rgba(255,255,255,0.3)" }} />
           </div>
         ) : (
-          <div className={`grid gap-4 sm:grid-cols-2 ${planGroups.length <= 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
-            {planGroups.map(options => {
-              const first = options[0];
-              if (!first) return null;
-              const isNetflix = isNetflixPlan(first);
-              const s = isNetflix ? selectedNetflixPlan(options, netflixChoice) : first;
-              if (!s) return null;
+          <div className={`grid gap-4 sm:grid-cols-2 ${(services?.length ?? 0) <= 2 ? "lg:max-w-3xl lg:mx-auto" : "lg:grid-cols-3"}`}>
+            {(services ?? []).map(s => {
+              const isNetflix = isNetflixPlan(s);
+              const lite = isNetflix && isNetflixLite(s);
               const accentHex  = resolveAccentHex(s.accent_color);
               const light      = isLightAccent(accentHex);
               const btnColor   = light ? "#000" : "#fff";
               const isFull     = !!s.is_full;
-              const isFeatured = s.badge === "Best Value" || s.badge === "Most Popular";
+              const badge      = s.badge ?? (isNetflix ? (lite ? "Budget pick" : "Most popular") : null);
+              const isFeatured = (isNetflix && !lite) || s.badge === "Best Value" || s.badge === "Most Popular";
               const direct     = getDirectPrice(s.slug, s.name);
               const saving     = direct ? direct.zmw - Number(s.price_kwacha) : 0;
               const savingPct  = direct ? Math.round((saving / direct.zmw) * 100) : 0;
@@ -195,7 +190,7 @@ export function Pricing() {
 
               return (
                 <div
-                  key={isNetflix ? "netflix" : s.id}
+                  key={s.id}
                   onMouseMove={e => {
                     if (isFull) return;
                     const el = e.currentTarget as HTMLDivElement;
@@ -227,26 +222,18 @@ export function Pricing() {
                     <span className="absolute right-4 top-4 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider" style={{ background: "rgba(229,25,42,0.15)", color: "#E5192A", border: "1px solid rgba(229,25,42,0.3)" }}>
                       Full
                     </span>
-                  ) : s.badge ? (
+                  ) : badge ? (
                     <span className="absolute right-4 top-4 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider" style={{ background: accentHex, color: btnColor }}>
-                      {s.badge}
+                      {badge}
                     </span>
                   ) : null}
 
-                  <h3 className="font-display text-lg font-bold text-white mb-1">{isNetflix ? "Netflix" : s.name}</h3>
+                  {isNetflix && (
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-primary">Netflix</p>
+                  )}
+                  <h3 className="font-display text-2xl font-black text-white mb-1">{isNetflix ? (lite ? "Lite" : "Personal") : s.name}</h3>
                   {isNetflix ? (
-                    <div className="mb-4">
-                      <p className="mb-3 text-xs text-muted-foreground">Two ways to watch.</p>
-                      <ToggleGroup type="single" value={s.id} onValueChange={value => { if (value) setNetflixChoice(value); }} aria-label="Netflix plan" className="grid w-full grid-cols-2 gap-1 rounded-lg bg-muted/50 p-1">
-                        {options.map(option => (
-                          <ToggleGroupItem key={option.id} value={option.id} aria-label={`Netflix ${isNetflixLite(option) ? "Lite" : "Personal"}, K${Number(option.price_kwacha)}`} className="h-14 min-w-0 flex-col gap-0.5 rounded-md px-1 text-foreground data-[state=on]:bg-primary/15 data-[state=on]:text-primary data-[state=on]:ring-1 data-[state=on]:ring-primary/40">
-                            <span className="text-sm font-semibold">{isNetflixLite(option) ? "Lite" : "Personal"}</span>
-                            <span className="text-xs">K{Number(option.price_kwacha)} <span className="text-muted-foreground">/ {isNetflixLite(option) ? "15 days" : "30 days"}</span></span>
-                          </ToggleGroupItem>
-                        ))}
-                      </ToggleGroup>
-                      <p className="mt-3 min-h-10 text-xs leading-5 text-muted-foreground">{isNetflixLite(s) ? "15 days. A profile shared with one other person." : "30 days. Your own personal profile."}</p>
-                    </div>
+                    <p className="mb-5 text-sm leading-6 text-muted-foreground">{lite ? "Netflix on a budget. 15 days on a profile you share with one other person." : "Your own profile, all to yourself. Your watchlist, your PIN, your picks."}</p>
                   ) : s.description && (
                     <p className="text-xs mb-4 line-clamp-2" style={{ color: "rgba(255,255,255,0.4)" }}>{s.description}</p>
                   )}
@@ -259,7 +246,7 @@ export function Pricing() {
                         {Number(s.price_kwacha)}
                       </span>
                     </div>
-                    <span className="mb-1.5 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{/15/.test(s.billing_period ?? "") ? "/15 days" : "/mo"}</span>
+                    <span className="mb-1.5 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{lite || /15/.test(s.billing_period ?? "") ? "/15 days" : "/mo"}</span>
                   </div>
 
                   {/* Savings */}
@@ -292,6 +279,12 @@ export function Pricing() {
                       </li>
                     ))}
                   </ul>
+
+                  {isNetflix && !lite && (
+                    <p className="mb-4 rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                      Pay for 2 months or more at checkout and skip monthly renewals.
+                    </p>
+                  )}
 
                   {/* CTA */}
                   {isFull ? (

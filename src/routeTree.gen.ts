@@ -20,6 +20,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminSetupRouteImport } from './routes/admin.setup'
+import { Route as ConsoleRentalsActivateRouteImport } from './routes/console-rentals_.activate'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 
 const IndexRoute = IndexRouteImport.update({
@@ -77,6 +78,11 @@ const AdminSetupRoute = AdminSetupRouteImport.update({
   path: '/admin/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConsoleRentalsActivateRoute = ConsoleRentalsActivateRouteImport.update({
+  id: '/console-rentals_/activate',
+  path: '/console-rentals/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinCodeRoute = JoinCodeRouteImport.update({
   id: '/join/$code',
   path: '/join/$code',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/setup': typeof AdminSetupRoute
+  '/console-rentals/activate': typeof ConsoleRentalsActivateRoute
   '/join/$code': typeof JoinCodeRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/setup': typeof AdminSetupRoute
+  '/console-rentals/activate': typeof ConsoleRentalsActivateRoute
   '/join/$code': typeof JoinCodeRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/setup': typeof AdminSetupRoute
+  '/console-rentals_/activate': typeof ConsoleRentalsActivateRoute
   '/join/$code': typeof JoinCodeRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/login'
     | '/admin/setup'
+    | '/console-rentals/activate'
     | '/join/$code'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/login'
     | '/admin/setup'
+    | '/console-rentals/activate'
     | '/join/$code'
     | '/admin'
   id:
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/login'
     | '/admin/setup'
+    | '/console-rentals_/activate'
     | '/join/$code'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -182,6 +194,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSetupRoute: typeof AdminSetupRoute
+  ConsoleRentalsActivateRoute: typeof ConsoleRentalsActivateRoute
   JoinCodeRoute: typeof JoinCodeRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/console-rentals_/activate': {
+      id: '/console-rentals_/activate'
+      path: '/console-rentals/activate'
+      fullPath: '/console-rentals/activate'
+      preLoaderRoute: typeof ConsoleRentalsActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join/$code': {
       id: '/join/$code'
       path: '/join/$code'
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSetupRoute: AdminSetupRoute,
+  ConsoleRentalsActivateRoute: ConsoleRentalsActivateRoute,
   JoinCodeRoute: JoinCodeRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

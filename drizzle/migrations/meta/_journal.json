@@ -36,6 +36,13 @@
       "when": 1794249396530,
       "tag": "0004_netflix_lite_half_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795546950804,
+      "tag": "0005_tighten_settings_and_engagement_reads",
+      "breakpoints": true
     }
   ]
 }
